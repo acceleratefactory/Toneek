@@ -155,7 +155,7 @@ export default async function ResultsPage({
                 {/* CTA */}
                 <section className="cta-section">
                     <p className="cta-label">Ready to get your formula made?</p>
-                    <a id="subscribe-cta" href="/subscribe" className="btn-primary">
+                    <a id="subscribe-cta" href={`/subscribe?assessment_id=${assessment.id}`} className="btn-primary">
                         Subscribe and get your formula
                     </a>
                     <p className="cta-hint">
