@@ -7,6 +7,7 @@ import { adminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { applyTriggerModifiers } from '@/lib/formula/triggerModifiers'
 import { resolveCurrency } from '@/lib/currency'
+import { sendFormulaEmail } from '@/lib/email/sendFormulaEmail'
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
 
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest) {
     const formulaResult = await formulaRes.json()
 
     // Step 3: Create / link user account via OTP (magic link)
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: authData } = await supabase.auth.signInWithOtp({
         email: assessment.email,
         options: { shouldCreateUser: true },
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
     const { data: assessmentRecord, error: insertError } = await adminClient
         .from('skin_assessments')
         .insert({
-            user_id: authData?.user?.id ?? null,
+            user_id: null, // linked after magic link click
 
             // Location
             country_of_residence: assessment.country_of_residence,
@@ -112,7 +113,7 @@ export async function POST(request: NextRequest) {
 
     // Step 5: Upsert profile with currency
     await adminClient.from('profiles').upsert({
-        id: authData?.user?.id ?? undefined,
+        id: undefined,
         email: assessment.email,
         country_of_residence: assessment.country_of_residence,
         city_of_residence: assessment.city_of_residence,
@@ -120,8 +121,18 @@ export async function POST(request: NextRequest) {
         currency: resolveCurrency(assessment.country_of_residence),
     }, { onConflict: 'id' })
 
-    // Step 6: Send formula email via Resend (Task 8 — placeholder until email built)
-    // await sendFormulaEmail({ ... })
+    // Step 6: Send formula email via Resend
+    await sendFormulaEmail({
+        email: assessment.email,
+        formula_code: formulaResult.formula_code,
+        formula: formulaResult.formula,
+        skin_os_score: formulaResult.skin_os_score,
+        primary_concern: assessment.primary_concern,
+        climate_zone: assessment.climate_zone,
+        routine_expectation: assessment.routine_expectation,
+        isotretinoin_flag: assessment.medications?.includes('isotretinoin') ?? false,
+        assessment_id: assessmentRecord?.id,
+    })
 
     return NextResponse.json({
         success: true,
