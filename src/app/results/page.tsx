@@ -23,9 +23,9 @@ const ROUTINE_MESSAGES: Record<string, string> = {
 export default async function ResultsPage({
     searchParams,
 }: {
-    searchParams: { assessment_id?: string }
+    searchParams: Promise<{ assessment_id?: string }>
 }) {
-    const assessment_id = searchParams.assessment_id
+    const { assessment_id } = await searchParams
 
     let query = adminClient
         .from('skin_assessments')
