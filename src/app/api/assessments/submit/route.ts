@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
             confidence_score: formulaResult.confidence_score,
             risk_score: formulaResult.risk_score,
             risk_routing: formulaResult.routing,
-            monitoring_mode: formulaResult.monitoring_mode,
+            monitoring_mode: !!formulaResult.monitoring_mode && formulaResult.monitoring_mode !== false,
             checkin_frequency: formulaResult.checkin_frequency,
             formula_tier: formulaResult.formula_tier,
 
