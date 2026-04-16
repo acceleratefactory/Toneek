@@ -67,7 +67,8 @@ export default function Step10PhotoEmail() {
             })
             const data = await res.json()
             if (data.success) {
-                router.push('/results')
+                const id = data.assessment_id
+                router.push(id ? `/results?assessment_id=${id}` : '/results')
             } else {
                 setError('Something went wrong. Please try again.')
             }

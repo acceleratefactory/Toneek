@@ -109,19 +109,13 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
         console.error('Assessment insert error:', insertError)
+        return NextResponse.json({
+            success: false,
+            error: insertError.message,
+        }, { status: 500 })
     }
 
-    // Step 5: Upsert profile with currency
-    await adminClient.from('profiles').upsert({
-        id: undefined,
-        email: assessment.email,
-        country_of_residence: assessment.country_of_residence,
-        city_of_residence: assessment.city_of_residence,
-        climate_zone: assessment.climate_zone,
-        currency: resolveCurrency(assessment.country_of_residence),
-    }, { onConflict: 'id' })
-
-    // Step 6: Send formula email via Resend
+    // Step 5: Send formula email via Resend
     await sendFormulaEmail({
         email: assessment.email,
         formula_code: formulaResult.formula_code,
