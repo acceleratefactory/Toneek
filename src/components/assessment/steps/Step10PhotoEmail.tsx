@@ -5,6 +5,7 @@
 import { useState } from 'react'
 import { useAssessmentStore } from '@/store/assessmentStore'
 import { useRouter } from 'next/navigation'
+import { createBrowserClient } from '@supabase/ssr'
 
 const HOW_DID_YOU_HEAR_OPTIONS = [
     { id: 'instagram', label: 'Instagram' },
@@ -67,6 +68,20 @@ export default function Step10PhotoEmail() {
             })
             const data = await res.json()
             if (data.success) {
+                // Send magic link from browser so PKCE code_verifier is stored in browser cookies
+                // This ensures /auth/callback can exchange the code for a session
+                const supabase = createBrowserClient(
+                    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+                )
+                await supabase.auth.signInWithOtp({
+                    email: store.email,
+                    options: {
+                        shouldCreateUser: true,
+                        emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+                    },
+                })
+
                 const id = data.assessment_id
                 router.push(id ? `/results?assessment_id=${id}` : '/results')
             } else {

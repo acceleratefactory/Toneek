@@ -24,26 +24,7 @@ export async function POST(request: NextRequest) {
     })
     const formulaResult = await formulaRes.json()
 
-    // Step 3: Generate a direct magic link via admin (no PKCE — works from server-side)
-    const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
-        type: 'magiclink',
-        email: assessment.email,
-        options: {
-            redirectTo: `${BASE_URL}/auth/callback?next=/dashboard`,
-        },
-    })
-
-    if (linkError) {
-        console.warn('Magic link generation failed:', linkError.message)
-    }
-
-    // Send the magic link via Resend (branded email, not Supabase default)
-    if (linkData?.properties?.action_link) {
-        await sendMagicLinkEmail(assessment.email, linkData.properties.action_link)
-    }
-
-
-    // Step 4: Write full assessment to DB using admin client (bypasses RLS)
+    // Step 3: Write full assessment to DB using admin client (bypasses RLS)
     const { data: assessmentRecord, error: insertError } = await adminClient
         .from('skin_assessments')
         .insert({
