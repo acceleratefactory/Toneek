@@ -7,6 +7,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import DashboardNav from '@/components/dashboard/DashboardNav'
+import WelcomeDismiss from '@/components/dashboard/WelcomeDismiss'
 
 export const metadata = {
     title: 'Dashboard — Toneek',
@@ -43,6 +44,33 @@ async function getSessionAndProfile() {
     return { session, profile }
 }
 
+// ─── Welcome banner ───────────────────────────────────────────────────────────
+
+function WelcomeBanner({ name }: { name?: string | null }) {
+    return (
+        <div
+            id="welcome-banner"
+            style={{
+                background: 'rgba(212,165,116,0.08)',
+                border: '1px solid rgba(212,165,116,0.25)',
+                padding: '1rem 1.5rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: '1rem',
+            }}
+        >
+            <p style={{ color: '#d4a574', fontSize: '0.9rem', margin: 0, lineHeight: '1.5' }}>
+                🧪 <strong>{name ? `${name.split(' ')[0]}, your` : 'Your'} formula is in production.</strong>{' '}
+                You'll receive a WhatsApp update when it's dispatched.
+            </p>
+            <WelcomeDismiss />
+        </div>
+    )
+}
+
+// ─── Layout ───────────────────────────────────────────────────────────────────
+
 export default async function DashboardLayout({
     children,
     searchParams,
@@ -62,7 +90,7 @@ export default async function DashboardLayout({
         redirect('/subscribe')
     }
 
-    const params = searchParams ? await searchParams : {}
+    const params      = searchParams ? await searchParams : {}
     const showWelcome = params?.welcome === 'true'
     const isCancelled = profile.subscription_status === 'cancelled'
 
@@ -96,11 +124,7 @@ export default async function DashboardLayout({
                 </div>
             )}
 
-            <div style={{
-                display: 'flex',
-                flex: 1,
-                // On desktop: sidebar left + content right
-            }}>
+            <div style={{ display: 'flex', flex: 1 }}>
                 {/* Desktop sidebar */}
                 <aside className="dashboard-sidebar">
                     <DashboardNav variant="sidebar" />
@@ -120,31 +144,3 @@ export default async function DashboardLayout({
         </div>
     )
 }
-
-// ─── Welcome banner (client component for dismiss) ────────────────────────────
-
-function WelcomeBanner({ name }: { name?: string | null }) {
-    return (
-        <div
-            id="welcome-banner"
-            style={{
-                background: 'rgba(212,165,116,0.08)',
-                border: '1px solid rgba(212,165,116,0.25)',
-                padding: '1rem 1.5rem',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                gap: '1rem',
-            }}
-        >
-            <p style={{ color: '#d4a574', fontSize: '0.9rem', margin: 0, lineHeight: '1.5' }}>
-                🧪 <strong>{name ? `${name.split(' ')[0]}, your` : 'Your'} formula is in production.</strong>{' '}
-                You'll receive a WhatsApp update when it's dispatched.
-            </p>
-            <WelcomeDismiss />
-        </div>
-    )
-}
-
-// Inline tiny client component for dismiss button
-import WelcomeDismiss from '@/components/dashboard/WelcomeDismiss'
