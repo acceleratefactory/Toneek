@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/overnight-payments",
       "schedule": "55 6 * * *"
+    },
+    {
+      "path": "/api/cron/checkin-triggers",
+      "schedule": "0 8 * * *"
     }
   ]
 }

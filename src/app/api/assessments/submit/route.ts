@@ -29,7 +29,10 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient()
     const { data: authData } = await supabase.auth.signInWithOtp({
         email: assessment.email,
-        options: { shouldCreateUser: true },
+        options: {
+            shouldCreateUser: true,
+            emailRedirectTo: `${BASE_URL}/auth/callback?next=/dashboard`,
+        },
     })
 
     // Step 4: Write full assessment to DB using admin client (bypasses RLS)
@@ -103,6 +106,9 @@ export async function POST(request: NextRequest) {
 
             // Acquisition
             how_did_you_hear: assessment.how_did_you_hear,
+
+            // Email — stored for anonymous user lookup before magic link confirmed
+            email: assessment.email ?? null,
         })
         .select()
         .single()

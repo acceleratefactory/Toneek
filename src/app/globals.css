@@ -395,3 +395,35 @@ html, body {
   .climate-manual { margin-bottom: 1.5rem; }
   .follow-up { margin-top: 0.5rem; }
 }
+
+/* ─── Dashboard responsive layout ───────────────────────────────────────────── */
+
+/* Mobile: bottom nav visible, sidebar hidden */
+.dashboard-sidebar { display: none; }
+
+/* Desktop (768px+): sidebar visible, bottom nav hidden */
+@media (min-width: 768px) {
+  .dashboard-sidebar {
+    display: flex;
+    flex-direction: column;
+    width: 220px;
+    flex-shrink: 0;
+    border-right: 1px solid #1a1a1a;
+    padding: 2rem 1rem;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  /* Hide mobile bottom nav on desktop */
+  nav[aria-label="Dashboard navigation"]:not(.dashboard-sidebar nav) {
+    display: none;
+  }
+
+  /* Remove bottom spacer on desktop */
+  .dashboard-bottom-spacer {
+    display: none;
+  }
+}
+

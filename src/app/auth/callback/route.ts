@@ -1,0 +1,54 @@
+// src/app/auth/callback/route.ts
+// Handles the magic link / OTP callback from Supabase.
+// Supabase redirects here with ?code=... after the user clicks the email link.
+// Exchanges the code for a session, then redirects the customer onward.
+
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+import { NextRequest, NextResponse } from 'next/server'
+
+export async function GET(request: NextRequest) {
+    const { searchParams, origin } = new URL(request.url)
+    const code  = searchParams.get('code')
+    const next  = searchParams.get('next') ?? '/dashboard'
+    const error = searchParams.get('error')
+
+    // If Supabase returned an error (e.g. expired link)
+    if (error) {
+        console.error('Auth callback error:', error, searchParams.get('error_description'))
+        return NextResponse.redirect(`${origin}/assessment?auth_error=expired`)
+    }
+
+    if (!code) {
+        return NextResponse.redirect(`${origin}/assessment`)
+    }
+
+    const cookieStore = await cookies()
+
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                getAll() {
+                    return cookieStore.getAll()
+                },
+                setAll(cookiesToSet) {
+                    cookiesToSet.forEach(({ name, value, options }) => {
+                        cookieStore.set(name, value, options)
+                    })
+                },
+            },
+        }
+    )
+
+    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+
+    if (exchangeError) {
+        console.error('Code exchange error:', exchangeError.message)
+        return NextResponse.redirect(`${origin}/assessment?auth_error=invalid`)
+    }
+
+    // Session created — redirect to dashboard (or wherever ?next= points)
+    return NextResponse.redirect(`${origin}${next}`)
+}
