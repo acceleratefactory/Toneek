@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import HashAuthHandler from "@/components/HashAuthHandler";
 
 export const metadata: Metadata = {
   title: "Toneek — Skin intelligence for melanin-rich skin",
@@ -14,6 +15,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body style={{ background: '#0f0f0f', color: '#f5f5f5', margin: 0 }}>
+        {/* Handles magic links with access_token in URL hash — redirects to /dashboard */}
+        <HashAuthHandler />
         {children}
       </body>
     </html>
