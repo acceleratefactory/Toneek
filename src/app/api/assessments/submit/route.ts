@@ -2,7 +2,6 @@
 // The full assessment submission pipeline.
 // Called by Step 10 on "Get my formula" click.
 
-import { createClient } from '@/lib/supabase/server'
 import { adminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { applyTriggerModifiers } from '@/lib/formula/triggerModifiers'
@@ -25,15 +24,24 @@ export async function POST(request: NextRequest) {
     })
     const formulaResult = await formulaRes.json()
 
-    // Step 3: Create / link user account via OTP (magic link)
-    const supabase = await createClient()
-    const { data: authData } = await supabase.auth.signInWithOtp({
+    // Step 3: Generate a direct magic link via admin (no PKCE — works from server-side)
+    const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
+        type: 'magiclink',
         email: assessment.email,
         options: {
-            shouldCreateUser: true,
-            emailRedirectTo: `${BASE_URL}/auth/callback?next=/dashboard`,
+            redirectTo: `${BASE_URL}/auth/callback?next=/dashboard`,
         },
     })
+
+    if (linkError) {
+        console.warn('Magic link generation failed:', linkError.message)
+    }
+
+    // Send the magic link via Resend (branded email, not Supabase default)
+    if (linkData?.properties?.action_link) {
+        await sendMagicLinkEmail(assessment.email, linkData.properties.action_link)
+    }
+
 
     // Step 4: Write full assessment to DB using admin client (bypasses RLS)
     const { data: assessmentRecord, error: insertError } = await adminClient
@@ -142,3 +150,39 @@ export async function POST(request: NextRequest) {
         redirect: '/results',
     })
 }
+
+// ─── Magic link email ─────────────────────────────────────────────────────────
+
+async function sendMagicLinkEmail(email: string, action_link: string) {
+    const from = process.env.FROM_EMAIL ?? 'onboarding@resend.dev'
+    try {
+        const { Resend } = await import('resend')
+        const resend = new Resend(process.env.RESEND_API_KEY)
+        await resend.emails.send({
+            from,
+            to: email,
+            subject: 'Your Toneek dashboard access link',
+            html: `
+                <div style="font-family:system-ui;max-width:560px;margin:0 auto;padding:32px 0;">
+                    <h2 style="margin:0 0 8px;color:#1a1a1a;">Access your Toneek dashboard</h2>
+                    <p style="color:#374151;margin-bottom:24px;">
+                        Click the link below to access your personalised formula and dashboard.
+                        This link expires in 24 hours and can only be used once.
+                    </p>
+                    <a href="${action_link}"
+                       style="display:inline-block;background:#1a1a1a;color:#d4a574;
+                              padding:14px 28px;border-radius:8px;text-decoration:none;
+                              font-weight:700;font-size:15px;letter-spacing:0.02em;">
+                        Open my dashboard &rarr;
+                    </a>
+                    <p style="color:#9ca3af;font-size:12px;margin-top:24px;">
+                        If you didn't request this, you can safely ignore this email.
+                    </p>
+                </div>
+            `,
+        })
+    } catch (err) {
+        console.error('Magic link email failed (non-fatal):', err)
+    }
+}
+
