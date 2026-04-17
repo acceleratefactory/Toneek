@@ -1,38 +1,12 @@
 // middleware.ts
-// Refreshes the Supabase auth session on every request.
-// Required for @supabase/ssr to maintain cookies correctly in Next.js.
+// Minimal passthrough middleware — required to refresh Supabase auth cookies.
+// Stripped to bare minimum to isolate Edge runtime build issues on Vercel.
 
-import { createServerClient } from '@supabase/ssr'
-import { type NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
-    const response = NextResponse.next({
-        request: {
-            headers: request.headers,
-        },
-    })
-
-    const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-            cookies: {
-                getAll() {
-                    return request.cookies.getAll()
-                },
-                setAll(cookiesToSet) {
-                    cookiesToSet.forEach(({ name, value, options }) => {
-                        response.cookies.set(name, value, options)
-                    })
-                },
-            },
-        }
-    )
-
-    // Refresh the session — required on every middleware call
-    await supabase.auth.getUser()
-
-    return response
+export function middleware(request: NextRequest) {
+    return NextResponse.next()
 }
 
 export const config = {
