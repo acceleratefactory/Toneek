@@ -42,7 +42,16 @@ async function getSessionAndProfile() {
         .eq('id', session.user.id)
         .single()
 
-    return { session, profile }
+    // Fetch latest assessment_id for the subscribe redirect
+    const { data: latestAssessment } = await supabase
+        .from('skin_assessments')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+    return { session, profile, assessmentId: latestAssessment?.id ?? null }
 }
 
 // ─── Welcome banner ───────────────────────────────────────────────────────────
@@ -79,16 +88,19 @@ export default async function DashboardLayout({
     children: React.ReactNode
     searchParams?: Promise<{ welcome?: string }>
 }) {
-    const { session, profile } = await getSessionAndProfile()
+    const { session, profile, assessmentId } = await getSessionAndProfile()
 
     // Not authenticated — send to assessment
     if (!session) {
         redirect('/assessment')
     }
 
-    // No subscription — send to subscribe
+    // No subscription — send to subscribe with assessment_id so it doesn't bounce
     if (!profile || profile.subscription_status === 'never' || profile.subscription_status === 'pending') {
-        redirect('/subscribe')
+        const subscribeUrl = assessmentId
+            ? `/subscribe?assessment_id=${assessmentId}`
+            : '/subscribe'
+        redirect(subscribeUrl)
     }
 
     const params      = searchParams ? await searchParams : {}
