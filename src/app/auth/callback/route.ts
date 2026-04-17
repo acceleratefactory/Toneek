@@ -1,13 +1,11 @@
 // src/app/auth/callback/route.ts
-// Handles the magic link / OTP callback from Supabase.
-// Supabase redirects here after the user clicks the email link.
+// Handles the Supabase magic link / OTP callback.
 //
-// Two flows handled:
-// 1. token_hash + type  → email OTP verification (most common for magic links sent from server-side)
-// 2. code               → PKCE exchange (when code_verifier cookie is present)
+// KEY FIX: Create the redirect response FIRST, then pass it to createServerClient
+// so Supabase writes the session cookies directly to the redirect response.
+// Without this, cookies set via cookieStore.set() do NOT transfer to NextResponse.redirect().
 
 import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import type { EmailOtpType } from '@supabase/supabase-js'
 
@@ -20,58 +18,58 @@ export async function GET(request: NextRequest) {
     const next       = searchParams.get('next') ?? '/dashboard'
     const error      = searchParams.get('error')
 
-    // Supabase returned an error (e.g. expired link)
+    // Supabase returned an explicit error (e.g. expired link)
     if (error) {
         console.error('Auth callback error:', error, searchParams.get('error_description'))
         return NextResponse.redirect(`${origin}/assessment?auth_error=expired`)
     }
 
-    const cookieStore = await cookies()
+    // Create the redirect response FIRST — Supabase writes cookies directly to it
+    const redirectResponse   = NextResponse.redirect(`${origin}${next}`)
+    const errorResponseExpired = NextResponse.redirect(`${origin}/assessment?auth_error=expired`)
+    const errorResponseInvalid = NextResponse.redirect(`${origin}/assessment?auth_error=invalid`)
 
-    const supabase = createServerClient(
+    const makeClient = (targetResponse: NextResponse) => createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
             cookies: {
+                // Read from the incoming request cookies (includes code_verifier)
                 getAll() {
-                    return cookieStore.getAll()
+                    return request.cookies.getAll()
                 },
+                // Write directly to the target response so they travel with the redirect
                 setAll(cookiesToSet) {
                     cookiesToSet.forEach(({ name, value, options }) => {
-                        cookieStore.set(name, value, options)
+                        targetResponse.cookies.set(name, value, options)
                     })
                 },
             },
         }
     )
 
-    // ── Flow 1: token_hash (email OTP — most common for server-sent magic links) ──
+    // ── Flow 1: token_hash (email OTP — no PKCE needed) ──────────────────────
     if (token_hash && type) {
-        const { error: verifyError } = await supabase.auth.verifyOtp({
-            token_hash,
-            type,
-        })
+        const supabase = makeClient(redirectResponse)
+        const { error: verifyError } = await supabase.auth.verifyOtp({ token_hash, type })
 
-        if (!verifyError) {
-            return NextResponse.redirect(`${origin}${next}`)
-        }
+        if (!verifyError) return redirectResponse
 
         console.error('OTP verify error:', verifyError.message)
-        return NextResponse.redirect(`${origin}/assessment?auth_error=expired`)
+        return errorResponseExpired
     }
 
-    // ── Flow 2: code exchange (PKCE — when code_verifier cookie exists) ──
+    // ── Flow 2: code exchange (PKCE — code_verifier must be in request cookies) ─
     if (code) {
+        const supabase = makeClient(redirectResponse)
         const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
 
-        if (!exchangeError) {
-            return NextResponse.redirect(`${origin}${next}`)
-        }
+        if (!exchangeError) return redirectResponse
 
         console.error('Code exchange error:', exchangeError.message)
-        return NextResponse.redirect(`${origin}/assessment?auth_error=invalid`)
+        return errorResponseInvalid
     }
 
-    // No valid params — send back to assessment
+    // No valid params
     return NextResponse.redirect(`${origin}/assessment`)
 }
