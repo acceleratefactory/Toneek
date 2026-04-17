@@ -1,14 +1,9 @@
 'use client'
 // src/components/HashAuthHandler.tsx
 // Handles Supabase magic links that deliver access_token in the URL hash.
-// This happens with: Supabase admin-resent links, or implicit flow links
-// that redirect to the site root instead of /auth/callback.
-//
-// When the hash contains #access_token=..., the Supabase browser client
-// auto-processes it and fires onAuthStateChange with SIGNED_IN.
-// We then redirect to /dashboard.
+// Extracts tokens from hash, POSTs to /api/auth/session to set server-side cookie,
+// then redirects to /dashboard.
 
-import { createBrowserClient } from '@supabase/ssr'
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -16,39 +11,37 @@ export default function HashAuthHandler() {
     const router = useRouter()
 
     useEffect(() => {
-        // Only run if there's a hash with an access_token
-        if (!window.location.hash.includes('access_token')) return
+        const hash = window.location.hash
+        if (!hash.includes('access_token')) return
 
-        const supabase = createBrowserClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        )
+        // Parse hash fragment (?access_token=...&refresh_token=...)
+        const params = new URLSearchParams(hash.replace('#', ''))
+        const access_token  = params.get('access_token')
+        const refresh_token = params.get('refresh_token')
 
-        // Supabase browser client auto-processes the hash on init.
-        // Listen for the SIGNED_IN event then redirect.
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            (event, session) => {
-                if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
-                    subscription.unsubscribe()
-                    // Small delay to ensure cookies are written before navigation
-                    setTimeout(() => {
-                        router.push('/dashboard')
-                    }, 100)
-                }
-            }
-        )
+        if (!access_token || !refresh_token) return
 
-        // Also try getSession immediately (handles case where event already fired)
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            if (session) {
-                subscription.unsubscribe()
-                router.push('/dashboard')
-            }
+        // Clear the hash from the URL immediately (security)
+        window.history.replaceState(null, '', window.location.pathname)
+
+        // POST tokens to server to set a proper server-side session cookie
+        fetch('/api/auth/session', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ access_token, refresh_token }),
         })
-
-        return () => {
-            subscription.unsubscribe()
-        }
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Hard navigate (full reload) so Next.js server reads fresh cookies
+                    window.location.href = '/dashboard'
+                } else {
+                    console.error('Session setup failed:', data.error)
+                }
+            })
+            .catch(err => {
+                console.error('HashAuthHandler fetch error:', err)
+            })
     }, [router])
 
     return null
