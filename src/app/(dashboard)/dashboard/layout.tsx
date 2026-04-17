@@ -8,6 +8,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import DashboardNav from '@/components/dashboard/DashboardNav'
 import WelcomeDismiss from '@/components/dashboard/WelcomeDismiss'
+import AuthRefresher from '@/components/dashboard/AuthRefresher'
 
 export const metadata = {
     title: 'Dashboard — Toneek',
@@ -102,6 +103,8 @@ export default async function DashboardLayout({
             display: 'flex',
             flexDirection: 'column',
         }}>
+            {/* Client-side token auto-refresh — replaces middleware */}
+            <AuthRefresher />
             {/* Welcome banner — only on ?welcome=true */}
             {showWelcome && (
                 <WelcomeBanner name={profile.full_name} />
