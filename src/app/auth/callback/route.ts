@@ -18,11 +18,25 @@ export async function GET(request: NextRequest) {
     const next       = searchParams.get('next') ?? '/dashboard'
     const error      = searchParams.get('error')
 
+    // ── VERBOSE DEBUG LOG (remove after auth is stable) ──────────────────────
+    console.log('[auth/callback] received', {
+        url: request.url,
+        token_hash: token_hash ? token_hash.slice(0, 20) + '...' : null,
+        type,
+        code: code ? code.slice(0, 20) + '...' : null,
+        next,
+        error,
+        allParams: Object.fromEntries(searchParams.entries()),
+        cookieNames: request.cookies.getAll().map(c => c.name),
+    })
+    // ─────────────────────────────────────────────────────────────────────────
+
     // Supabase returned an explicit error (e.g. expired link)
     if (error) {
         console.error('Auth callback error:', error, searchParams.get('error_description'))
         return NextResponse.redirect(`${origin}/assessment?auth_error=expired`)
     }
+
 
     // Create the redirect response FIRST — Supabase writes cookies directly to it
     const redirectResponse   = NextResponse.redirect(`${origin}${next}`)
