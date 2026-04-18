@@ -1,10 +1,11 @@
 // src/app/api/auth/session/route.ts
-// Called by HashAuthHandler with the access_token + refresh_token from the URL hash.
-// Uses createServerClient to call setSession() — which writes the auth cookie
-// via the setAll callback so the server can read it on the next request.
+// Sets Supabase session from access_token + refresh_token.
+// Called client-side after browser-based PKCE or hash exchange.
+//
+// KEY FIX: cookies are written directly to the NextResponse object,
+// NOT via cookieStore.set() which is read-only in Route Handlers.
 
 import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
@@ -15,7 +16,8 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Missing tokens' }, { status: 400 })
         }
 
-        const cookieStore = await cookies()
+        // Create the response FIRST — cookies are written directly to it
+        const response = NextResponse.json({ success: true })
 
         const supabase = createServerClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,18 +25,18 @@ export async function POST(request: NextRequest) {
             {
                 cookies: {
                     getAll() {
-                        return cookieStore.getAll()
+                        return request.cookies.getAll()
                     },
+                    // Write directly to the response object (not cookieStore — read-only in Route Handlers)
                     setAll(cookiesToSet) {
                         cookiesToSet.forEach(({ name, value, options }) => {
-                            cookieStore.set(name, value, options)
+                            response.cookies.set(name, value, options)
                         })
                     },
                 },
             }
         )
 
-        // Set the session server-side — writesCookie via setAll callback above
         const { data, error } = await supabase.auth.setSession({
             access_token,
             refresh_token,
@@ -45,7 +47,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: error?.message ?? 'Session failed' }, { status: 401 })
         }
 
-        return NextResponse.json({ success: true })
+        return response
 
     } catch (err: any) {
         console.error('Session endpoint error:', err)

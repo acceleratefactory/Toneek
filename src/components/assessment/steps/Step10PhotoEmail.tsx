@@ -78,7 +78,7 @@ export default function Step10PhotoEmail() {
                     email: store.email,
                     options: {
                         shouldCreateUser: true,
-                        emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+                        emailRedirectTo: `${window.location.origin}/auth/confirm?next=/dashboard`,
                     },
                 })
 
