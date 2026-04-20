@@ -8,10 +8,9 @@ import { applyTriggerModifiers } from '@/lib/formula/triggerModifiers'
 import { resolveCurrency } from '@/lib/currency'
 import { sendFormulaEmail } from '@/lib/email/sendFormulaEmail'
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-
 export async function POST(request: NextRequest) {
     const assessment = await request.json()
+    const BASE_URL = request.nextUrl.origin
 
     // Step 1: Apply trigger modifiers before calling rule engine
     const modified = applyTriggerModifiers(assessment)
@@ -108,6 +107,31 @@ export async function POST(request: NextRequest) {
             success: false,
             error: insertError.message,
         }, { status: 500 })
+    }
+
+    // Step 4: Generate magic link + create/link user (no PKCE — uses token_hash flow)
+    const confirmUrl = `${BASE_URL}/auth/confirm?next=/dashboard`
+    const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
+        type: 'magiclink',
+        email: assessment.email,
+        options: { redirectTo: confirmUrl },
+    })
+
+    if (linkError) {
+        console.warn('Magic link generation failed:', linkError.message)
+    }
+
+    // Link assessment to the user Supabase just created/found
+    if (linkData?.user?.id && assessmentRecord?.id) {
+        await adminClient
+            .from('skin_assessments')
+            .update({ user_id: linkData.user.id })
+            .eq('id', assessmentRecord.id)
+    }
+
+    // Send magic link email via Resend
+    if (linkData?.properties?.action_link) {
+        await sendMagicLinkEmail(assessment.email, linkData.properties.action_link)
     }
 
     // Step 5: Send formula email via Resend
