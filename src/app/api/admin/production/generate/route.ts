@@ -98,8 +98,7 @@ export async function POST() {
       production_date: new Date().toISOString().split('T')[0],
       status: 'pending',
       batches,
-      total_orders_covered: orders.length,
-      triggered_automatically: false,
+      total_orders_covered: orders.length
     })
     .select()
     .single()
