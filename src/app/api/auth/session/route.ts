@@ -7,6 +7,7 @@
 
 import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { adminClient } from '@/lib/supabase/admin'
 
 export async function POST(request: NextRequest) {
     try {
@@ -45,6 +46,21 @@ export async function POST(request: NextRequest) {
         if (error || !data.session) {
             console.error('setSession error:', error?.message)
             return NextResponse.json({ error: error?.message ?? 'Session failed' }, { status: 401 })
+        }
+
+        // ─── ASSESSMENT LINKER ───
+        // Sweep for any orphaned assessments with this user's email and attach their new user_id.
+        // This permanently glues pre-login assessments to the newly created account.
+        if (data.session.user.email) {
+            const { error: linkError } = await adminClient
+                .from('skin_assessments')
+                .update({ user_id: data.session.user.id })
+                .eq('email', data.session.user.email)
+                .is('user_id', null)
+                
+            if (linkError) {
+                console.error('Assessment Linker failed:', linkError)
+            }
         }
 
         return response
