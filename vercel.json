@@ -1,12 +1,24 @@
 {
   "crons": [
     {
+      "path": "/api/cron/checkin-triggers",
+      "schedule": "0 8 * * *"
+    },
+    {
       "path": "/api/cron/overnight-payments",
       "schedule": "55 6 * * *"
     },
     {
-      "path": "/api/cron/checkin-triggers",
-      "schedule": "0 8 * * *"
+      "path": "/api/admin/production/generate",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/nightly-intelligence",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/restoration-transitions",
+      "schedule": "0 3 * * *"
     }
   ]
 }
