@@ -2,20 +2,36 @@ import { adminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 
 export async function POST() {
-  // Get all orders in payment_confirmed or pending_formulation status
-  const { data: orders } = await adminClient
+  // Get all orders in payment_confirmed, pending_formulation, or pending_production status
+  const { data: rawOrders } = await adminClient
     .from('orders')
-    .select('id, status, skin_assessments(formula_code, active_modules, climate_zone)')
+    .select('id, status, user_id, payment_reference, created_at')
     .in('status', ['payment_confirmed', 'pending_formulation', 'pending_production'])
     .order('created_at', { ascending: true })
 
-  if (!orders || orders.length === 0) {
+  if (!rawOrders || rawOrders.length === 0) {
     return NextResponse.redirect(new URL('/admin/production?error=no_orders', process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'))
   }
 
+  // Enrich each order with the correct formula code by checking the user's latest assessment
+  const orders = await Promise.all(rawOrders.map(async (order: any) => {
+    let formula_code = 'UNKNOWN'
+    if (order.user_id) {
+       const { data: assessment } = await adminClient
+         .from('skin_assessments')
+         .select('formula_code')
+         .eq('user_id', order.user_id)
+         .order('created_at', { ascending: false })
+         .limit(1)
+         .maybeSingle()
+       if (assessment?.formula_code) formula_code = assessment.formula_code
+    }
+    return { ...order, formula_code }
+  }))
+
   // Group by formula_code
   const grouped = orders.reduce((acc: Record<string, any[]>, order: any) => {
-    const code = order.skin_assessments?.formula_code ?? 'UNKNOWN'
+    const code = order.formula_code
     if (!acc[code]) acc[code] = []
     acc[code].push(order)
     return acc

@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 async function getOrders(filterState: string) {
   let query = adminClient
     .from('orders')
-    .select('id, payment_reference, status, tracking_number, dispatch_held_reason, created_at, user_id, order_number, skin_assessments(formula_code)')
+    .select('id, payment_reference, status, tracking_number, dispatch_held_reason, created_at, user_id, order_number')
     .order('created_at', { ascending: false })
 
   if (filterState === 'held') {
@@ -20,14 +20,24 @@ async function getOrders(filterState: string) {
 
   const { data: orders } = await query
 
-  // Map profile names manually for robustness
+  // Map profile names and formula codes manually for robustness without implicit FKs
   const enriched = await Promise.all((orders ?? []).map(async (o: any) => {
     let name = 'Unknown'
+    let formula = '—'
     if (o.user_id) {
        const { data: profile } = await adminClient.from('profiles').select('full_name').eq('id', o.user_id).single()
        if (profile?.full_name) name = profile.full_name
+       
+       const { data: assessment } = await adminClient
+         .from('skin_assessments')
+         .select('formula_code')
+         .eq('user_id', o.user_id)
+         .order('created_at', { ascending: false })
+         .limit(1)
+         .maybeSingle()
+       if (assessment?.formula_code) formula = assessment.formula_code
     }
-    return { ...o, customer_name: name, formula: o.skin_assessments?.formula_code ?? '—' }
+    return { ...o, customer_name: name, formula }
   }))
 
   return enriched
