@@ -66,11 +66,15 @@ export default async function FormulaPage() {
     if (!session) redirect('/assessment')
 
     // Fetch all assessments for this user, newest first
-    const { data: assessments } = await supabase
+    const { data: assessments, error: fetchError } = await supabase
         .from('skin_assessments')
-        .select('*, formula_codes!formula_code(*)')
+        .select('*')
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false })
+
+    if (fetchError) {
+        console.error('Error fetching assessments:', fetchError.message)
+    }
 
     if (!assessments || assessments.length === 0) {
         return (
