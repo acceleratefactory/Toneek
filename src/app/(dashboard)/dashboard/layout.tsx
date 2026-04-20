@@ -114,7 +114,7 @@ export default async function DashboardLayout({
             <AuthRefresher />
             {/* Welcome banner — only on ?welcome=true */}
             {showWelcome && (
-                <WelcomeBanner name={profile.full_name} />
+                <WelcomeBanner name={profile?.full_name} />
             )}
 
             {/* Cancelled subscription notice */}
