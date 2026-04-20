@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
             how_did_you_hear: assessment.how_did_you_hear,
 
             // Email — stored for anonymous user lookup before magic link confirmed
-            email: assessment.email ?? null,
+            email: assessment.email ? assessment.email.toLowerCase().trim() : null,
         })
         .select()
         .single()

@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
             const { error: linkError } = await adminClient
                 .from('skin_assessments')
                 .update({ user_id: data.session.user.id })
-                .eq('email', data.session.user.email)
+                .ilike('email', data.session.user.email)
                 .is('user_id', null)
                 
             if (linkError) {
