@@ -6,6 +6,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import ScoreSparkline from '@/components/dashboard/ScoreSparkline'
+import { adminClient } from '@/lib/supabase/admin'
 
 export const metadata = {
     title: 'My Formula — Toneek',
@@ -66,7 +67,7 @@ export default async function FormulaPage() {
     if (!session) redirect('/assessment')
 
     // Fetch all assessments for this user, newest first
-    const { data: assessments, error: fetchError } = await supabase
+    const { data: assessments, error: fetchError } = await adminClient
         .from('skin_assessments')
         .select('*')
         .eq('user_id', session.user.id)
@@ -93,7 +94,7 @@ export default async function FormulaPage() {
     const previous   = assessments.slice(1)
 
     // Fetch skin outcomes for sparkline
-    const { data: outcomes } = await supabase
+    const { data: outcomes } = await adminClient
         .from('skin_outcomes')
         .select('check_in_week, improvement_score, recorded_at, new_skin_os_score')
         .eq('user_id', session.user.id)
