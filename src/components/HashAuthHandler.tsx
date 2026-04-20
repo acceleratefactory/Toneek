@@ -11,6 +11,15 @@ export default function HashAuthHandler() {
     const router = useRouter()
 
     useEffect(() => {
+        // Failsafe: if Supabase stripped the /auth/confirm path and dumped ?code= on the Home page,
+        // intercept it and forward it to the correct handler page.
+        const searchParams = new URLSearchParams(window.location.search)
+        const code = searchParams.get('code')
+        if (code && window.location.pathname === '/') {
+            window.location.href = `/auth/confirm?code=${code}&next=/dashboard`
+            return
+        }
+
         const hash = window.location.hash
         if (!hash.includes('access_token')) return
 

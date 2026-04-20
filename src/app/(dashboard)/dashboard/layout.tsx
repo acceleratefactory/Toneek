@@ -95,13 +95,8 @@ export default async function DashboardLayout({
         redirect('/assessment')
     }
 
-    // No subscription — send to subscribe with assessment_id so it doesn't bounce
-    if (!profile || profile.subscription_status === 'never' || profile.subscription_status === 'pending') {
-        const subscribeUrl = assessmentId
-            ? `/subscribe?assessment_id=${assessmentId}`
-            : '/subscribe'
-        redirect(subscribeUrl)
-    }
+    // Subscription checks are removed as per request to allow access to dashboard regardless.
+    // If you ever want to re-add it, the logic is stored in git history.
 
     const params      = searchParams ? await searchParams : {}
     const showWelcome = params?.welcome === 'true'
