@@ -102,10 +102,10 @@ export async function GET(request: NextRequest) {
             .eq('id', order.user_id)
     }
 
-    // ── Move order to pending_production ──────────────────────────────────────
+    // ── Move order to pending_formulation ──────────────────────────────────────
     await adminClient
         .from('orders')
-        .update({ status: 'pending_production' })
+        .update({ status: 'pending_formulation' })
         .eq('id', order.id)
 
     // ── Resolve customer contact details ──────────────────────────────────────

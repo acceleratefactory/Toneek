@@ -6,7 +6,7 @@ export async function POST() {
   const { data: orders } = await adminClient
     .from('orders')
     .select('id, status, skin_assessments(formula_code, active_modules, climate_zone)')
-    .in('status', ['payment_confirmed', 'pending_formulation'])
+    .in('status', ['payment_confirmed', 'pending_formulation', 'pending_production'])
     .order('created_at', { ascending: true })
 
   if (!orders || orders.length === 0) {

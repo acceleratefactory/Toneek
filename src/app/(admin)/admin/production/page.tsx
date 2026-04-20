@@ -22,7 +22,7 @@ async function getProductionData() {
   const { count: ordersReady } = await adminClient
     .from('orders')
     .select('*', { count: 'exact', head: true })
-    .in('status', ['payment_confirmed', 'pending_formulation'])
+    .in('status', ['payment_confirmed', 'pending_formulation', 'pending_production'])
 
   return {
     activeRun: activeRuns && activeRuns.length > 0 ? activeRuns[0] : null,
