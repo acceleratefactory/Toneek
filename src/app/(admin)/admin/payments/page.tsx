@@ -6,7 +6,6 @@ async function getPayments() {
   const { data: orders } = await adminClient
     .from('orders')
     .select('id, payment_reference, status, amount, currency, created_at, user_id, subscription_tier')
-    .in('status', ['pending_verification', 'payment_confirmed'])
     .order('created_at', { ascending: false })
 
   // Map profile names manually
