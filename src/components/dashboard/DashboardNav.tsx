@@ -5,7 +5,7 @@
 // variant="sidebar" → desktop left sidebar (shown via CSS)
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 
 const NAV_ITEMS = [
     { href: '/dashboard',              label: 'My Formula',  icon: '🧪', id: 'nav-formula'  },
@@ -21,6 +21,12 @@ interface DashboardNavProps {
 
 export default function DashboardNav({ variant }: DashboardNavProps) {
     const pathname = usePathname()
+    const router = useRouter()
+
+    const handleLogout = async () => {
+        await fetch('/api/auth/logout', { method: 'POST' })
+        window.location.href = '/assessment'
+    }
 
     if (variant === 'bottom') {
         return (
@@ -71,6 +77,29 @@ export default function DashboardNav({ variant }: DashboardNavProps) {
                         </Link>
                     )
                 })}
+                <button
+                    onClick={handleLogout}
+                    title="Log Out"
+                    style={{
+                        flex: 0.5,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '0.65rem 0.25rem',
+                        background: 'transparent',
+                        border: 'none',
+                        borderTop: '2px solid transparent',
+                        color: '#e05555',
+                        cursor: 'pointer',
+                        fontSize: '0',
+                    }}
+                >
+                    <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>🚪</span>
+                    <span style={{ fontSize: '0.65rem', marginTop: '0.2rem', letterSpacing: '0.02em' }}>
+                        Log Out
+                    </span>
+                </button>
             </nav>
         )
     }
@@ -120,6 +149,32 @@ export default function DashboardNav({ variant }: DashboardNavProps) {
                     </Link>
                 )
             })}
+            
+            <div style={{ flex: 1 }} />
+            
+            <button
+                onClick={handleLogout}
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.65rem',
+                    padding: '0.6rem 0.75rem',
+                    borderRadius: '8px',
+                    textDecoration: 'none',
+                    color: '#e05555',
+                    background: 'transparent',
+                    border: '1px solid rgba(224,85,85,0.2)',
+                    fontSize: '0.88rem',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    marginTop: 'auto',
+                    textAlign: 'left',
+                    transition: 'all 0.15s',
+                }}
+            >
+                <span>🚪</span>
+                Log Out
+            </button>
         </nav>
     )
 }
