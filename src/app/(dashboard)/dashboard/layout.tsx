@@ -100,7 +100,7 @@ export default async function DashboardLayout({
 
     const params      = searchParams ? await searchParams : {}
     const showWelcome = params?.welcome === 'true'
-    const isCancelled = profile.subscription_status === 'cancelled'
+    const isCancelled = profile?.subscription_status === 'cancelled'
 
     return (
         <div style={{
