@@ -3,10 +3,12 @@ import { adminClient } from '@/lib/supabase/admin'
 export const dynamic = 'force-dynamic'
 
 async function getPayments() {
-  const { data: orders } = await adminClient
+  const { data: orders, error } = await adminClient
     .from('orders')
-    .select('id, payment_reference, status, amount, currency, created_at, user_id, subscription_tier')
-    .order('created_at', { ascending: false })
+    .select('id, payment_reference, status, payment_amount, currency, customer_claimed_sent_at, user_id, plan_tier')
+    .order('customer_claimed_sent_at', { ascending: false })
+
+  if (error) console.error("Error fetching payments log:", error)
 
   // Map profile names manually
   const enriched = await Promise.all((orders ?? []).map(async (o: any) => {
@@ -52,7 +54,7 @@ export default async function AdminPaymentsPage() {
              ) : payments.map((payment) => (
                <tr key={payment.id} className="hover:bg-gray-50 transition-colors">
                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                   {new Date(payment.created_at).toLocaleString()}
+                   {payment.customer_claimed_sent_at ? new Date(payment.customer_claimed_sent_at).toLocaleString() : '—'}
                  </td>
                  <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">
                    {payment.payment_reference || '—'}
@@ -61,10 +63,10 @@ export default async function AdminPaymentsPage() {
                    {payment.customer_name}
                  </td>
                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">
-                   {payment.currency} {payment.amount?.toLocaleString()}
+                   {payment.currency} {payment.payment_amount?.toLocaleString() || '—'}
                  </td>
                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                   {payment.subscription_tier}
+                   {payment.plan_tier}
                  </td>
                  <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
