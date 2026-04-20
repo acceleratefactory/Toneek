@@ -94,6 +94,7 @@ export async function POST() {
   const { data: productionRun, error } = await adminClient
     .from('production_queue')
     .insert({
+      id: crypto.randomUUID(), // Explicitly bypass database uuid generation just in case
       production_date: new Date().toISOString().split('T')[0],
       status: 'pending',
       batches,
@@ -105,7 +106,7 @@ export async function POST() {
 
   if (error) {
     console.error('Queue generation error:', error)
-    return NextResponse.redirect(new URL('/admin/production?error=db_error', process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'))
+    return NextResponse.redirect(new URL(`/admin/production?error=db_error&details=${encodeURIComponent(error.message || error.details || 'Unknown Error')}`, process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'))
   }
 
   // Update order statuses
