@@ -1,6 +1,5 @@
 import { adminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
-import { v4 as uuidv4 } from 'uuid'
 
 export async function POST(
   request: NextRequest,
@@ -12,7 +11,7 @@ export async function POST(
 
     // Update order status from held_for_checkin to pending_dispatch
     // and generate a tracking number automatically for the holding override.
-    const tracking = `TNK-${uuidv4().split('-')[0].toUpperCase()}`
+    const tracking = `TNK-${crypto.randomUUID().split('-')[0].toUpperCase()}`
 
     const { error } = await adminClient
       .from('orders')

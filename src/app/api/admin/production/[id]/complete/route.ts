@@ -1,6 +1,5 @@
 import { adminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
-import { v4 as uuidv4 } from 'uuid'
 import { canDispatchNextOrder } from '@/lib/dispatch/canDispatch'
 
 export async function POST(
@@ -77,7 +76,7 @@ export async function POST(
         }
 
         // B. Generate tracking number
-        const tracking = `TNK-${uuidv4().split('-')[0].toUpperCase()}`
+        const tracking = `TNK-${crypto.randomUUID().split('-')[0].toUpperCase()}`
 
         // C. Mark as pending_dispatch
         await adminClient
