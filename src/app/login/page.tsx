@@ -5,6 +5,7 @@ import { createBrowserClient } from '@supabase/ssr'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [status, setStatus] = useState<'idle'|'loading'|'success'|'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
 
@@ -18,19 +19,33 @@ export default function LoginPage() {
     setStatus('loading')
     setErrorMessage('')
 
-    const { error } = await supabase.auth.signInWithOtp({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: email.toLowerCase().trim(),
-      options: {
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_BASE_URL || window.location.origin}/auth/confirm?next=/admin`,
-      },
+      password: password
     })
 
     if (error) {
       console.error(error)
       setStatus('error')
       setErrorMessage(error.message)
-    } else {
-      setStatus('success')
+    } else if (data.session) {
+       // Save to server-side cookies so Next.js middleware knows we are logged in
+       const res = await fetch('/api/auth/session', {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify({ 
+               access_token: data.session.access_token, 
+               refresh_token: data.session.refresh_token 
+           }),
+       })
+
+       if (res.ok) {
+           setStatus('success')
+           window.location.href = '/admin'
+       } else {
+           setStatus('error')
+           setErrorMessage('Authentication succeeded but failed to set secure cookies.')
+       }
     }
   }
 
@@ -38,11 +53,11 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4" style={{ color: '#0f0f0f' }}>
       <div className="max-w-md w-full bg-white p-8 rounded-xl shadow-md border border-gray-100">
         <h1 className="text-2xl font-bold text-gray-900 mb-2 text-center">Admin Access</h1>
-        <p className="text-gray-500 mb-6 text-center text-sm">Enter your email to receive a secure login link.</p>
+        <p className="text-gray-500 mb-6 text-center text-sm">Secure password authentication.</p>
 
         {status === 'success' ? (
           <div className="bg-green-50 text-green-800 p-4 rounded-md border border-green-200 text-sm text-center">
-             ✅ Check your inbox for the login link! It will redirect you straight to the admin dashboard.
+             ✅ Login successful! Redirecting to dashboard...
           </div>
         ) : (
           <form onSubmit={handleLogin} className="space-y-4">
@@ -58,15 +73,27 @@ export default function LoginPage() {
                 placeholder="admin@example.com"
               />
             </div>
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 outline-none"
+                placeholder="••••••••"
+              />
+            </div>
             {status === 'error' && (
-              <p className="text-red-500 text-sm">{errorMessage}</p>
+              <p className="text-red-500 text-sm font-medium bg-red-50 p-3 rounded">{errorMessage}</p>
             )}
             <button
               type="submit"
               disabled={status === 'loading'}
-              className="w-full bg-gray-900 hover:bg-black text-white font-bold py-2 px-4 rounded-md transition-colors disabled:opacity-50"
+              className="w-full bg-gray-900 hover:bg-black text-white font-bold py-2 px-4 rounded-md transition-colors disabled:opacity-50 mt-4"
             >
-              {status === 'loading' ? 'Sending...' : 'Send Magic Link'}
+              {status === 'loading' ? 'Authenticating...' : 'Log In'}
             </button>
           </form>
         )}
