@@ -98,10 +98,6 @@ export default async function ProductionQueuePage() {
                     </div>
                   ) : (
                     <div className="font-mono text-sm space-y-2 mt-4 text-gray-800">
-                      <div className="flex justify-between border-b pb-1">
-                        <span>Base Formula:</span>
-                        <span className="font-bold">{batch.base_grams}g</span>
-                      </div>
                       {batch.ingredients?.map((ing: any, i: number) => (
                         <div key={i} className="flex justify-between border-b pb-1">
                           <span>{ing.name} {ing.concentration_pct}%:</span>

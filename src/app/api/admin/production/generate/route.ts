@@ -63,29 +63,18 @@ export async function POST() {
     // Calculate ingredient quantities for this batch
     // Each unit = 100g formula
     const total_grams = units * 100
-    const ingredients = spec.active_modules?.map((active: any) => ({
-      name: active.name,
-      concentration_pct: active.concentration_pct,
-      grams_total: (active.concentration_pct / 100) * total_grams,
-      ml_total: (active.concentration_pct / 100) * total_grams, // 1g ≈ 1ml for these formulas
+    const ingredients = spec.active_modules?.map((ingredient: any) => ({
+      name: ingredient.name,
+      concentration_pct: ingredient.concentration_pct,
+      grams_total: Math.round(((ingredient.concentration_pct / 100) * total_grams) * 10) / 10,
     })) ?? []
-
-    // Add base formula quantity
-    const actives_total_pct = ingredients.reduce(
-      (sum: number, i: any) => sum + i.concentration_pct, 0
-    )
-    const base_pct = 100 - actives_total_pct - 2 // 2% preservative allowance
-    const base_grams = (base_pct / 100) * total_grams
 
     batches.push({
       formula_code,
       units,
       total_grams,
-      base_grams: Math.round(base_grams * 10) / 10,
-      ingredients: ingredients.map((i: any) => ({
-        ...i,
-        grams_total: Math.round(i.grams_total * 10) / 10,
-      })),
+      ingredients,
+      stability_note: spec.stability_note || '',
       order_ids: formulaOrders.map((o: any) => o.id),
     })
   }
