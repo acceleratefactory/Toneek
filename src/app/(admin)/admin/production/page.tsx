@@ -97,18 +97,24 @@ export default async function ProductionQueuePage() {
                       ⚠️ {batch.warning}
                     </div>
                   ) : (
-                    <div className="font-mono text-sm space-y-2 mt-4 text-gray-800">
-                      {batch.ingredients?.map((ing: any, i: number) => (
-                        <div key={i} className="flex justify-between border-b pb-1">
-                          <span>{ing.name} {ing.concentration_pct}%:</span>
-                          <span className="font-bold">{ing.grams_total}g</span>
+                    <details className="mt-4 group">
+                      <summary className="cursor-pointer text-sm font-bold text-blue-600 hover:text-blue-800 list-none flex items-center gap-2">
+                        <span>View Compounding Recipe</span>
+                        <span className="transition duration-200 group-open:rotate-180 text-xs">▼</span>
+                      </summary>
+                      <div className="font-mono text-sm space-y-2 mt-3 pt-3 border-t border-gray-200 text-gray-800">
+                        {batch.ingredients?.map((ing: any, i: number) => (
+                          <div key={i} className="flex justify-between border-b pb-1 border-gray-100">
+                            <span>{ing.name} {ing.concentration_pct}%:</span>
+                            <span className="font-bold text-gray-900">{ing.grams_total}g</span>
+                          </div>
+                        ))}
+                        <div className="flex justify-between pt-2 text-gray-900 font-black text-base border-t-2 border-gray-800 mt-2 pb-1">
+                          <span>Total Batch Target:</span>
+                          <span>{batch.total_grams}g</span>
                         </div>
-                      ))}
-                      <div className="flex justify-between pt-2 text-gray-900 font-bold">
-                        <span>Total Batch Target:</span>
-                        <span>{batch.total_grams}g</span>
                       </div>
-                    </div>
+                    </details>
                   )}
                 </div>
               ))}
