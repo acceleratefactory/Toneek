@@ -141,15 +141,18 @@ export default async function ProductionQueuePage() {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Units</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completed At</th>
+                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {data.historyRuns.map((run: any) => {
                   const uniqueFormulas = Array.isArray(run.batches) ? run.batches.map((b: any) => b.formula_code).join(', ') : '—'
                   return (
-                    <tr key={run.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(run.production_date).toLocaleDateString()}
+                    <tr key={run.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                        <a href={`/admin/production/${run.id}`} className="text-blue-600 hover:text-blue-900">
+                          {new Date(run.production_date).toLocaleDateString()}
+                        </a>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
                         {uniqueFormulas}
@@ -159,13 +162,18 @@ export default async function ProductionQueuePage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          run.status === 'dispatched' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          run.status === 'dispatched' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
                         }`}>
                           {run.status}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {run.completed_at ? new Date(run.completed_at).toLocaleString() : '—'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <a href={`/admin/production/${run.id}`} className="text-blue-600 hover:text-blue-900 font-bold">
+                          View Log &rarr;
+                        </a>
                       </td>
                     </tr>
                   )
