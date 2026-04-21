@@ -5,17 +5,7 @@
 import { adminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 
-// ─── Pricing ─────────────────────────────────────────────────────────────────
-
-const PRICES: Record<string, Record<string, number>> = {
-    essentials:    { NGN: 18000, GBP: 35,  USD: 45, EUR: 38, GHS: 250, CAD: 55  },
-    full_protocol: { NGN: 22000, GBP: 42,  USD: 55, EUR: 48, GHS: 320, CAD: 70  },
-    restoration:   { NGN: 35000, GBP: 68,  USD: 88, EUR: 75, GHS: 500, CAD: 110 },
-}
-
-function getPlanPrice(plan_tier: string, currency: string): number {
-    return PRICES[plan_tier]?.[currency] ?? PRICES[plan_tier]?.['USD'] ?? 45
-}
+// Pricing is fetched dynamically from the subscription_tiers database table
 
 // ─── Bank details from env vars ───────────────────────────────────────────────
 
@@ -66,12 +56,7 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        if (!PRICES[plan_tier]) {
-            return NextResponse.json(
-                { error: `Unknown plan_tier: ${plan_tier}` },
-                { status: 400 }
-            )
-        }
+
 
         // Get assessment to link formula_code to the order
         const { data: assessment } = await adminClient
@@ -80,7 +65,22 @@ export async function POST(request: NextRequest) {
             .eq('id', assessment_id)
             .single()
 
-        const amount = getPlanPrice(plan_tier, currency)
+        // Fetch dynamic pricing from database
+        const { data: tier } = await adminClient
+            .from('subscription_tiers')
+            .select('prices')
+            .eq('id', plan_tier)
+            .single()
+
+        if (!tier || !tier.prices) {
+            return NextResponse.json(
+                { error: `Pricing not found for plan_tier: ${plan_tier}` },
+                { status: 400 }
+            )
+        }
+
+        const exactPriceData = tier.prices[currency] || tier.prices['USD']
+        const amount = exactPriceData?.amount || 45
 
         // Generate unique payment reference — TNOK-TIMESTAMP-XXXX
         const random = Math.floor(1000 + Math.random() * 9000)

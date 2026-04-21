@@ -8,73 +8,13 @@ import dynamic from 'next/dynamic'
 
 const BankTransferModal = dynamic(() => import('./BankTransferModal'), { ssr: false })
 
-const PLANS = [
-    {
-        id: 'essentials',
-        name: 'Essentials',
-        description: 'Your personalised formula. Monthly delivery.',
-        features: [
-            'Monthly personalised formula',
-            'Full active ingredient breakdown',
-            'Climate-matched formulation',
-            'WhatsApp delivery updates',
-        ],
-        prices: {
-            NGN: { amount: 18000, display: '₦18,000' },
-            GBP: { amount: 35, display: '£35' },
-            USD: { amount: 45, display: '$45' },
-            EUR: { amount: 38, display: '€38' },
-            GHS: { amount: 250, display: 'GH₵250' },
-            CAD: { amount: 55, display: 'CA$55' },
-        },
-        highlight: false,
-    },
-    {
-        id: 'full_protocol',
-        name: 'Full Protocol',
-        description: 'Formula + clinical outcome tracking + priority reformulation.',
-        features: [
-            'Everything in Essentials',
-            'Skin OS Score tracking every 4 weeks',
-            'Priority formula reformulation',
-            'Skin response monitoring',
-        ],
-        highlight: true,
-        prices: {
-            NGN: { amount: 22000, display: '₦22,000' },
-            GBP: { amount: 42, display: '£42' },
-            USD: { amount: 55, display: '$55' },
-            EUR: { amount: 48, display: '€48' },
-            GHS: { amount: 320, display: 'GH₵320' },
-            CAD: { amount: 70, display: 'CA$70' },
-        },
-    },
-    {
-        id: 'restoration',
-        name: 'Restoration Protocol',
-        description: 'Three-phase barrier repair. 12-month programme.',
-        features: [
-            'Everything in Full Protocol',
-            '3-phase progressive formula system',
-            '12-month barrier restoration plan',
-            'Dedicated clinical review at month 3 and 6',
-        ],
-        highlight: false,
-        prices: {
-            NGN: { amount: 35000, display: '₦35,000' },
-            GBP: { amount: 68, display: '£68' },
-            USD: { amount: 88, display: '$88' },
-            EUR: { amount: 75, display: '€75' },
-            GHS: { amount: 500, display: 'GH₵500' },
-            CAD: { amount: 110, display: 'CA$110' },
-        },
-    },
-]
+
 
 interface SubscribePlansProps {
     assessmentId: string
     userId: string | null
     currency: string
+    plans: any[]
 }
 
 interface ModalData {
@@ -92,7 +32,7 @@ interface ModalData {
     }
 }
 
-export default function SubscribePlans({ assessmentId, userId, currency }: SubscribePlansProps) {
+export default function SubscribePlans({ assessmentId, userId, currency, plans }: SubscribePlansProps) {
     const [loading, setLoading] = useState<string | null>(null)
     const [error, setError] = useState('')
     const [modal, setModal] = useState<ModalData | null>(null)
@@ -130,14 +70,12 @@ export default function SubscribePlans({ assessmentId, userId, currency }: Subsc
         }
     }
 
-    const curr = currency as keyof typeof PLANS[0]['prices']
-
     return (
         <>
             {/* Plan cards */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {PLANS.map(plan => {
-                    const price = plan.prices[curr] ?? plan.prices['USD']
+                {plans.map((plan: any) => {
+                    const price = plan.prices[currency] ?? plan.prices['USD']
                     const isLoading = loading === plan.id
 
                     return (
@@ -189,7 +127,7 @@ export default function SubscribePlans({ assessmentId, userId, currency }: Subsc
                             </div>
 
                             <ul style={{ margin: '0 0 1.25rem', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                {plan.features.map((feature, i) => (
+                                {plan.features.map((feature: string, i: number) => (
                                     <li key={i} style={{ color: 'var(--muted)', fontSize: '0.85rem', display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
                                         <span style={{ color: 'var(--accent)', flexShrink: 0 }}>✓</span>
                                         {feature}

@@ -32,6 +32,17 @@ export default async function SubscribePage({
 
     const currency = resolveCurrency(assessment.country_of_residence ?? 'Nigeria')
 
+    // Fetch dynamic plans from the database directly
+    const { data: plansData, error: plansError } = await adminClient
+        .from('subscription_tiers')
+        .select('*')
+        .order('sort_order', { ascending: true })
+
+    if (plansError || !plansData) {
+         console.error('Failed to load subscription tiers')
+         // Hard fallback or redirect
+    }
+
     return (
         <main className="assessment-page">
             <div className="assessment-container" style={{ maxWidth: '640px' }}>
@@ -64,6 +75,7 @@ export default async function SubscribePage({
                     assessmentId={assessment_id}
                     userId={assessment.user_id ?? null}
                     currency={currency}
+                    plans={plansData || []}
                 />
 
                 <p style={{ textAlign: 'center', color: 'var(--muted)', fontSize: '0.8rem', marginTop: '1.5rem', lineHeight: '1.6' }}>
