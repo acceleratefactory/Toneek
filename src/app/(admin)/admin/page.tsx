@@ -1,4 +1,5 @@
 import { adminClient } from '@/lib/supabase/admin'
+import DashboardCharts from '@/components/admin/DashboardCharts'
 
 // Force the page to dynamically render
 export const dynamic = 'force-dynamic'
@@ -11,6 +12,7 @@ async function getSystemHealth() {
     { data: pendingProduction },
     { data: recentOutcomes },
     { count: flaggedAssessments },
+    { data: allOrders },
   ] = await Promise.all([
     adminClient.from('subscriptions').select('*', { count: 'exact', head: true }),
     adminClient.from('subscriptions').select('*', { count: 'exact', head: true })
@@ -30,8 +32,14 @@ async function getSystemHealth() {
     adminClient.from('skin_assessments')
       .select('*', { count: 'exact', head: true })
       .eq('is_flagged_for_review', true),
+    adminClient.from('orders')
+      .select('created_at, payment_amount, plan_tier, status')
+      .neq('status', 'cancelled'),
   ])
 
+  // Process historical data for interactive charts
+  const historicalOrders = Array.isArray(allOrders) ? allOrders : []
+  
   // Need to fetch profile names for pending payments manually because sometimes orders 
   // are created successfully but FK joins might be tricky if user hasn't fully logged in yet.
   const paymentsWithProfiles = await Promise.all((pendingPayments ?? []).map(async (order: any) => {
@@ -50,6 +58,7 @@ async function getSystemHealth() {
     pendingProduction: pendingProduction ?? [],
     recentOutcomes: recentOutcomes ?? [],
     flaggedAssessments: flaggedAssessments ?? 0,
+    historicalOrders
   }
 }
 
@@ -77,18 +86,6 @@ export default async function AdminDashboardPage() {
           <div>
             <h1 className="text-xl font-bold text-gray-900">Hello, Administrator</h1>
             <p className="text-sm text-gray-500 mt-1">Toneek System Health & Operations</p>
-          </div>
-        </div>
-        
-        <div className="flex gap-8">
-          <div className="pb-4 border-b-2 border-[#b8895a] text-[#b8895a] text-sm font-semibold tracking-wide">
-            Dashboard
-          </div>
-          <div className="pb-4 text-gray-500 text-sm font-medium hover:text-gray-800 cursor-pointer transition-colors">
-            Getting Started
-          </div>
-          <div className="pb-4 text-gray-500 text-sm font-medium hover:text-gray-800 cursor-pointer transition-colors">
-            Recent Updates
           </div>
         </div>
       </div>
@@ -173,8 +170,11 @@ export default async function AdminDashboardPage() {
 
       </div>
 
+      {/* ── Interactive Historical Charts Canvas ── */}
+      <DashboardCharts historicalOrders={data.historicalOrders} />
+
       {/* ── Row 2: Data Grids (Zoho Lists Style) ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         
         {/* Payments Grid */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col min-h-[350px]">
