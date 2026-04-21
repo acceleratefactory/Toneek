@@ -13,6 +13,7 @@ async function getSystemHealth() {
     { data: recentOutcomes },
     { count: flaggedAssessments },
     { data: allOrders },
+    { data: allSubscriptions },
   ] = await Promise.all([
     adminClient.from('subscriptions').select('*', { count: 'exact', head: true }),
     adminClient.from('subscriptions').select('*', { count: 'exact', head: true })
@@ -35,10 +36,13 @@ async function getSystemHealth() {
     adminClient.from('orders')
       .select('created_at, payment_amount, plan_tier, status')
       .neq('status', 'cancelled'),
+    adminClient.from('subscriptions')
+      .select('created_at, status'),
   ])
 
   // Process historical data for interactive charts
   const historicalOrders = Array.isArray(allOrders) ? allOrders : []
+  const historicalSubscriptions = Array.isArray(allSubscriptions) ? allSubscriptions : []
   
   // Need to fetch profile names for pending payments manually because sometimes orders 
   // are created successfully but FK joins might be tricky if user hasn't fully logged in yet.
@@ -58,7 +62,8 @@ async function getSystemHealth() {
     pendingProduction: pendingProduction ?? [],
     recentOutcomes: recentOutcomes ?? [],
     flaggedAssessments: flaggedAssessments ?? 0,
-    historicalOrders
+    historicalOrders,
+    historicalSubscriptions
   }
 }
 
@@ -171,7 +176,11 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* ── Interactive Historical Charts Canvas ── */}
-      <DashboardCharts historicalOrders={data.historicalOrders} />
+      <DashboardCharts 
+         historicalOrders={data.historicalOrders} 
+         historicalSubscriptions={data.historicalSubscriptions}
+         totalSubscribers={data.totalSubscribers}
+      />
 
       {/* ── Row 2: Data Grids (Zoho Lists Style) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">

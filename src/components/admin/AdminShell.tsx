@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { 
   Activity, 
@@ -15,14 +15,22 @@ import {
   Stethoscope,
   LogOut,
   Menu,
-  ChevronLeft
+  ChevronLeft,
+  Loader2
 } from 'lucide-react'
 
 export default function AdminShell({ children, userProfile }: { children: React.ReactNode, userProfile: any }) {
   const pathname = usePathname()
+  const router = useRouter()
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-  const [activeDropdown, setActiveDropdown] = useState<'notifications' | 'settings' | 'profile' | null>(null)
+  const [activeDropdown, setActiveDropdown] = useState<'notifications' | 'settings' | 'profile' | 'search' | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -32,8 +40,46 @@ export default function AdminShell({ children, userProfile }: { children: React.
       }
     }
     document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+    }
   }, [])
+
+  // Handle Global Search Input
+  const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value
+    setSearchQuery(query)
+    
+    if (query.trim().length < 2) {
+      setSearchResults([])
+      setActiveDropdown(null)
+      return
+    }
+
+    setActiveDropdown('search')
+    setIsSearching(true)
+
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+    
+    searchTimeoutRef.current = setTimeout(async () => {
+       try {
+          const res = await fetch(`/api/admin/search?q=${encodeURIComponent(query)}`)
+          const data = await res.json()
+          setSearchResults(data.results || [])
+       } catch (err) {
+          setSearchResults([])
+       } finally {
+          setIsSearching(false)
+       }
+    }, 400)
+  }
+
+  const navigateToResult = (url: string) => {
+    setActiveDropdown(null)
+    setSearchQuery('')
+    router.push(url)
+  }
 
   const links = [
     { name: 'System Health', href: '/admin', icon: Activity },
@@ -107,18 +153,54 @@ export default function AdminShell({ children, userProfile }: { children: React.
                 <Menu size={20} />
               </button>
             )}
-            <div className="relative w-96">
+            <div className="relative w-96 flex-shrink-0" ref={activeDropdown === 'search' ? dropdownRef : null}>
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                  <Search size={16} className="text-gray-400" />
               </div>
               <input 
                 type="text" 
+                value={searchQuery}
+                onChange={handleSearchInput}
+                onFocus={() => { if (searchQuery.trim().length >= 2) setActiveDropdown('search') }}
                 placeholder="Search customers, orders..." 
-                className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-slate-50 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#b8895a] focus:border-[#b8895a] sm:text-sm"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-slate-50 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#b8895a] focus:border-[#b8895a] sm:text-sm transition-colors"
               />
+              
+              {/* Search Results Dropdown Popover */}
+              {activeDropdown === 'search' && (
+                <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-lg border border-gray-200 shadow-xl overflow-hidden z-50">
+                   {isSearching ? (
+                     <div className="p-4 flex items-center justify-center text-sm text-gray-500 gap-2">
+                       <Loader2 size={16} className="animate-spin text-[#b8895a]" /> Searching Database...
+                     </div>
+                   ) : searchResults.length > 0 ? (
+                     <ul className="max-h-96 overflow-y-auto divide-y divide-gray-50">
+                       {searchResults.map((result, idx) => (
+                         <li 
+                           key={idx} 
+                           onClick={() => navigateToResult(result.url)}
+                           className="p-3 hover:bg-gray-50 cursor-pointer flex items-start gap-3 transition-colors"
+                         >
+                           <div className={`mt-0.5 w-6 h-6 rounded flex items-center justify-center flex-shrink-0 ${result.type === 'customer' ? 'bg-blue-50 text-blue-600' : 'bg-green-50 text-green-600'}`}>
+                             {result.type === 'customer' ? <Users size={14} /> : <Package size={14} />}
+                           </div>
+                           <div className="flex-1 min-w-0">
+                             <p className="text-sm font-semibold text-gray-800 truncate">{result.title}</p>
+                             <p className="text-xs text-gray-500 truncate">{result.secondary}</p>
+                           </div>
+                         </li>
+                       ))}
+                     </ul>
+                   ) : (
+                     <div className="p-4 text-sm text-gray-500 text-center">
+                        No matches found for "{searchQuery}"
+                     </div>
+                   )}
+                </div>
+              )}
             </div>
           </div>
-          <div className="flex items-center justify-end" ref={dropdownRef}>
+          <div className="flex items-center justify-end" ref={activeDropdown !== 'search' ? dropdownRef : null}>
             
             {/* Notification Bell */}
             <div className="relative">
