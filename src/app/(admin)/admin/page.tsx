@@ -55,163 +55,271 @@ async function getSystemHealth() {
 
 export default async function AdminDashboardPage() {
   const data = await getSystemHealth()
+  const totalTasks = data.pendingPayments.length + data.flaggedAssessments + data.pendingProduction.length
+  
+  // Safe math for styling widths safely to prevent NaN values if 0
+  const activePct = data.totalSubscribers > 0 ? (data.activeSubscribers / data.totalSubscribers) * 100 : 0
+  const inactivePct = data.totalSubscribers > 0 ? ((data.totalSubscribers - data.activeSubscribers) / data.totalSubscribers) * 100 : 0
+  
+  const payPct = totalTasks > 0 ? (data.pendingPayments.length / totalTasks) * 100 : 0
+  const flagPct = totalTasks > 0 ? (data.flaggedAssessments / totalTasks) * 100 : 0
+  const prodPct = totalTasks > 0 ? (data.pendingProduction.length / totalTasks) * 100 : 0
 
   return (
-    <div className="space-y-8" style={{ color: '#0f0f0f' }}>
+    <div className="space-y-6 text-gray-800">
       
-      {/* ── Stat Cards ── */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">System Health</h1>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-xl border shadow-sm">
-            <p className="text-sm font-medium text-gray-500 uppercase">Total Subs</p>
-            <p className="text-3xl font-extrabold text-gray-900 mt-1">{data.totalSubscribers}</p>
+      {/* ── Top Header Banner (Zoho Style) ── */}
+      <div className="bg-white pt-6 px-10 rounded-b-xl shadow-sm border-b border-gray-200 -mt-8 mx-[-2rem] mb-6 relative">
+        <div className="flex items-center gap-4 mb-8">
+          <div className="h-12 w-12 bg-[#b8895a]/10 border border-[#b8895a]/20 text-[#b8895a] rounded flex items-center justify-center font-bold text-xl shadow-sm">
+            TA
           </div>
-          <div className="bg-white p-5 rounded-xl border shadow-sm">
-            <p className="text-sm font-medium text-gray-500 uppercase">Active Subs</p>
-            <p className="text-3xl font-extrabold text-green-600 mt-1">{data.activeSubscribers}</p>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Hello, Administrator</h1>
+            <p className="text-sm text-gray-500 mt-1">Toneek System Health & Operations</p>
           </div>
-          <div className="bg-white p-5 rounded-xl border shadow-sm border-amber-200">
-            <p className="text-sm font-medium text-amber-600 uppercase">Pending Payments</p>
-            <p className="text-3xl font-extrabold text-amber-600 mt-1">{data.pendingPayments.length}</p>
+        </div>
+        
+        <div className="flex gap-8">
+          <div className="pb-4 border-b-2 border-[#b8895a] text-[#b8895a] text-sm font-semibold tracking-wide">
+            Dashboard
           </div>
-          <div className="bg-white p-5 rounded-xl border shadow-sm">
-            <p className="text-sm font-medium text-gray-500 uppercase">Flagged Assessments</p>
-            <p className="text-3xl font-extrabold text-red-600 mt-1">{data.flaggedAssessments}</p>
+          <div className="pb-4 text-gray-500 text-sm font-medium hover:text-gray-800 cursor-pointer transition-colors">
+            Getting Started
+          </div>
+          <div className="pb-4 text-gray-500 text-sm font-medium hover:text-gray-800 cursor-pointer transition-colors">
+            Recent Updates
           </div>
         </div>
       </div>
 
-      {/* ── Pending Payments (Task 5.3) ── */}
-      <div>
-        <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-          Payments Awaiting Confirmation
-          {data.pendingPayments.length > 0 && (
-            <span className="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full font-bold">
-              Action Required
-            </span>
-          )}
-        </h2>
+      {/* ── Row 1: KPI Overview Cards (Zoho Receivables Style) ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
-        {data.pendingPayments.length === 0 ? (
-          <div className="bg-white p-8 text-center rounded-xl border border-gray-200 shadow-sm text-gray-500">
-            No payments currently waiting for confirmation.
+        {/* Subscription Overview Card */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col">
+          <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
+            <h2 className="text-sm font-bold text-gray-800">Subscription Overview</h2>
+            <span className="text-blue-600 text-xs font-semibold flex items-center gap-1 cursor-pointer hover:underline bg-blue-50 px-2 py-1 rounded">
+              <span className="text-lg leading-none">+</span> New
+            </span>
           </div>
-        ) : (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reference</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Claimed At</th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {data.pendingPayments.map((payment: any) => (
-                  <tr key={payment.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                      {payment.payment_reference}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {payment.customer_name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {payment.currency} {payment.payment_amount?.toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {payment.plan_tier}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(payment.customer_claimed_sent_at).toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <a
-                        href={`/api/payments/admin-confirm?order_id=${payment.id}&token=${payment.payment_confirm_token}`}
-                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors"
-                      >
-                        Confirm Payment
-                      </a>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="p-6 pb-8">
+            <p className="text-xs text-gray-500 mb-1 uppercase font-medium tracking-wide">Total Subscriptions</p>
+            <p className="text-4xl font-light text-gray-900 mb-8">{data.totalSubscribers}</p>
+            
+            <div className="h-3 w-full flex rounded-full overflow-hidden mb-4 bg-gray-100">
+               {data.totalSubscribers === 0 && <div className="bg-gray-200 w-full h-full"></div>}
+               {data.totalSubscribers > 0 && (
+                 <>
+                   <div className="bg-[#1e88e5] h-full" style={{ width: `${activePct}%` }}></div>
+                   <div className="bg-[#fb8c00] h-full" style={{ width: `${inactivePct}%` }}></div>
+                 </>
+               )}
+            </div>
+            
+            <div className="flex gap-8 items-center mt-2">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-sm bg-[#1e88e5]"></div>
+                <span className="text-sm text-gray-500">Active : <b className="text-gray-800 ml-1">{data.activeSubscribers}</b></span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-sm bg-[#fb8c00]"></div>
+                <span className="text-sm text-gray-500">Inactive : <b className="text-gray-800 ml-1">{data.totalSubscribers - data.activeSubscribers}</b></span>
+              </div>
+            </div>
           </div>
-        )}
+        </div>
+
+        {/* Action Pipeline Card */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col">
+          <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
+            <h2 className="text-sm font-bold text-gray-800">Action Pipeline</h2>
+            <span className="text-gray-400 text-xs font-medium cursor-pointer hover:text-gray-600">
+              This Week ▾
+            </span>
+          </div>
+          <div className="p-6 pb-8">
+            <p className="text-xs text-gray-500 mb-1 uppercase font-medium tracking-wide">Pending Tasks</p>
+            <p className="text-4xl font-light text-gray-900 mb-8">{totalTasks}</p>
+            
+            <div className="h-3 w-full flex rounded-full overflow-hidden mb-4 bg-gray-100">
+               {totalTasks === 0 && <div className="bg-gray-200 w-full h-full"></div>}
+               {totalTasks > 0 && (
+                 <>
+                   <div className="bg-[#10b981] h-full" style={{ width: `${payPct}%` }}></div>
+                   <div className="bg-[#ef4444] h-full" style={{ width: `${flagPct}%` }}></div>
+                   <div className="bg-[#8b5cf6] h-full" style={{ width: `${prodPct}%` }}></div>
+                 </>
+               )}
+            </div>
+            
+            <div className="flex gap-6 items-center mt-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-sm bg-[#10b981]"></div>
+                <span className="text-sm text-gray-500">Payments : <b className="text-gray-800 ml-1">{data.pendingPayments.length}</b></span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-sm bg-[#ef4444]"></div>
+                <span className="text-sm text-gray-500">Flagged : <b className="text-gray-800 ml-1">{data.flaggedAssessments}</b></span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-sm bg-[#8b5cf6]"></div>
+                <span className="text-sm text-gray-500">Production : <b className="text-gray-800 ml-1">{data.pendingProduction.length}</b></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
 
-      {/* ── Production Queue Snapshot (Task 5.3 Row 3) ── */}
-      <div>
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Production Queue</h2>
-        {data.pendingProduction.length === 0 ? (
-          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm text-gray-500">
-            No active production runs. Formulas are queued when payments are confirmed.
+      {/* ── Row 2: Data Grids (Zoho Lists Style) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Payments Grid */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col min-h-[350px]">
+          <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
+            <h2 className="text-sm font-bold text-gray-800">Payments Awaiting Confirmation</h2>
           </div>
-        ) : (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-             <ul className="divide-y divide-gray-200">
+          <div className="p-0 overflow-auto flex-1">
+            {data.pendingPayments.length === 0 ? (
+              <div className="h-full min-h-[250px] flex flex-col items-center justify-center text-center p-6">
+                <p className="text-gray-400 text-sm mb-2">No payments awaiting confirmation</p>
+              </div>
+            ) : (
+              <table className="min-w-full divide-y divide-gray-100">
+                <thead className="bg-white">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase">Customer</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase">Amount</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 tracking-wide uppercase">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {data.pendingPayments.map((payment: any) => (
+                    <tr key={payment.id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <p className="text-sm font-semibold text-blue-600">{payment.customer_name}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{payment.payment_reference}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-sm font-medium text-gray-900">{payment.currency} {payment.payment_amount}</p>
+                        <p className="text-xs text-gray-400 mt-0.5 whitespace-nowrap">{new Date(payment.customer_claimed_sent_at).toLocaleDateString()}</p>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <a
+                          href={`/api/payments/admin-confirm?order_id=${payment.id}&token=${payment.payment_confirm_token}`}
+                          className="inline-block bg-[#10b981] hover:bg-[#059669] text-white text-xs font-medium px-4 py-2 rounded shadow-sm transition-colors"
+                        >
+                          Confirm
+                        </a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        {/* Production Queue */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col min-h-[350px]">
+          <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
+            <h2 className="text-sm font-bold text-gray-800">Production Queue</h2>
+            <span className="text-gray-400 text-xs font-medium cursor-pointer hover:text-gray-600">Active Runs ▾</span>
+          </div>
+          <div className="p-0 overflow-auto flex-1">
+            {data.pendingProduction.length === 0 ? (
+              <div className="h-full min-h-[250px] flex flex-col items-center justify-center text-center p-6">
+                <p className="text-gray-400 text-sm mb-2">No active production runs</p>
+                <a href="/admin/production" className="text-blue-600 text-sm hover:underline">View queued formulas</a>
+              </div>
+            ) : (
+              <ul className="divide-y divide-gray-50">
                 {data.pendingProduction.map((run: any) => (
-                  <li key={run.id} className="p-6 flex justify-between items-center">
+                  <li key={run.id} className="p-6 flex justify-between items-center hover:bg-gray-50/50 transition-colors">
                     <div>
-                      <p className="font-bold text-gray-900">Run: {new Date(run.production_date).toLocaleDateString()}</p>
-                      <p className="text-sm text-gray-500 mt-1">Status: <span className="uppercase font-medium text-amber-600">{run.status}</span></p>
-                      <p className="text-sm text-gray-500">Orders covered: {run.total_orders_covered}</p>
+                      <p className="font-bold text-blue-600 text-sm">Run Core: {new Date(run.production_date).toLocaleDateString()}</p>
+                      <div className="flex gap-4 mt-2">
+                        <p className="text-xs text-gray-500">Status: <span className="uppercase font-semibold text-amber-500">{run.status}</span></p>
+                        <p className="text-xs text-gray-500">Units: <span className="font-bold text-gray-700">{run.total_orders_covered}</span></p>
+                      </div>
                     </div>
-                    <a href="/admin/production" className="text-blue-600 hover:text-blue-800 font-medium">Manage Run →</a>
+                    <a href="/admin/production" className="text-blue-600 text-sm hover:underline font-medium">Manage →</a>
                   </li>
                 ))}
-             </ul>
+              </ul>
+            )}
           </div>
-        )}
+        </div>
+        
       </div>
 
-      {/* ── Recent Outcomes (Task 5.3 Row 4) ── */}
-      <div>
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Outcomes</h2>
-        {data.recentOutcomes.length === 0 ? (
-          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm text-gray-500">
-            No recent check-ins.
+      {/* ── Row 3: Outcomes & Alerts (Preserving Functionality) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-12">
+        {/* Recent Outcomes Card */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col min-h-[300px]">
+          <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
+            <h2 className="text-sm font-bold text-gray-800">Recent Customer Outcomes</h2>
+            <a href="/admin/outcomes" className="text-blue-600 text-xs font-medium hover:underline">View All</a>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {data.recentOutcomes.map((outcome: any, idx: number) => {
-               const hasAdverse = outcome.adverse_reactions === true
-               const badScore = outcome.improvement_score && outcome.improvement_score < 4
-               let borderColor = 'border-gray-200'
-               if (hasAdverse) borderColor = 'border-red-400 bg-red-50'
-               else if (badScore) borderColor = 'border-amber-400 bg-amber-50'
+          <div className="p-6 overflow-auto flex-1 bg-gray-50/20">
+            {data.recentOutcomes.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center">
+                 <p className="text-gray-400 text-sm">No recent clinical check-ins logged.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {data.recentOutcomes.map((outcome: any, idx: number) => {
+                   const hasAdverse = outcome.adverse_reactions === true
+                   const badScore = outcome.improvement_score && outcome.improvement_score < 4
+                   let borderColor = 'border-gray-200 bg-white'
+                   if (hasAdverse) borderColor = 'border-red-300 bg-red-50/50'
+                   else if (badScore) borderColor = 'border-amber-300 bg-amber-50/50'
 
-               return (
-                 <div key={idx} className={`p-4 rounded-xl border shadow-sm ${borderColor}`}>
-                   <p className="text-sm text-gray-500">Week {outcome.check_in_week} Check-in</p>
-                   <p className="text-lg font-bold text-gray-900 mt-1">
-                     Score: {outcome.improvement_score ? `${outcome.improvement_score}/10` : '—'}
-                   </p>
-                   {hasAdverse && <p className="text-sm font-medium text-red-600 mt-1">⚠️ Adverse Reaction</p>}
-                   <p className="text-xs text-gray-400 mt-2">{new Date(outcome.recorded_at).toLocaleDateString()}</p>
+                   return (
+                     <div key={idx} className={`p-4 rounded-lg border shadow-sm ${borderColor}`}>
+                       <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Week {outcome.check_in_week}</p>
+                       <div className="mt-2 flex items-baseline gap-2">
+                         <span className="text-2xl font-bold text-gray-900">{outcome.improvement_score ? outcome.improvement_score : '—'}</span>
+                         <span className="text-sm font-medium text-gray-400">/ 10</span>
+                       </div>
+                       {hasAdverse && <p className="text-xs font-semibold text-red-600 mt-2 flex items-center bg-white w-max px-2 py-0.5 rounded shadow-sm border border-red-100">⚠️ Adverse Reaction</p>}
+                       <p className="text-xs text-gray-400 mt-3">{new Date(outcome.recorded_at).toLocaleDateString()}</p>
+                     </div>
+                   )
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* System Alerts Card */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col min-h-[300px]">
+          <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
+            <h2 className="text-sm font-bold text-gray-800">System Activity & Alerts</h2>
+          </div>
+          <div className="p-6 overflow-auto flex-1">
+            {data.flaggedAssessments > 0 ? (
+               <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded text-red-700">
+                 <div className="flex">
+                    <span className="font-bold mr-2 text-lg">⚠️</span>
+                    <div>
+                      <h3 className="font-bold">Review Required</h3>
+                       <p className="text-sm mt-1">{data.flaggedAssessments} assessments are automatically flagged for potentional medical contraindications.</p>
+                       <a href="/admin/customers" className="inline-block mt-3 bg-white px-3 py-1.5 text-xs font-bold border border-red-200 rounded shadow-sm hover:bg-gray-50 transition-colors text-red-700">Review Flags</a>
+                    </div>
                  </div>
-               )
-            })}
+               </div>
+            ) : (
+               <div className="h-full flex items-center justify-center">
+                 <div className="text-center text-gray-400">
+                    <p className="mb-2 text-3xl">✓</p>
+                    <p className="text-sm font-medium">All systems nominally operating.</p>
+                 </div>
+               </div>
+            )}
           </div>
-        )}
-      </div>
-
-      {/* ── System Alerts (Task 5.3 Row 5) ── */}
-      <div>
-        <h2 className="text-xl font-bold text-gray-900 mb-4">System Alerts</h2>
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-3">
-          {data.flaggedAssessments > 0 ? (
-             <div className="flex items-center text-red-700">
-               <span className="font-bold mr-2">⚠️ Review Required:</span> 
-               {data.flaggedAssessments} assessments are flagged for potential contraindications.
-             </div>
-          ) : (
-             <p className="text-gray-500">All systems nominally operating. No active alerts.</p>
-          )}
         </div>
       </div>
 
