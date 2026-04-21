@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { adminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
-import AdminNav from '@/components/admin/AdminNav'
+import AdminShell from '@/components/admin/AdminShell'
 
 export default async function AdminLayout({
   children,
@@ -16,18 +16,15 @@ export default async function AdminLayout({
 
   const { data: profile } = await adminClient
     .from('profiles')
-    .select('is_admin')
+    .select('is_admin, full_name, email')
     .eq('id', user.id)
     .single()
 
   if (!profile?.is_admin) redirect('/dashboard')
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900" style={{ color: '#0f0f0f' }}>
-      <AdminNav />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {children}
-      </main>
-    </div>
+    <AdminShell userProfile={profile}>
+      {children}
+    </AdminShell>
   )
 }
