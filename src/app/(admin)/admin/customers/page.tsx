@@ -35,163 +35,184 @@ export default async function AdminCustomersPage({
   const { customers, flagged } = await getCustomers(tab)
 
   return (
-    <div className="space-y-8" style={{ color: '#0f0f0f' }}>
-      <div className="flex justify-between items-center border-b border-gray-200 pb-4">
-        <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
-        <div className="space-x-4">
+  return (
+    <div className="space-y-6 text-gray-800">
+      
+      {/* ── Top Header Banner (Zoho Style) ── */}
+      <div className="bg-white pt-6 px-10 rounded-b-xl shadow-sm border-b border-gray-200 -mt-8 mx-[-2rem] mb-6 relative">
+        <div className="flex items-center gap-4 mb-8">
+          <div className="h-12 w-12 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded flex items-center justify-center font-bold shadow-sm">
+            US
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">User Directory</h1>
+            <p className="text-sm text-gray-500 mt-1">Manage global subscriber base and flagged physical risk profiles</p>
+          </div>
+        </div>
+        
+        {/* ── Tabs Integrated into Banner ── */}
+        <div className="flex gap-8 overflow-x-auto">
           <a
             href="/admin/customers?tab=all"
-            className={`px-4 py-2 font-medium text-sm rounded-md transition-colors ${
-              tab === 'all' ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+            className={`pb-4 text-sm font-semibold tracking-wide transition-colors whitespace-nowrap ${
+              tab === 'all'
+                ? 'border-b-2 border-[#b8895a] text-[#b8895a]'
+                : 'text-gray-500 hover:text-gray-800 border-b-2 border-transparent hover:border-gray-200 cursor-pointer'
             }`}
           >
             All Customers
           </a>
           <a
             href="/admin/customers?tab=flagged"
-            className={`px-4 py-2 font-medium text-sm rounded-md transition-colors ${
-              tab === 'flagged' ? 'bg-red-600 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-red-50 hover:text-red-600 hover:border-red-200'
+            className={`flex items-center gap-2 pb-4 text-sm font-semibold tracking-wide transition-colors whitespace-nowrap ${
+              tab === 'flagged'
+                ? 'border-b-2 border-red-500 text-red-600'
+                : 'text-red-400 hover:text-red-600 border-b-2 border-transparent hover:border-red-200 cursor-pointer'
             }`}
           >
-            Flagged Assessments
+            Flagged Review Queue <span className="bg-red-100 text-red-600 text-[10px] px-1.5 py-0.5 rounded font-bold">{flagged.length}</span>
           </a>
         </div>
       </div>
 
       {/* ── FLAG TAB ── */}
       {tab === 'flagged' && (
-        <div className="bg-white rounded-xl border border-red-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl border border-red-200 shadow-sm flex flex-col min-h-[500px]">
           {flagged.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              No flagged assessments currently pending review.
+            <div className="p-12 flex flex-col items-center justify-center text-center flex-1">
+              <p className="text-gray-400 text-sm">No flagged assessments currently pending review.</p>
             </div>
           ) : (
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-red-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-red-800 uppercase tracking-wider">Customer</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-red-800 uppercase tracking-wider">Flag Reason</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-red-800 uppercase tracking-wider">Assigned Formula</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-red-800 uppercase tracking-wider">Days Since Flagged</th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-bold text-red-800 uppercase tracking-wider">Action</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {flagged.map((f: any) => {
-                  const daysSince = Math.floor((new Date().getTime() - new Date(f.created_at).getTime()) / (1000 * 3600 * 24))
-                  return (
-                    <tr key={f.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{f.profiles?.full_name ?? 'Unknown'}</div>
-                        <div className="text-sm text-gray-500">{f.profiles?.email}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm font-bold text-red-600 bg-red-100 px-2 py-1 rounded">
-                          {f.flag_reason ?? 'Manual review required'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
-                        {f.formula_code ?? 'None'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {daysSince} days
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                        <div className="flex justify-end gap-2">
-                          <button className="text-blue-600 hover:text-blue-900 font-medium text-xs border border-blue-200 px-2 py-1 rounded">Review</button>
-                          <button className="text-gray-600 hover:text-gray-900 font-medium text-xs border border-gray-200 px-2 py-1 rounded">Clear</button>
-                          <button className="text-red-600 hover:text-red-900 font-medium text-xs border border-red-200 px-2 py-1 rounded">Derm Bridge</button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+            <div className="p-0 overflow-auto flex-1">
+              <table className="min-w-full divide-y divide-gray-100">
+                <thead className="bg-red-50/30">
+                  <tr>
+                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-red-700 tracking-wide uppercase border-b border-red-100 rounded-tl-xl border-t-0">Customer</th>
+                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-red-700 tracking-wide uppercase border-b border-red-100 border-t-0">Flag Reason</th>
+                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-red-700 tracking-wide uppercase border-b border-red-100 border-t-0">Assigned Formula</th>
+                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-red-700 tracking-wide uppercase border-b border-red-100 border-t-0">Days Since Flagged</th>
+                    <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-red-700 tracking-wide uppercase border-b border-red-100 rounded-tr-xl border-t-0">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-red-50">
+                  {flagged.map((f: any) => {
+                    const daysSince = Math.floor((new Date().getTime() - new Date(f.created_at).getTime()) / (1000 * 3600 * 24))
+                    return (
+                      <tr key={f.id} className="hover:bg-red-50/50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-bold text-gray-900">{f.profiles?.full_name ?? 'Unknown'}</div>
+                          <div className="text-xs text-gray-500 mt-0.5">{f.profiles?.email}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-100 px-2 py-1 rounded uppercase tracking-wider">
+                            {f.flag_reason ?? 'Manual review required'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono font-bold">
+                          {f.formula_code ?? 'None'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {daysSince} days
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                          <div className="flex justify-end gap-2">
+                            <button className="text-indigo-600 hover:text-indigo-900 font-bold text-xs border border-indigo-200 px-3 py-1.5 rounded transition-colors">Review</button>
+                            <button className="text-gray-600 hover:text-gray-900 font-bold text-xs border border-gray-200 px-3 py-1.5 rounded transition-colors">Clear</button>
+                            <button className="text-white bg-red-600 hover:bg-red-700 font-bold text-xs px-3 py-1.5 rounded shadow-sm transition-colors">Derm Bridge</button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}
 
       {/* ── ALL CUSTOMERS TAB ── */}
       {tab === 'all' && (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden overflow-x-auto">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col min-h-[500px]">
           {customers.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              No customers found.
+            <div className="p-12 flex flex-col items-center justify-center text-center flex-1">
+              <p className="text-gray-400 text-sm">No customers found.</p>
             </div>
           ) : (
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name / Email</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Country</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Formula / Sub</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scores</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-in</th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {customers.map((c: any) => {
-                  const assessments = Array.isArray(c.skin_assessments) ? c.skin_assessments : []
-                  const outcomes = Array.isArray(c.skin_outcomes) ? c.skin_outcomes : []
-                  
-                  // Sort to get latest
-                  const latestAssessment = assessments.sort((a: any, b: any) => 
-                    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-                  )[0]
-                  
-                  const latestOutcome = outcomes.sort((a: any, b: any) => 
-                    new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime()
-                  )[0]
+            <div className="p-0 overflow-auto flex-1">
+              <table className="min-w-full divide-y divide-gray-100">
+                <thead className="bg-gray-50/50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase border-b border-gray-100 rounded-tl-xl border-t-0">Name / Email</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase border-b border-gray-100 border-t-0">Country</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase border-b border-gray-100 border-t-0">Formula / Sub</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase border-b border-gray-100 border-t-0">Scores</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase border-b border-gray-100 border-t-0">Check-in</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 tracking-wide uppercase border-b border-gray-100 rounded-tr-xl border-t-0">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-100">
+                  {customers.map((c: any) => {
+                    const assessments = Array.isArray(c.skin_assessments) ? c.skin_assessments : []
+                    const outcomes = Array.isArray(c.skin_outcomes) ? c.skin_outcomes : []
+                    
+                    // Sort to get latest
+                    const latestAssessment = assessments.sort((a: any, b: any) => 
+                      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                    )[0]
+                    
+                    const latestOutcome = outcomes.sort((a: any, b: any) => 
+                      new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime()
+                    )[0]
 
-                  const formula = latestAssessment?.formula_code ?? 'None'
-                  const osScore = latestAssessment?.skin_os_score ?? '—'
-                  const riskScore = latestAssessment?.risk_score ?? 0
-                  
-                  // Calculate weeks active based on created_at
-                  const weeksActive = Math.floor((new Date().getTime() - new Date(c.created_at).getTime()) / (1000 * 3600 * 24 * 7))
+                    const formula = latestAssessment?.formula_code ?? 'None'
+                    const osScore = latestAssessment?.skin_os_score ?? '—'
+                    const riskScore = latestAssessment?.risk_score ?? 0
+                    
+                    // Calculate weeks active based on created_at
+                    const weeksActive = Math.floor((new Date().getTime() - new Date(c.created_at).getTime()) / (1000 * 3600 * 24 * 7))
 
-                  return (
-                    <tr key={c.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-bold text-gray-900">{c.full_name}</div>
-                        <div className="text-sm text-gray-500">{c.email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {c.country}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-mono font-bold text-gray-900">{formula}</div>
-                        <div className="text-xs text-gray-500 mt-1">Tier: {c.subscription_tier ?? 'none'}</div>
-                        <span className={`mt-1 px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          c.subscription_status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {c.subscription_status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">OS Score: <span className="font-bold">{osScore}</span></div>
-                        <div className={`text-xs mt-1 ${riskScore > 0 ? 'text-red-600 font-bold' : 'text-gray-500'}`}>
-                          Risk: {riskScore}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{weeksActive} weeks active</div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          {latestOutcome ? new Date(latestOutcome.recorded_at).toLocaleDateString() : 'No check-ins yet'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                        <a href={`/admin/customers/${c.id}`} className="text-blue-600 hover:text-blue-900 font-bold bg-blue-50 px-3 py-2 rounded transition-colors">
-                          View Profile
-                        </a>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+                    return (
+                      <tr key={c.id} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-bold text-gray-900">{c.full_name}</div>
+                          <div className="text-xs text-gray-500 mt-0.5">{c.email}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {c.country}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-mono font-bold text-gray-900">{formula}</div>
+                          <div className="text-xs text-gray-500 mt-0.5">Tier: {c.subscription_tier?.replace(/_/g, ' ') ?? 'None'}</div>
+                          <span className={`mt-1.5 px-2 py-0.5 inline-flex text-[10px] font-bold uppercase tracking-wider rounded border ${
+                            c.subscription_status === 'active' ? 'bg-green-50 border-green-100 text-green-700' : 'bg-gray-50 border-gray-200 text-gray-600'
+                          }`}>
+                            {c.subscription_status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">OS Score: <span className="font-bold">{osScore}</span></div>
+                          <div className={`text-[10px] uppercase font-bold tracking-wider mt-1.5 px-2 py-0.5 inline-block rounded border ${riskScore > 0 ? 'bg-red-50 border-red-100 text-red-600' : 'bg-gray-50 border-gray-200 text-gray-500'}`}>
+                            Risk: {riskScore}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">{weeksActive} weeks active</div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {latestOutcome ? new Date(latestOutcome.recorded_at).toLocaleDateString() : 'No check-ins yet'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                          <a href={`/admin/customers/${c.id}`} className="text-indigo-600 hover:text-indigo-900 font-bold border border-indigo-200 hover:bg-indigo-50 px-3 py-1.5 rounded transition-colors">
+                            View Profile
+                          </a>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}

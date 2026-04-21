@@ -35,15 +35,26 @@ export default async function ProductionQueuePage() {
   const data = await getProductionData()
 
   return (
-    <div className="space-y-8" style={{ color: '#0f0f0f' }}>
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Production Queue</h1>
+  return (
+    <div className="space-y-6 text-gray-800">
+      
+      {/* ── Top Header Banner (Zoho Style) ── */}
+      <div className="bg-white pt-6 px-10 rounded-b-xl shadow-sm border-b border-gray-200 -mt-8 mx-[-2rem] mb-6 relative flex justify-between items-end pb-6">
+        <div className="flex items-center gap-4">
+          <div className="h-12 w-12 bg-blue-50 border border-blue-100 text-blue-600 rounded flex items-center justify-center font-bold shadow-sm">
+            PQ
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Production Queue</h1>
+            <p className="text-sm text-gray-500 mt-1">Manage daily formulation runs and dispatch tracking</p>
+          </div>
+        </div>
         {data.ordersReady > 0 && !data.activeRun && (
-          <div className="bg-blue-50 border border-blue-200 px-4 py-2 rounded-lg flex items-center gap-3">
-            <span className="text-blue-800 font-medium">{data.ordersReady} orders ready for formulation</span>
+          <div className="flex items-center gap-4">
+            <span className="text-gray-500 text-sm font-medium">{data.ordersReady} orders queued</span>
             <form action="/api/admin/production/generate" method="POST">
-              <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors">
-                Generate Run
+              <button type="submit" className="bg-[#b8895a] hover:bg-amber-700 text-white px-4 py-2 rounded shadow-sm text-sm font-medium transition-colors">
+                Generate Run +
               </button>
             </form>
           </div>
@@ -52,15 +63,17 @@ export default async function ProductionQueuePage() {
 
       {/* ── Active Production Run ── */}
       {data.activeRun ? (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          <div className="bg-gray-50 border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col mb-8">
+          <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
             <div>
-              <h2 className="text-lg font-bold text-gray-900">
-                Active Run: {new Date(data.activeRun.production_date).toLocaleDateString()}
+              <h2 className="text-sm font-bold text-gray-800">
+                Active Run / <span className="text-gray-500">{new Date(data.activeRun.production_date).toLocaleDateString()}</span>
               </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Status: <span className="uppercase font-bold text-amber-600">{data.activeRun.status}</span> • Orders covered: {data.activeRun.total_orders_covered}
-              </p>
+              <div className="flex items-center gap-3 mt-1">
+                <span className="uppercase text-xs font-bold text-amber-500">{data.activeRun.status}</span>
+                <span className="text-gray-300">•</span>
+                <span className="text-xs text-gray-500">{data.activeRun.total_orders_covered} Total Units</span>
+              </div>
             </div>
             <div className="flex gap-2">
               {data.activeRun.status === 'pending' && (
@@ -130,18 +143,20 @@ export default async function ProductionQueuePage() {
 
       {/* ── Historical Runs ── */}
       {data.historyRuns.length > 0 && (
-        <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Production History (Last 30 Days)</h2>
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col min-h-[350px]">
+          <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
+            <h2 className="text-sm font-bold text-gray-800">Production History (Last 30 Days)</h2>
+          </div>
+          <div className="p-0 overflow-auto flex-1">
+            <table className="min-w-full divide-y divide-gray-100">
+              <thead className="bg-white">
                 <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Generated</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Formulas Covered</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Units</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completed At</th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase">Date Generated</th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase">Formulas Covered</th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase">Units</th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase">Status</th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase">Completed At</th>
+                  <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-gray-500 tracking-wide uppercase">Action</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">

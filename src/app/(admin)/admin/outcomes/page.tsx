@@ -25,60 +25,72 @@ export default async function AdminOutcomesPage() {
   const outcomes = await getOutcomes()
 
   return (
-    <div className="space-y-8" style={{ color: '#0f0f0f' }}>
-      <div className="flex justify-between items-center border-b border-gray-200 pb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Clinical Outcomes Log</h1>
+    <div className="space-y-6 text-gray-800">
+      
+      {/* ── Top Header Banner (Zoho Style) ── */}
+      <div className="bg-white pt-6 px-10 rounded-b-xl shadow-sm border-b border-gray-200 -mt-8 mx-[-2rem] mb-6 relative pb-6">
+        <div className="flex items-center gap-4">
+          <div className="h-12 w-12 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded flex items-center justify-center font-bold shadow-sm">
+            CO
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Clinical Outcomes Log</h1>
+            <p className="text-sm text-gray-500 mt-1">Review global check-in logs, clinical scores, and flag interventions</p>
+          </div>
+        </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Milestone</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Old Score</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">New Score</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Flag Alerts</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-             {outcomes.length === 0 ? (
-               <tr>
-                 <td colSpan={6} className="px-6 py-12 text-center text-sm text-gray-500">
-                   No clinical outcomes recorded yet. Check-ins begin after 14 days.
-                 </td>
-               </tr>
-             ) : outcomes.map((outcome) => (
-               <tr key={outcome.id}>
-                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                   {new Date(outcome.created_at).toLocaleDateString()}
-                 </td>
-                 <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                   {outcome.customer_name}
-                 </td>
-                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500">
-                   {outcome.check_in_stage || '—'}
-                 </td>
-                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                   {outcome.previous_score ?? '—'}
-                 </td>
-                 <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                   {outcome.new_score ?? '—'}
-                 </td>
-                 <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    {outcome.is_flagged ? (
-                      <span className="px-2 inline-flex text-xs leading-5 font-bold rounded-full bg-red-100 text-red-800">
-                        {outcome.flag_reason || 'Requires Review'}
-                      </span>
-                    ) : (
-                      <span className="text-gray-400">Nominal</span>
-                    )}
-                 </td>
-               </tr>
-             ))}
-          </tbody>
-        </table>
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col min-h-[500px]">
+        <div className="p-0 overflow-auto flex-1">
+          <table className="min-w-full divide-y divide-gray-100">
+            <thead className="bg-gray-50/50">
+              <tr>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase border-b border-gray-100 rounded-tl-xl border-t-0">Date</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase border-b border-gray-100 border-t-0">Customer</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase border-b border-gray-100 border-t-0">Milestone</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase border-b border-gray-100 border-t-0">Old Score</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase border-b border-gray-100 border-t-0">New Score</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase border-b border-gray-100 rounded-tr-xl border-t-0">Flag Alerts</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-100">
+               {outcomes.length === 0 ? (
+                 <tr>
+                   <td colSpan={6} className="px-6 py-12 text-center text-sm text-gray-500">
+                     No clinical outcomes recorded yet. Check-ins begin after 14 days.
+                   </td>
+                 </tr>
+               ) : outcomes.map((outcome) => (
+                 <tr key={outcome.id}>
+                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                     {new Date(outcome.created_at).toLocaleDateString()}
+                   </td>
+                   <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                     {outcome.customer_name}
+                   </td>
+                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500">
+                     {outcome.check_in_stage || '—'}
+                   </td>
+                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                     {outcome.previous_score ?? '—'}
+                   </td>
+                   <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                     {outcome.new_score ?? '—'}
+                   </td>
+                   <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {outcome.is_flagged ? (
+                        <span className="px-2 py-0.5 inline-flex text-[10px] uppercase tracking-wider font-bold rounded-md bg-red-50 text-red-700 border border-red-100">
+                          {outcome.flag_reason || 'Requires Review'}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 font-medium">Nominal</span>
+                      )}
+                   </td>
+                 </tr>
+               ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )
