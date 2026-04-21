@@ -35,7 +35,6 @@ export default async function ProductionQueuePage() {
   const data = await getProductionData()
 
   return (
-  return (
     <div className="space-y-6 text-gray-800">
       
       {/* ── Top Header Banner (Zoho Style) ── */}
