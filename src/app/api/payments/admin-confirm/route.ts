@@ -75,10 +75,9 @@ export async function GET(request: NextRequest) {
     await adminClient
         .from('orders')
         .update({
-            payment_status:      'confirmed',
+            payment_status:      'payment_confirmed',
             payment_token_used:  true,
-            payment_confirmed_at: new Date().toISOString(),
-            status:              'confirmed',
+            payment_confirmed_at: new Date().toISOString()
         })
         .eq('id', order.id)
 
@@ -102,11 +101,15 @@ export async function GET(request: NextRequest) {
             .eq('id', order.user_id)
     }
 
-    // ── Move order to pending_formulation ──────────────────────────────────────
-    await adminClient
+    // ── Move order to pending_production ──────────────────────────────────────
+    const { error: moveError } = await adminClient
         .from('orders')
-        .update({ status: 'pending_formulation' })
+        .update({ status: 'pending_production' })
         .eq('id', order.id)
+
+    if (moveError) {
+        console.error("Failed to move to production:", moveError)
+    }
 
     // ── Resolve customer contact details ──────────────────────────────────────
     let customerEmail: string | null = null
