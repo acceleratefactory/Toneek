@@ -40,7 +40,7 @@ export default async function ProductionQueuePage() {
       {/* ── Top Header Banner (Zoho Style) ── */}
       <div className="bg-white pt-6 px-10 rounded-b-xl shadow-sm border-b border-gray-200 -mt-8 mx-[-2rem] mb-6 relative flex justify-between items-end pb-6">
         <div className="flex items-center gap-4">
-          <div className="h-12 w-12 bg-blue-50 border border-blue-100 text-blue-600 rounded flex items-center justify-center font-bold shadow-sm">
+          <div className="h-12 w-12 bg-toneek-cream border border-toneek-gray text-toneek-brown rounded flex items-center justify-center font-bold shadow-sm">
             PQ
           </div>
           <div>
@@ -52,7 +52,7 @@ export default async function ProductionQueuePage() {
           <div className="flex items-center gap-4">
             <span className="text-gray-500 text-sm font-medium">{data.ordersReady} orders queued</span>
             <form action="/api/admin/production/generate" method="POST">
-              <button type="submit" className="bg-[#b8895a] hover:bg-amber-700 text-white px-4 py-2 rounded shadow-sm text-sm font-medium transition-colors">
+              <button type="submit" className="bg-toneek-brown hover:bg-[#1A1210] text-[#ffffff] px-4 py-2 rounded-lg shadow-sm text-sm font-medium transition-colors">
                 Generate Run +
               </button>
             </form>
@@ -69,7 +69,7 @@ export default async function ProductionQueuePage() {
                 Active Run / <span className="text-gray-500">{new Date(data.activeRun.production_date).toLocaleDateString()}</span>
               </h2>
               <div className="flex items-center gap-3 mt-1">
-                <span className="uppercase text-xs font-bold text-amber-500">{data.activeRun.status}</span>
+                <span className="uppercase text-xs font-bold text-toneek-alert">{data.activeRun.status}</span>
                 <span className="text-gray-300">•</span>
                 <span className="text-xs text-gray-500">{data.activeRun.total_orders_covered} Total Units</span>
               </div>
@@ -78,13 +78,13 @@ export default async function ProductionQueuePage() {
               {data.activeRun.status === 'pending' && (
                 // In an MVP, we could have a route to simply update status to in_production. 
                 // For now it's visual. Mark Complete is the critical action.
-                <div className="px-4 py-2 border border-blue-200 text-blue-700 rounded-md text-sm font-bold opacity-80 cursor-not-allowed">
+                <div className="px-4 py-2 border border-toneek-lightgray text-toneek-gray rounded-md text-sm font-bold opacity-80 cursor-not-allowed">
                   Starts processing...
                 </div>
               )}
               {data.activeRun.status !== 'complete' && data.activeRun.status !== 'dispatched' && (
                  <form action={`/api/admin/production/${data.activeRun.id}/complete`} method="POST">
-                   <button type="submit" className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-bold transition-colors">
+                   <button type="submit" className="bg-toneek-forest hover:bg-[#144229] text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors">
                      Mark Complete & Dispatch
                    </button>
                  </form>
@@ -98,8 +98,8 @@ export default async function ProductionQueuePage() {
               {Array.isArray(data.activeRun.batches) && data.activeRun.batches.map((batch: any, index: number) => (
                 <div key={index} className="bg-gray-50 rounded-lg p-5 border border-gray-200">
                   <div className="flex justify-between items-center mb-3">
-                    <span className="font-bold text-lg text-gray-900">{batch.formula_code}</span>
-                    <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-1 rounded">
+                    <span className="font-mono font-bold text-lg text-toneek-brown">{batch.formula_code}</span>
+                    <span className="bg-toneek-alertbg text-toneek-alert text-xs font-bold px-2 py-1 rounded">
                       {batch.units} units
                     </span>
                   </div>
@@ -110,7 +110,7 @@ export default async function ProductionQueuePage() {
                     </div>
                   ) : (
                     <details className="mt-4 group">
-                      <summary className="cursor-pointer text-sm font-bold text-blue-600 hover:text-blue-800 list-none flex items-center gap-2">
+                      <summary className="cursor-pointer text-sm font-bold text-toneek-brown hover:text-black list-none flex items-center gap-2">
                         <span>View Compounding Recipe</span>
                         <span className="transition duration-200 group-open:rotate-180 text-xs">▼</span>
                       </summary>
@@ -164,7 +164,7 @@ export default async function ProductionQueuePage() {
                   return (
                     <tr key={run.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                        <a href={`/admin/production/${run.id}`} className="text-blue-600 hover:text-blue-900">
+                        <a href={`/admin/production/${run.id}`} className="text-toneek-brown hover:text-black underline">
                           {new Date(run.production_date).toLocaleDateString()}
                         </a>
                       </td>
@@ -176,7 +176,7 @@ export default async function ProductionQueuePage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          run.status === 'dispatched' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                          run.status === 'dispatched' ? 'bg-toneek-sage text-toneek-forest' : 'bg-toneek-cream text-toneek-brown border border-toneek-lightgray'
                         }`}>
                           {run.status}
                         </span>
@@ -185,7 +185,7 @@ export default async function ProductionQueuePage() {
                         {run.completed_at ? new Date(run.completed_at).toLocaleString() : '—'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <a href={`/admin/production/${run.id}`} className="text-blue-600 hover:text-blue-900 font-bold">
+                        <a href={`/admin/production/${run.id}`} className="text-toneek-brown hover:text-black font-bold">
                           View Log &rarr;
                         </a>
                       </td>

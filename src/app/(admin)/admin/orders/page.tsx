@@ -65,7 +65,7 @@ export default async function AdminOrdersPage({
       {/* ── Top Header Banner (Zoho Style) ── */}
       <div className="bg-white pt-6 px-10 rounded-b-xl shadow-sm border-b border-gray-200 -mt-8 mx-[-2rem] mb-6 relative">
         <div className="flex items-center gap-4 mb-8">
-          <div className="h-12 w-12 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded flex items-center justify-center font-bold shadow-sm">
+          <div className="h-12 w-12 bg-toneek-cream border border-toneek-lightgray text-toneek-brown rounded flex items-center justify-center font-bold shadow-sm">
             OM
           </div>
           <div>
@@ -82,7 +82,7 @@ export default async function AdminOrdersPage({
               href={`/admin/orders?filter=${tab.id}`}
               className={`pb-4 text-sm font-semibold tracking-wide transition-colors whitespace-nowrap ${
                 filter === tab.id
-                  ? 'border-b-2 border-[#b8895a] text-[#b8895a]'
+                  ? 'border-b-2 border-toneek-amber text-toneek-amber'
                   : 'text-gray-500 hover:text-gray-800 border-b-2 border-transparent hover:border-gray-200 cursor-pointer'
               }`}
             >
@@ -114,25 +114,25 @@ export default async function AdminOrdersPage({
                 {orders.map((order: any) => (
                   <tr key={order.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-bold text-gray-900">{order.payment_reference}</div>
-                      <div className="text-xs text-gray-500 mt-0.5">Order #{order.order_number}</div>
+                      <div className="text-sm font-bold text-gray-900 font-mono">{order.payment_reference}</div>
+                      <div className="text-xs text-gray-500 mt-0.5 font-mono">Order #{order.order_number}</div>
                       <div className="text-xs text-gray-400 mt-0.5">{new Date(order.created_at).toLocaleDateString()}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{order.customer_name}</div>
-                      <div className="text-xs text-gray-500 mt-0.5">{order.formula}</div>
+                      <div className="text-xs text-toneek-gray mt-0.5 font-mono font-medium">{order.formula}</div>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 text-[10px] font-bold rounded-md uppercase tracking-wider ${
-                        order.status === 'held_for_checkin' ? 'bg-orange-50 text-orange-700' :
-                        order.status === 'pending_dispatch' ? 'bg-blue-50 text-blue-700' :
-                        order.status === 'dispatched' ? 'bg-green-50 text-green-700' :
+                        order.status === 'held_for_checkin' ? 'bg-toneek-alertbg text-toneek-alert' :
+                        order.status === 'pending_dispatch' ? 'bg-toneek-cream text-toneek-brown border border-toneek-lightgray' :
+                        order.status === 'dispatched' ? 'bg-toneek-sage text-toneek-forest' :
                         'bg-gray-100 text-gray-600'
                       }`}>
                         {order.status.replace(/_/g, ' ')}
                       </span>
                       {order.status === 'held_for_checkin' && order.dispatch_held_reason && (
-                        <div className="text-[10px] text-orange-600 mt-1 font-medium">
+                        <div className="text-[10px] text-toneek-alert mt-1 font-medium">
                           ⚠️ {order.dispatch_held_reason.replace(/_/g, ' ')}
                         </div>
                       )}
@@ -140,13 +140,13 @@ export default async function AdminOrdersPage({
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                       {order.status === 'pending_dispatch' && (
                         <form action={`/api/admin/orders/${order.id}/dispatch`} method="POST" className="flex items-center justify-end gap-2">
-                          <input type="text" name="tracking" placeholder="Tracking #..." className="border border-gray-200 rounded px-2 py-1 text-xs w-32" required />
-                          <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-xs font-bold">Dispatch</button>
+                          <input type="text" name="tracking" placeholder="Tracking #..." className="border border-gray-200 rounded px-2 py-1 text-xs w-32 focus:border-toneek-amber focus:ring-toneek-amber font-mono" required />
+                          <button type="submit" className="bg-toneek-brown hover:bg-[#1A1210] text-white px-3 py-1 rounded text-xs font-bold transition-colors">Dispatch</button>
                         </form>
                       )}
                       {order.status === 'held_for_checkin' && (
                         <form action={`/api/admin/orders/${order.id}/override-hold`} method="POST">
-                          <button type="submit" className="text-orange-600 hover:text-orange-700 text-xs font-bold underline">Override Hold</button>
+                          <button type="submit" className="text-toneek-alert hover:text-[#995208] text-xs font-bold underline">Override Hold</button>
                         </form>
                       )}
                     </td>

@@ -93,18 +93,18 @@ export default function AdminShell({ children, userProfile }: { children: React.
   ]
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
+    <div className="flex h-screen bg-toneek-cream overflow-hidden font-sans">
       {/* Sidebar */}
-      <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} transition-all duration-300 ease-in-out bg-slate-900 border-r border-slate-800 flex flex-col flex-shrink-0 z-20`}>
-        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800">
+      <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} transition-all duration-300 ease-in-out bg-toneek-brown border-r border-[#2C130A] flex flex-col flex-shrink-0 z-20`}>
+        <div className="h-16 flex items-center justify-between px-4 border-b border-[#2C130A]">
           {isSidebarOpen ? (
-            <span className="text-xl font-bold text-white tracking-tight ml-2 truncate">Toneek Admin</span>
+            <span className="text-xl font-bold text-toneek-cream tracking-tight ml-2 truncate">Toneek Admin</span>
           ) : (
-             <span className="text-xl font-bold text-white tracking-tight mx-auto">TA</span>
+             <span className="text-xl font-bold text-toneek-cream tracking-tight mx-auto">TA</span>
           )}
           <button 
              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-             className="text-slate-400 hover:text-white p-1 rounded-md hover:bg-slate-800"
+             className="text-stone-400 hover:text-toneek-cream p-1 rounded-md hover:bg-[#2C130A]"
           >
              {isSidebarOpen ? <ChevronLeft size={20} /> : <Menu size={20} />}
           </button>
@@ -114,33 +114,33 @@ export default function AdminShell({ children, userProfile }: { children: React.
             const isActive = pathname === link.href
             const Icon = link.icon
             return (
-              <Link 
-                key={link.name} 
-                href={link.href}
-                className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors ${
-                  isActive 
-                    ? 'bg-[#b8895a] text-white shadow-md' 
-                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                } ${!isSidebarOpen ? 'justify-center' : ''}`}
-                title={!isSidebarOpen ? link.name : undefined}
-              >
-                <Icon size={20} className={isActive ? 'text-white flex-shrink-0' : 'text-slate-400 flex-shrink-0'} />
-                {isSidebarOpen && <span className="truncate">{link.name}</span>}
-              </Link>
-            )
-          })}
-        </div>
-        <div className="p-3 border-t border-slate-800">
-          <Link 
-             href="/dashboard" 
-             className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition-colors ${!isSidebarOpen ? 'justify-center' : ''}`}
-             title={!isSidebarOpen ? "Exit to Platform" : undefined}
-          >
-            <LogOut size={20} className="flex-shrink-0" />
-            {isSidebarOpen && <span className="truncate">Exit to Platform</span>}
-          </Link>
-        </div>
-      </aside>
+                <Link 
+                  key={link.name} 
+                  href={link.href}
+                  className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors ${
+                    isActive 
+                      ? 'bg-toneek-amber text-[#000000] shadow-md' 
+                      : 'text-stone-400 hover:bg-[#2C130A] hover:text-toneek-cream'
+                  } ${!isSidebarOpen ? 'justify-center' : ''}`}
+                  title={!isSidebarOpen ? link.name : undefined}
+                >
+                  <Icon size={20} className={isActive ? 'text-[#000000] flex-shrink-0' : 'text-stone-400 flex-shrink-0'} />
+                  {isSidebarOpen && <span className="truncate">{link.name}</span>}
+                </Link>
+              )
+            })}
+          </div>
+          <div className="p-3 border-t border-[#2C130A]">
+            <Link 
+               href="/dashboard" 
+               className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-stone-400 hover:bg-[#2C130A] hover:text-toneek-cream transition-colors ${!isSidebarOpen ? 'justify-center' : ''}`}
+               title={!isSidebarOpen ? "Exit to Platform" : undefined}
+            >
+              <LogOut size={20} className="flex-shrink-0" />
+              {isSidebarOpen && <span className="truncate">Exit to Platform</span>}
+            </Link>
+          </div>
+        </aside>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -165,7 +165,7 @@ export default function AdminShell({ children, userProfile }: { children: React.
                 onChange={handleSearchInput}
                 onFocus={() => { if (searchQuery.trim().length >= 2) setActiveDropdown('search') }}
                 placeholder="Search customers, orders..." 
-                className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-slate-50 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#b8895a] focus:border-[#b8895a] sm:text-sm transition-colors"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-toneek-cream placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-toneek-amber focus:border-toneek-amber sm:text-sm transition-colors"
               />
               
               {/* Search Results Dropdown Popover */}
@@ -173,8 +173,8 @@ export default function AdminShell({ children, userProfile }: { children: React.
                 <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-lg border border-gray-200 shadow-xl overflow-hidden z-50">
                    {isSearching ? (
                      <div className="p-4 flex items-center justify-center text-sm text-gray-500 gap-2">
-                       <Loader2 size={16} className="animate-spin text-[#b8895a]" /> Searching Database...
-                     </div>
+                         <Loader2 size={16} className="animate-spin text-toneek-amber" /> Searching Database...
+                       </div>
                    ) : searchResults.length > 0 ? (
                      <ul className="max-h-96 overflow-y-auto divide-y divide-gray-50">
                        {searchResults.map((result, idx) => (
@@ -247,7 +247,7 @@ export default function AdminShell({ children, userProfile }: { children: React.
                 onClick={() => setActiveDropdown(activeDropdown === 'profile' ? null : 'profile')}
                 className="flex items-center gap-3 pl-2 pr-1 py-1 rounded-full hover:bg-gray-50 transition-colors"
                >
-                 <div className="h-8 w-8 rounded-full bg-[#b8895a] flex items-center justify-center text-white font-bold text-sm">
+                 <div className="h-8 w-8 rounded-full bg-toneek-amber flex items-center justify-center text-[#ffffff] font-bold text-sm">
                    {userProfile?.full_name?.charAt(0) || 'A'}
                  </div>
                  <span className="text-sm font-medium text-gray-700">{userProfile?.full_name || 'Admin'}</span>
@@ -264,7 +264,7 @@ export default function AdminShell({ children, userProfile }: { children: React.
         </header>
 
         {/* Scrollable Content Canvas */}
-        <main className="flex-1 overflow-auto bg-[#f9f9fb] p-8">
+        <main className="flex-1 overflow-auto bg-toneek-cream p-8">
           <div className="max-w-7xl mx-auto">
              {children}
           </div>

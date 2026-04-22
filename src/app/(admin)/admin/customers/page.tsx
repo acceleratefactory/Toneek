@@ -40,7 +40,7 @@ export default async function AdminCustomersPage({
       {/* ── Top Header Banner (Zoho Style) ── */}
       <div className="bg-white pt-6 px-10 rounded-b-xl shadow-sm border-b border-gray-200 -mt-8 mx-[-2rem] mb-6 relative">
         <div className="flex items-center gap-4 mb-8">
-          <div className="h-12 w-12 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded flex items-center justify-center font-bold shadow-sm">
+          <div className="h-12 w-12 bg-toneek-cream border border-toneek-lightgray text-toneek-brown rounded flex items-center justify-center font-bold shadow-sm">
             US
           </div>
           <div>
@@ -55,7 +55,7 @@ export default async function AdminCustomersPage({
             href="/admin/customers?tab=all"
             className={`pb-4 text-sm font-semibold tracking-wide transition-colors whitespace-nowrap ${
               tab === 'all'
-                ? 'border-b-2 border-[#b8895a] text-[#b8895a]'
+                ? 'border-b-2 border-toneek-amber text-toneek-amber'
                 : 'text-gray-500 hover:text-gray-800 border-b-2 border-transparent hover:border-gray-200 cursor-pointer'
             }`}
           >
@@ -65,11 +65,11 @@ export default async function AdminCustomersPage({
             href="/admin/customers?tab=flagged"
             className={`flex items-center gap-2 pb-4 text-sm font-semibold tracking-wide transition-colors whitespace-nowrap ${
               tab === 'flagged'
-                ? 'border-b-2 border-red-500 text-red-600'
-                : 'text-red-400 hover:text-red-600 border-b-2 border-transparent hover:border-red-200 cursor-pointer'
+                ? 'border-b-2 border-toneek-error text-toneek-error'
+                : 'text-toneek-alert hover:text-toneek-error border-b-2 border-transparent hover:border-toneek-errorbg cursor-pointer'
             }`}
           >
-            Flagged Review Queue <span className="bg-red-100 text-red-600 text-[10px] px-1.5 py-0.5 rounded font-bold">{flagged.length}</span>
+            Flagged Review Queue <span className="bg-toneek-errorbg text-toneek-error text-[10px] px-1.5 py-0.5 rounded font-bold">{flagged.length}</span>
           </a>
         </div>
       </div>
@@ -103,7 +103,7 @@ export default async function AdminCustomersPage({
                           <div className="text-xs text-gray-500 mt-0.5">{f.profiles?.email}</div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-100 px-2 py-1 rounded uppercase tracking-wider">
+                          <span className="text-[10px] font-bold text-toneek-error bg-toneek-errorbg border border-toneek-error px-2 py-1 rounded uppercase tracking-wider">
                             {f.flag_reason ?? 'Manual review required'}
                           </span>
                         </td>
@@ -115,9 +115,9 @@ export default async function AdminCustomersPage({
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                           <div className="flex justify-end gap-2">
-                            <button className="text-indigo-600 hover:text-indigo-900 font-bold text-xs border border-indigo-200 px-3 py-1.5 rounded transition-colors">Review</button>
+                            <button className="text-toneek-brown hover:text-black font-bold text-xs border border-toneek-lightgray px-3 py-1.5 rounded transition-colors">Review</button>
                             <button className="text-gray-600 hover:text-gray-900 font-bold text-xs border border-gray-200 px-3 py-1.5 rounded transition-colors">Clear</button>
-                            <button className="text-white bg-red-600 hover:bg-red-700 font-bold text-xs px-3 py-1.5 rounded shadow-sm transition-colors">Derm Bridge</button>
+                            <button className="text-white bg-toneek-error hover:bg-[#A03226] font-bold text-xs px-3 py-1.5 rounded shadow-sm transition-colors">Derm Bridge</button>
                           </div>
                         </td>
                       </tr>
@@ -181,10 +181,10 @@ export default async function AdminCustomersPage({
                           {c.country}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-mono font-bold text-gray-900">{formula}</div>
+                          <div className="text-sm font-mono font-bold text-toneek-brown">{formula}</div>
                           <div className="text-xs text-gray-500 mt-0.5">Tier: {c.subscription_tier?.replace(/_/g, ' ') ?? 'None'}</div>
                           <span className={`mt-1.5 px-2 py-0.5 inline-flex text-[10px] font-bold uppercase tracking-wider rounded border ${
-                            c.subscription_status === 'active' ? 'bg-green-50 border-green-100 text-green-700' : 'bg-gray-50 border-gray-200 text-gray-600'
+                            c.subscription_status === 'active' ? 'bg-toneek-sage border-toneek-sage text-toneek-forest' : 'bg-toneek-cream border-toneek-lightgray text-toneek-brown'
                           }`}>
                             {c.subscription_status}
                           </span>
@@ -202,7 +202,7 @@ export default async function AdminCustomersPage({
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                          <a href={`/admin/customers/${c.id}`} className="text-indigo-600 hover:text-indigo-900 font-bold border border-indigo-200 hover:bg-indigo-50 px-3 py-1.5 rounded transition-colors">
+                          <a href={`/admin/customers/${c.id}`} className="text-toneek-brown hover:text-black font-bold border border-toneek-lightgray hover:bg-toneek-cream px-3 py-1.5 rounded transition-colors">
                             View Profile
                           </a>
                         </td>

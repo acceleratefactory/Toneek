@@ -15,7 +15,7 @@ export default async function AdminPricingPage() {
       {/* ── Top Header Banner (Zoho Style) ── */}
       <div className="bg-white pt-6 px-10 rounded-b-xl shadow-sm border-b border-gray-200 -mt-8 mx-[-2rem] mb-6 relative pb-6">
         <div className="flex items-center gap-4">
-          <div className="h-12 w-12 bg-purple-50 border border-purple-100 text-purple-600 rounded flex items-center justify-center font-bold shadow-sm">
+          <div className="h-12 w-12 bg-toneek-cream border border-toneek-lightgray text-toneek-brown rounded flex items-center justify-center font-bold shadow-sm">
             PL
           </div>
           <div>
@@ -26,7 +26,7 @@ export default async function AdminPricingPage() {
       </div>
 
       {error || !tiers ? (
-        <div className="bg-red-50 text-red-600 border border-red-200 p-6 rounded-lg text-center font-medium">
+        <div className="bg-toneek-errorbg text-toneek-error border border-toneek-error px-6 py-6 rounded-lg text-center font-medium shadow-sm">
           Error retrieving global pricing parameters. Ensure database migration 009 has correctly established the subscription_tiers registry.
         </div>
       ) : (

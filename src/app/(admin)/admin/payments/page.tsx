@@ -32,7 +32,7 @@ export default async function AdminPaymentsPage() {
       {/* ── Top Header Banner (Zoho Style) ── */}
       <div className="bg-white pt-6 px-10 rounded-b-xl shadow-sm border-b border-gray-200 -mt-8 mx-[-2rem] mb-6 relative pb-6">
         <div className="flex items-center gap-4">
-          <div className="h-12 w-12 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded flex items-center justify-center font-bold shadow-sm">
+          <div className="h-12 w-12 bg-toneek-cream border border-toneek-lightgray text-toneek-brown rounded flex items-center justify-center font-bold shadow-sm">
             FL
           </div>
           <div>
@@ -81,7 +81,7 @@ export default async function AdminPaymentsPage() {
                    </td>
                    <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <span className={`px-2 py-1 inline-flex text-[10px] uppercase tracking-wider font-bold rounded-md border ${
-                        payment.status === 'payment_confirmed' ? 'bg-green-50 text-green-700 border-green-100' : 'bg-amber-50 text-amber-700 border-amber-100'
+                        payment.status === 'payment_confirmed' ? 'bg-toneek-sage text-toneek-forest border-toneek-sage' : 'bg-toneek-alertbg text-toneek-alert border-toneek-alertbg'
                       }`}>
                         {payment.status.replace(/_/g, ' ')}
                       </span>

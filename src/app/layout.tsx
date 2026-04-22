@@ -1,6 +1,18 @@
 import type { Metadata } from "next";
+import { Jost, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import HashAuthHandler from "@/components/HashAuthHandler";
+
+const jost = Jost({
+  subsets: ["latin"],
+  variable: "--font-jost",
+});
+
+const mono = IBM_Plex_Mono({
+  weight: ["400", "500", "600"],
+  subsets: ["latin"],
+  variable: "--font-mono",
+});
 
 export const metadata: Metadata = {
   title: "Toneek — Skin intelligence for melanin-rich skin",
@@ -13,8 +25,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body style={{ background: '#0f0f0f', color: '#f5f5f5', margin: 0 }}>
+    <html lang="en" className={`${jost.variable} ${mono.variable}`}>
+      <body className="font-sans antialiased bg-stone-50 text-stone-900 m-0">
         {/* Handles magic links with access_token in URL hash — redirects to /dashboard */}
         <HashAuthHandler />
         {children}

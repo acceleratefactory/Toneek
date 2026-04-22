@@ -82,7 +82,7 @@ export default function SubscribePlans({ assessmentId, userId, currency, plans }
                         <div
                             key={plan.id}
                             style={{
-                                background: plan.highlight ? 'rgba(212,165,116,0.06)' : 'var(--surface)',
+                                background: plan.highlight ? 'rgba(196,123,60,0.06)' : 'var(--surface)',
                                 border: plan.highlight ? '1px solid var(--accent)' : '1px solid var(--border)',
                                 borderRadius: '12px',
                                 padding: '1.5rem',
@@ -96,7 +96,7 @@ export default function SubscribePlans({ assessmentId, userId, currency, plans }
                                     left: '50%',
                                     transform: 'translateX(-50%)',
                                     background: 'var(--accent)',
-                                    color: '#0f0f0f',
+                                    color: 'var(--color-toneek-brown)',
                                     fontSize: '0.72rem',
                                     fontWeight: 700,
                                     letterSpacing: '0.08em',
