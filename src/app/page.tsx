@@ -8,7 +8,7 @@ export default async function Home() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-stone-950 text-white">
       <div className="text-center space-y-4 p-8">
-        <img src="/logo-dark.svg" alt="Toneek" className="h-10 w-auto mx-auto" />
+        <img src="/logo-dark.svg" alt="Toneek" className="h-16 w-auto mx-auto" />
         <p className="text-stone-400 text-lg">Skin intelligence for melanin-rich skin</p>
         <div className="text-sm text-stone-500 space-y-1 mt-6">
           <p>Database: {count !== null ? '✅ Connected' : '❌ Error'}</p>

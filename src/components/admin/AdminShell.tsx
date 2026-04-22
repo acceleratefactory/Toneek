@@ -98,10 +98,7 @@ export default function AdminShell({ children, userProfile }: { children: React.
       <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} transition-all duration-300 ease-in-out bg-toneek-brown border-r border-[#2C130A] flex flex-col flex-shrink-0 z-20`}>
         <div className="h-16 flex items-center justify-between px-4 border-b border-[#2C130A]">
           {isSidebarOpen ? (
-            <div className="flex items-center ml-2">
-                <img src="/logo-dark.svg" alt="Toneek" className="h-6 w-auto object-contain mr-2" />
-                <span className="text-[10px] font-bold text-toneek-amber tracking-widest uppercase mt-1">Admin</span>
-            </div>
+            <img src="/logo-dark.svg" alt="Toneek" className="h-10 w-auto ml-3 object-contain" />
           ) : (
              <span className="text-xl font-bold text-toneek-cream tracking-tight mx-auto">TA</span>
           )}

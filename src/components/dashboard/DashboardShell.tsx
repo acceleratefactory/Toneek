@@ -83,7 +83,7 @@ export default function DashboardShell({ children, userProfile }: { children: Re
       <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} transition-all duration-300 ease-in-out bg-toneek-brown border-r border-[#2C130A] flex flex-col flex-shrink-0 z-20`}>
         <div className="h-16 flex items-center justify-between px-4 border-b border-[#2C130A]">
           {isSidebarOpen ? (
-            <img src="/logo-dark.svg" alt="Toneek" className="h-7 w-auto ml-2 object-contain" />
+            <img src="/logo-dark.svg" alt="Toneek" className="h-10 w-auto ml-3 object-contain" />
           ) : (
              <span className="text-xl font-bold text-toneek-cream tracking-tight mx-auto">TK</span>
           )}
