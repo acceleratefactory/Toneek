@@ -59,46 +59,53 @@ export default async function CustomerDetailPage(
   return (
     <div className="space-y-8" style={{ color: '#0f0f0f' }}>
       
-      {/* ── HEADER ── */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">{data.profile.full_name}</h1>
-          <p className="text-gray-500 mt-1">{data.profile.email} • {data.profile.phone ?? 'No phone'}</p>
-          <div className="flex gap-2 mt-3">
-             <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-               data.profile.subscription_status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-800'
-             }`}>
-               Status: {data.profile.subscription_status}
-             </span>
-             {latestAssessment && (
-               <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-blue-100 text-blue-800">
-                 Formula: {latestAssessment.formula_code ?? 'Pending'}
-               </span>
-             )}
+      {/* ── Top Header Banner (Zoho Style) ── */}
+      <div className="bg-white pt-6 px-10 rounded-b-xl shadow-sm border-b border-gray-200 -mt-8 mx-[-2rem] mb-6 relative pb-6">
+        <div className="flex justify-between items-start">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 bg-toneek-cream border border-toneek-lightgray text-toneek-brown rounded flex items-center justify-center font-bold text-xl shadow-sm">
+              {data.profile.full_name?.charAt(0) || 'U'}
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">{data.profile.full_name}</h1>
+              <p className="text-sm text-gray-500 mt-1">{data.profile.email} • {data.profile.phone ?? 'No phone'}</p>
+              <div className="flex gap-2 mt-3">
+                 <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                   data.profile.subscription_status === 'active' ? 'bg-toneek-sage text-toneek-forest' : 'bg-toneek-cream text-toneek-brown border border-toneek-lightgray'
+                 }`}>
+                   Status: {data.profile.subscription_status}
+                 </span>
+                 {latestAssessment && (
+                   <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-toneek-cream text-toneek-brown border border-toneek-lightgray font-mono">
+                     Formula: {latestAssessment.formula_code ?? 'Pending'}
+                   </span>
+                 )}
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="flex gap-2">
-           <a href={`https://wa.me/${data.profile.phone?.replace('+', '')}`} target="_blank" className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md font-bold text-sm transition-colors cursor-pointer flex items-center gap-2">
-             <span>💬</span> WhatsApp
-           </a>
-           <button className="bg-gray-800 hover:bg-black text-white px-4 py-2 rounded-md font-bold text-sm transition-colors border">
-             Update Formula
-           </button>
+          <div className="flex gap-2">
+             <a href={`https://wa.me/${data.profile.phone?.replace('+', '')}`} target="_blank" className="bg-toneek-forest hover:bg-[#144229] text-white px-4 py-2 rounded-md font-bold text-sm transition-colors cursor-pointer flex items-center gap-2 shadow-sm">
+               <span>💬</span> WhatsApp
+             </a>
+             <button className="bg-toneek-brown hover:bg-[#1A1210] text-white px-4 py-2 rounded-md font-bold text-sm transition-colors border-none shadow-sm">
+               Update Formula
+             </button>
+          </div>
         </div>
       </div>
 
       {/* ── ALERTS / FLAGS ── */}
       {isFlagged && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-5 shadow-sm">
-          <h2 className="text-red-800 font-bold flex items-center gap-2">
+        <div className="bg-toneek-errorbg border border-toneek-error rounded-xl p-5 shadow-sm">
+          <h2 className="text-toneek-error font-bold flex items-center gap-2">
             ⚠️ Assessment Flagged For Review
           </h2>
-          <p className="text-red-700 mt-2 text-sm">
+          <p className="text-toneek-error mt-2 text-sm">
             Reason: <span className="font-bold">{latestAssessment.flag_reason}</span>
           </p>
           <div className="mt-4 flex gap-3">
-             <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-xs font-bold rounded">Trigger Dermatology Bridge</button>
-             <button className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-4 py-2 text-xs font-bold rounded">Clear Flag</button>
+             <button className="bg-toneek-error hover:bg-[#A03226] text-white px-4 py-2 text-xs font-bold rounded shadow-sm">Trigger Dermatology Bridge</button>
+             <button className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-4 py-2 text-xs font-bold rounded shadow-sm">Clear Flag</button>
           </div>
         </div>
       )}
@@ -124,7 +131,7 @@ export default async function CustomerDetailPage(
                   </div>
                   <div className="pt-4 border-t border-gray-100">
                     <p className="text-gray-500 mb-1">Assigned Formula:</p>
-                    <p className="font-mono font-bold text-lg">{latestAssessment.formula_code}</p>
+                    <p className="font-mono font-bold text-lg text-toneek-brown">{latestAssessment.formula_code}</p>
                     <p className="text-gray-600 mt-2 bg-gray-50 p-3 rounded">{latestAssessment.formula_rationale}</p>
                   </div>
                   <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
@@ -134,7 +141,7 @@ export default async function CustomerDetailPage(
                     </div>
                     <div className="text-right">
                        <span className="text-gray-500">Risk Score:</span><br/>
-                       <span className={`text-xl font-black ${latestAssessment.risk_score > 0 ? 'text-red-500' : 'text-green-500'}`}>
+                       <span className={`text-xl font-black ${latestAssessment.risk_score > 0 ? 'text-toneek-error' : 'text-toneek-forest'}`}>
                          {latestAssessment.risk_score}
                        </span>
                     </div>
@@ -160,11 +167,11 @@ export default async function CustomerDetailPage(
                  {data.orders.map((o: any) => (
                    <li key={o.id} className="p-4 flex justify-between items-center">
                      <div>
-                       <p className="font-bold text-sm text-gray-900">{o.payment_reference}</p>
+                       <p className="font-bold text-sm text-gray-900 font-mono">{o.payment_reference}</p>
                        <p className="text-xs text-gray-500 mt-1">{new Date(o.created_at).toLocaleDateString()}</p>
                      </div>
-                     <span className={`px-2 py-1 text-xs font-bold rounded ${
-                       o.status === 'dispatched' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                     <span className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded border ${
+                       o.status === 'dispatched' ? 'bg-toneek-sage text-toneek-forest border-toneek-sage' : 'bg-toneek-cream text-toneek-brown border-toneek-lightgray'
                      }`}>
                        {o.status}
                      </span>
@@ -182,7 +189,7 @@ export default async function CustomerDetailPage(
              {data.outcomes.length === 0 ? (
                <div className="p-6 text-gray-500 text-sm flex items-center gap-3">
                  <span>No check-ins recorded yet.</span>
-                 <button className="text-blue-600 hover:underline font-medium">Trigger Check-in</button>
+                 <button className="text-toneek-brown hover:underline font-bold">Trigger Check-in</button>
                </div>
              ) : (
                <ul className="divide-y divide-gray-100">
@@ -198,12 +205,12 @@ export default async function CustomerDetailPage(
                            <span className="font-bold text-gray-900">{out.improvement_score}/10</span>
                         </div>
                         {out.adverse_reactions && (
-                          <div className="bg-red-50 text-red-700 px-3 py-1 rounded text-xs font-bold">
+                          <div className="bg-toneek-errorbg text-toneek-error border border-toneek-errorbg px-3 py-1 rounded text-xs font-bold">
                              ⚠️ Adverse Reaction
                           </div>
                         )}
                      </div>
-                     {out.adverse_detail && <p className="text-xs text-red-600 mt-2">{out.adverse_detail}</p>}
+                     {out.adverse_detail && <p className="text-xs text-toneek-error mt-2">{out.adverse_detail}</p>}
                    </li>
                  ))}
                </ul>

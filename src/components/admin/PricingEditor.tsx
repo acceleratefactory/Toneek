@@ -76,7 +76,7 @@ export default function PricingEditor({ initialTiers }: { initialTiers: TierData
     <div className="space-y-6">
       
       {(successMsg || errorMsg) && (
-         <div className={`p-4 rounded-lg font-medium text-sm flex items-center justify-between ${successMsg ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+         <div className={`p-4 rounded-lg font-medium text-sm flex items-center justify-between ${successMsg ? 'bg-toneek-sage text-toneek-forest border border-toneek-sage' : 'bg-toneek-errorbg text-toneek-error border border-toneek-errorbg'}`}>
             <span>{successMsg || errorMsg}</span>
          </div>
       )}
@@ -92,7 +92,7 @@ export default function PricingEditor({ initialTiers }: { initialTiers: TierData
              <button 
                onClick={() => savePrices(tier)} 
                disabled={savingId === tier.id}
-               className="bg-[#b8895a] hover:bg-amber-700 disabled:opacity-50 text-white px-5 py-2 rounded shadow-sm text-sm font-bold transition-all flex items-center gap-2"
+               className="bg-toneek-brown hover:bg-[#1A1210] disabled:opacity-50 text-white px-5 py-2 rounded shadow-sm text-sm font-bold transition-all flex items-center gap-2"
              >
                {savingId === tier.id ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                {savingId === tier.id ? 'Deploying...' : 'Deploy Global Pricing'}
@@ -118,11 +118,11 @@ export default function PricingEditor({ initialTiers }: { initialTiers: TierData
                         min="0"
                         value={currentPrice.amount || ''}
                         onChange={(e) => handlePriceChange(tier.id, curr, e.target.value)}
-                        className="block w-full rounded-md border-gray-300 pl-14 py-2.5 text-gray-900 focus:border-[#b8895a] focus:ring-[#b8895a] sm:text-sm font-bold bg-gray-50/50 border transition-colors"
+                        className="block w-full rounded-md border-gray-300 pl-14 py-2.5 text-gray-900 focus:border-toneek-amber focus:ring-toneek-amber sm:text-sm font-bold bg-gray-50/50 border transition-colors font-mono"
                         placeholder="0"
                       />
                       <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                         <span className="text-xs font-bold text-[#b8895a] bg-amber-50 px-2 py-0.5 rounded">
+                         <span className="text-xs font-bold text-toneek-brown bg-toneek-cream border border-toneek-lightgray px-2 py-0.5 rounded font-mono">
                            {currentPrice.display}
                          </span>
                       </div>

@@ -88,11 +88,11 @@ export default function DashboardCharts({ historicalOrders, historicalSubscripti
            <div className="p-6 relative">
               <div className="flex items-center gap-6 mb-8">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-[#10b981]"></div>
+                  <div className="w-3 h-3 rounded-sm bg-toneek-forest"></div>
                   <span className="text-sm font-semibold text-gray-700">Gross Income</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-[#ef4444]"></div>
+                  <div className="w-3 h-3 rounded-sm bg-toneek-error"></div>
                   <span className="text-sm font-semibold text-gray-700">Operational Cost</span>
                 </div>
               </div>
@@ -111,14 +111,14 @@ export default function DashboardCharts({ historicalOrders, historicalSubscripti
                      className="w-16 h-full flex items-end gap-1 relative group cursor-pointer z-10"
                      onMouseEnter={(e) => setActiveBar({ 
                        label: d.name, 
-                       payload: [ { color: '#10b981', name: 'Income', value: `$${d.revenue}` }, { color: '#ef4444', name: 'Cost', value: `$${d.cost}` } ],
+                       payload: [ { color: 'var(--color-toneek-forest)', name: 'Income', value: `$${d.revenue}` }, { color: 'var(--color-toneek-error)', name: 'Cost', value: `$${d.cost}` } ],
                        coordinate: { x: e.clientX, y: e.clientY }
                      })}
                    >
                      {/* Gross Income Bar */}
-                     <div className="w-full bg-[#10b981] rounded-t-sm hover:brightness-110 transition-all" style={{ height: `${(d.revenue / 1000) * 100}%`, minHeight: '5%' }}></div>
+                     <div className="w-full bg-toneek-forest rounded-t-sm hover:brightness-110 transition-all" style={{ height: `${(d.revenue / 1000) * 100}%`, minHeight: '5%' }}></div>
                      {/* Cost Bar */}
-                     <div className="w-full bg-[#ef4444] rounded-t-sm hover:brightness-110 transition-all" style={{ height: `${(d.cost / 1000) * 100}%`, minHeight: '5%' }}></div>
+                     <div className="w-full bg-toneek-error rounded-t-sm hover:brightness-110 transition-all" style={{ height: `${(d.cost / 1000) * 100}%`, minHeight: '5%' }}></div>
                      
                      {/* X Axis Label */}
                      <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-xs font-semibold text-gray-400">{d.name}</span>
@@ -142,8 +142,8 @@ export default function DashboardCharts({ historicalOrders, historicalSubscripti
               <div className="relative w-48 h-48 mb-8">
                  <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
                     <circle cx="50" cy="50" r="40" fill="transparent" stroke="#f3f4f6" strokeWidth="20" />
-                    <circle cx="50" cy="50" r="40" fill="transparent" stroke="#8b5cf6" strokeWidth="20" strokeDasharray={`${percentages.full * 2.5} 250`} className="hover:opacity-80 cursor-pointer transition-opacity" />
-                    <circle cx="50" cy="50" r="40" fill="transparent" stroke="#f59e0b" strokeWidth="20" strokeDasharray={`${percentages.starter * 2.5} 250`} strokeDashoffset={`-${percentages.full * 2.5}`} className="hover:opacity-80 cursor-pointer transition-opacity" />
+                    <circle cx="50" cy="50" r="40" fill="transparent" stroke="var(--color-toneek-brown)" strokeWidth="20" strokeDasharray={`${percentages.full * 2.5} 250`} className="hover:opacity-80 cursor-pointer transition-opacity" />
+                    <circle cx="50" cy="50" r="40" fill="transparent" stroke="var(--color-toneek-amber)" strokeWidth="20" strokeDasharray={`${percentages.starter * 2.5} 250`} strokeDashoffset={`-${percentages.full * 2.5}`} className="hover:opacity-80 cursor-pointer transition-opacity" />
                  </svg>
                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                     <span className="text-xs font-bold text-gray-400">Total Orders</span>
@@ -154,14 +154,14 @@ export default function DashboardCharts({ historicalOrders, historicalSubscripti
               <div className="w-full space-y-3">
                  <div className="flex justify-between items-center text-sm">
                     <div className="flex items-center gap-2">
-                       <div className="w-3 h-3 rounded bg-[#8b5cf6]"></div>
+                       <div className="w-3 h-3 rounded bg-toneek-brown"></div>
                        <span className="text-gray-600 font-medium">Full Protocol</span>
                     </div>
                     <span className="font-bold text-gray-900">{percentages.full}%</span>
                  </div>
                  <div className="flex justify-between items-center text-sm">
                     <div className="flex items-center gap-2">
-                       <div className="w-3 h-3 rounded bg-[#f59e0b]"></div>
+                       <div className="w-3 h-3 rounded bg-toneek-amber"></div>
                        <span className="text-gray-600 font-medium">Starter Routine</span>
                     </div>
                     <span className="font-bold text-gray-900">{percentages.starter}%</span>
@@ -192,13 +192,13 @@ export default function DashboardCharts({ historicalOrders, historicalSubscripti
                  <path 
                    d={`M 0,${256 - (lineData[0].total/maxLineTotal)*256} ${lineData.map((d, i) => `L ${i * (100/(lineData.length-1))}%, ${256 - (d.total/maxLineTotal)*256}`).join(' ')}`}
                    fill="none" 
-                   stroke="#3b82f6" 
+                   stroke="var(--color-toneek-amber)" 
                    strokeWidth="2"
                  />
                  {/* Subtle blue fill beneath the line */}
                  <path 
                    d={`M 0,256 L 0,${256 - (lineData[0].total/maxLineTotal)*256} ${lineData.map((d, i) => `L ${i * (100/(lineData.length-1))}%, ${256 - (d.total/maxLineTotal)*256}`).join(' ')} L 100%, 256 Z`}
-                   fill="rgba(59, 130, 246, 0.05)" 
+                   fill="rgba(196, 123, 60, 0.05)" 
                    stroke="none"
                  />
                </svg>
@@ -212,14 +212,14 @@ export default function DashboardCharts({ historicalOrders, historicalSubscripti
                       style={{ height: '100%', left: `${i * (100/(lineData.length-1))}%`, transform: 'translateX(-5%)' }}
                       onMouseEnter={(e) => setActiveLineItem({
                         label: d.name,
-                        payload: [ { color: '#3b82f6', name: 'Total Subscribers', value: d.total } ],
+                        payload: [ { color: 'var(--color-toneek-amber)', name: 'Total Subscribers', value: d.total } ],
                         coordinate: { x: e.clientX, y: e.clientY }
                       })}
                     >
                       {/* X Axis Label */}
                       <span className="absolute -bottom-8 text-xs font-semibold text-gray-400">{d.name}</span>
                       {/* Glowing Dot overlay */}
-                      <div className="absolute w-3 h-3 bg-[#3b82f6] border-2 border-white rounded-full shadow-md z-10 transition-transform group-hover:scale-150" style={{ bottom: `calc(${(d.total/maxLineTotal)*100}%)`, transform: 'translateY(50%)' }}></div>
+                      <div className="absolute w-3 h-3 bg-toneek-amber border-2 border-white rounded-full shadow-md z-10 transition-transform group-hover:scale-150" style={{ bottom: `calc(${(d.total/maxLineTotal)*100}%)`, transform: 'translateY(50%)' }}></div>
                     </div>
                  ))}
                </div>
@@ -238,7 +238,7 @@ export default function DashboardCharts({ historicalOrders, historicalSubscripti
 
               <div>
                  <div className="flex items-center gap-2 mb-1">
-                   <div className="w-2.5 h-2.5 rounded bg-[#10b981]"></div>
+                   <div className="w-2.5 h-2.5 rounded bg-toneek-forest"></div>
                    <span className="text-xs text-gray-500 font-semibold uppercase">New Acquisitions (+)</span>
                  </div>
                  <p className="text-xl font-bold text-gray-900 ml-4.5">{historicalOrders.length}</p>
@@ -246,7 +246,7 @@ export default function DashboardCharts({ historicalOrders, historicalSubscripti
 
               <div>
                  <div className="flex items-center gap-2 mb-1">
-                   <div className="w-2.5 h-2.5 rounded bg-[#ef4444]"></div>
+                   <div className="w-2.5 h-2.5 rounded bg-toneek-error"></div>
                    <span className="text-xs text-gray-500 font-semibold uppercase">Cancellations (-)</span>
                  </div>
                  <p className="text-xl font-bold text-gray-900 ml-4.5">0</p>
@@ -254,10 +254,10 @@ export default function DashboardCharts({ historicalOrders, historicalSubscripti
 
               <div className="pt-4 border-t border-gray-100 mt-2">
                  <div className="flex items-center gap-2 mb-1">
-                   <div className="w-2.5 h-2.5 rounded bg-[#3b82f6]"></div>
+                   <div className="w-2.5 h-2.5 rounded bg-toneek-amber"></div>
                    <span className="text-xs text-gray-500 font-semibold uppercase">Subs as of {rawMonths[rawMonths.length-1].label} {rawMonths[rawMonths.length-1].year}</span>
                  </div>
-                 <p className="text-xl font-bold text-[#b8895a] ml-4.5">{lineData[lineData.length-1].total}</p>
+                 <p className="text-xl font-bold text-toneek-amber ml-4.5">{lineData[lineData.length-1].total}</p>
               </div>
             </div>
          </div>

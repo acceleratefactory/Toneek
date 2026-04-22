@@ -85,7 +85,7 @@ export default async function AdminDashboardPage() {
       {/* ── Top Header Banner (Zoho Style) ── */}
       <div className="bg-white pt-6 px-10 rounded-b-xl shadow-sm border-b border-gray-200 -mt-8 mx-[-2rem] mb-6 relative">
         <div className="flex items-center gap-4 mb-8">
-          <div className="h-12 w-12 bg-[#b8895a]/10 border border-[#b8895a]/20 text-[#b8895a] rounded flex items-center justify-center font-bold text-xl shadow-sm">
+          <div className="h-12 w-12 bg-toneek-cream border border-toneek-lightgray text-toneek-brown rounded flex items-center justify-center font-bold text-xl shadow-sm">
             TA
           </div>
           <div>
@@ -102,7 +102,7 @@ export default async function AdminDashboardPage() {
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col">
           <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
             <h2 className="text-sm font-bold text-gray-800">Subscription Overview</h2>
-            <span className="text-blue-600 text-xs font-semibold flex items-center gap-1 cursor-pointer hover:underline bg-blue-50 px-2 py-1 rounded">
+            <span className="text-toneek-brown text-xs font-semibold flex items-center gap-1 cursor-pointer hover:underline bg-toneek-cream px-2 py-1 rounded">
               <span className="text-lg leading-none">+</span> New
             </span>
           </div>
@@ -112,21 +112,21 @@ export default async function AdminDashboardPage() {
             
             <div className="h-3 w-full flex rounded-full overflow-hidden mb-4 bg-gray-100">
                {data.totalSubscribers === 0 && <div className="bg-gray-200 w-full h-full"></div>}
-               {data.totalSubscribers > 0 && (
+                {data.totalSubscribers > 0 && (
                  <>
-                   <div className="bg-[#1e88e5] h-full" style={{ width: `${activePct}%` }}></div>
-                   <div className="bg-[#fb8c00] h-full" style={{ width: `${inactivePct}%` }}></div>
+                   <div className="bg-toneek-forest h-full" style={{ width: `${activePct}%` }}></div>
+                   <div className="bg-toneek-gray h-full" style={{ width: `${inactivePct}%` }}></div>
                  </>
                )}
             </div>
             
             <div className="flex gap-8 items-center mt-2">
               <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-sm bg-[#1e88e5]"></div>
+                <div className="w-2.5 h-2.5 rounded-sm bg-toneek-forest"></div>
                 <span className="text-sm text-gray-500">Active : <b className="text-gray-800 ml-1">{data.activeSubscribers}</b></span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-sm bg-[#fb8c00]"></div>
+                <div className="w-2.5 h-2.5 rounded-sm bg-toneek-gray"></div>
                 <span className="text-sm text-gray-500">Inactive : <b className="text-gray-800 ml-1">{data.totalSubscribers - data.activeSubscribers}</b></span>
               </div>
             </div>
@@ -147,26 +147,26 @@ export default async function AdminDashboardPage() {
             
             <div className="h-3 w-full flex rounded-full overflow-hidden mb-4 bg-gray-100">
                {totalTasks === 0 && <div className="bg-gray-200 w-full h-full"></div>}
-               {totalTasks > 0 && (
+                {totalTasks > 0 && (
                  <>
-                   <div className="bg-[#10b981] h-full" style={{ width: `${payPct}%` }}></div>
-                   <div className="bg-[#ef4444] h-full" style={{ width: `${flagPct}%` }}></div>
-                   <div className="bg-[#8b5cf6] h-full" style={{ width: `${prodPct}%` }}></div>
+                   <div className="bg-toneek-brown h-full" style={{ width: `${payPct}%` }}></div>
+                   <div className="bg-toneek-error h-full" style={{ width: `${flagPct}%` }}></div>
+                   <div className="bg-toneek-amber h-full" style={{ width: `${prodPct}%` }}></div>
                  </>
                )}
             </div>
             
             <div className="flex gap-6 items-center mt-2 flex-wrap">
               <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-sm bg-[#10b981]"></div>
+                <div className="w-2.5 h-2.5 rounded-sm bg-toneek-brown"></div>
                 <span className="text-sm text-gray-500">Payments : <b className="text-gray-800 ml-1">{data.pendingPayments.length}</b></span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-sm bg-[#ef4444]"></div>
+                <div className="w-2.5 h-2.5 rounded-sm bg-toneek-error"></div>
                 <span className="text-sm text-gray-500">Flagged : <b className="text-gray-800 ml-1">{data.flaggedAssessments}</b></span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-sm bg-[#8b5cf6]"></div>
+                <div className="w-2.5 h-2.5 rounded-sm bg-toneek-amber"></div>
                 <span className="text-sm text-gray-500">Production : <b className="text-gray-800 ml-1">{data.pendingProduction.length}</b></span>
               </div>
             </div>
@@ -208,8 +208,8 @@ export default async function AdminDashboardPage() {
                   {data.pendingPayments.map((payment: any) => (
                     <tr key={payment.id} className="hover:bg-gray-50/50 transition-colors">
                       <td className="px-6 py-4">
-                        <p className="text-sm font-semibold text-blue-600">{payment.customer_name}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">{payment.payment_reference}</p>
+                        <p className="text-sm font-semibold text-toneek-brown">{payment.customer_name}</p>
+                        <p className="text-xs text-toneek-gray mt-0.5 font-mono">{payment.payment_reference}</p>
                       </td>
                       <td className="px-6 py-4">
                         <p className="text-sm font-medium text-gray-900">{payment.currency} {payment.payment_amount}</p>
@@ -218,7 +218,7 @@ export default async function AdminDashboardPage() {
                       <td className="px-6 py-4 text-right">
                         <a
                           href={`/api/payments/admin-confirm?order_id=${payment.id}&token=${payment.payment_confirm_token}`}
-                          className="inline-block bg-[#10b981] hover:bg-[#059669] text-white text-xs font-medium px-4 py-2 rounded shadow-sm transition-colors"
+                          className="inline-block bg-toneek-forest hover:bg-[#144229] text-white text-xs font-medium px-4 py-2 rounded shadow-sm transition-colors"
                         >
                           Confirm
                         </a>
@@ -241,20 +241,20 @@ export default async function AdminDashboardPage() {
             {data.pendingProduction.length === 0 ? (
               <div className="h-full min-h-[250px] flex flex-col items-center justify-center text-center p-6">
                 <p className="text-gray-400 text-sm mb-2">No active production runs</p>
-                <a href="/admin/production" className="text-blue-600 text-sm hover:underline">View queued formulas</a>
+                <a href="/admin/production" className="text-toneek-brown text-sm hover:underline">View queued formulas</a>
               </div>
             ) : (
               <ul className="divide-y divide-gray-50">
                 {data.pendingProduction.map((run: any) => (
                   <li key={run.id} className="p-6 flex justify-between items-center hover:bg-gray-50/50 transition-colors">
                     <div>
-                      <p className="font-bold text-blue-600 text-sm">Run Core: {new Date(run.production_date).toLocaleDateString()}</p>
+                      <p className="font-bold text-toneek-brown text-sm font-mono">Run Core: {new Date(run.production_date).toLocaleDateString()}</p>
                       <div className="flex gap-4 mt-2">
-                        <p className="text-xs text-gray-500">Status: <span className="uppercase font-semibold text-amber-500">{run.status}</span></p>
+                        <p className="text-xs text-gray-500">Status: <span className="uppercase font-semibold text-toneek-alert">{run.status}</span></p>
                         <p className="text-xs text-gray-500">Units: <span className="font-bold text-gray-700">{run.total_orders_covered}</span></p>
                       </div>
                     </div>
-                    <a href="/admin/production" className="text-blue-600 text-sm hover:underline font-medium">Manage →</a>
+                    <a href="/admin/production" className="text-toneek-brown text-sm hover:underline font-medium">Manage →</a>
                   </li>
                 ))}
               </ul>
@@ -270,7 +270,7 @@ export default async function AdminDashboardPage() {
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col min-h-[300px]">
           <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
             <h2 className="text-sm font-bold text-gray-800">Recent Customer Outcomes</h2>
-            <a href="/admin/outcomes" className="text-blue-600 text-xs font-medium hover:underline">View All</a>
+            <a href="/admin/outcomes" className="text-toneek-brown text-xs font-medium hover:underline">View All</a>
           </div>
           <div className="p-6 overflow-auto flex-1 bg-gray-50/20">
             {data.recentOutcomes.length === 0 ? (
@@ -283,8 +283,8 @@ export default async function AdminDashboardPage() {
                    const hasAdverse = outcome.adverse_reactions === true
                    const badScore = outcome.improvement_score && outcome.improvement_score < 4
                    let borderColor = 'border-gray-200 bg-white'
-                   if (hasAdverse) borderColor = 'border-red-300 bg-red-50/50'
-                   else if (badScore) borderColor = 'border-amber-300 bg-amber-50/50'
+                   if (hasAdverse) borderColor = 'border-toneek-errorbg bg-[#FDECEA]'
+                   else if (badScore) borderColor = 'border-toneek-alertbg bg-[#FEF3E2]'
 
                    return (
                      <div key={idx} className={`p-4 rounded-lg border shadow-sm ${borderColor}`}>
@@ -293,7 +293,7 @@ export default async function AdminDashboardPage() {
                          <span className="text-2xl font-bold text-gray-900">{outcome.improvement_score ? outcome.improvement_score : '—'}</span>
                          <span className="text-sm font-medium text-gray-400">/ 10</span>
                        </div>
-                       {hasAdverse && <p className="text-xs font-semibold text-red-600 mt-2 flex items-center bg-white w-max px-2 py-0.5 rounded shadow-sm border border-red-100">⚠️ Adverse Reaction</p>}
+                       {hasAdverse && <p className="text-xs font-semibold text-toneek-error mt-2 flex items-center bg-white w-max px-2 py-0.5 rounded shadow-sm border border-toneek-errorbg">⚠️ Adverse Reaction</p>}
                        <p className="text-xs text-gray-400 mt-3">{new Date(outcome.recorded_at).toLocaleDateString()}</p>
                      </div>
                    )
@@ -310,13 +310,13 @@ export default async function AdminDashboardPage() {
           </div>
           <div className="p-6 overflow-auto flex-1">
             {data.flaggedAssessments > 0 ? (
-               <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded text-red-700">
+               <div className="bg-toneek-errorbg border-l-4 border-toneek-error p-4 rounded text-toneek-error">
                  <div className="flex">
                     <span className="font-bold mr-2 text-lg">⚠️</span>
                     <div>
-                      <h3 className="font-bold">Review Required</h3>
+                      <h3 className="font-bold border-b border-toneek-error/10 pb-1">Review Required</h3>
                        <p className="text-sm mt-1">{data.flaggedAssessments} assessments are automatically flagged for potentional medical contraindications.</p>
-                       <a href="/admin/customers" className="inline-block mt-3 bg-white px-3 py-1.5 text-xs font-bold border border-red-200 rounded shadow-sm hover:bg-gray-50 transition-colors text-red-700">Review Flags</a>
+                       <a href="/admin/customers" className="inline-block mt-3 bg-white px-3 py-1.5 text-xs font-bold border border-toneek-errorbg rounded shadow-sm hover:bg-gray-50 transition-colors text-toneek-error">Review Flags</a>
                     </div>
                  </div>
                </div>
