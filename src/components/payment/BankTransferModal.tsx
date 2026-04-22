@@ -148,119 +148,76 @@ export default function BankTransferModal({
             role="dialog"
             aria-modal="true"
             aria-label="Bank transfer payment"
-            style={{
-                position: 'fixed', inset: 0,
-                background: 'rgba(0,0,0,0.85)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                padding: '1rem', zIndex: 1000,
-            }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[1000]"
             onClick={e => { if (e.target === e.currentTarget) onClose() }}
         >
-            <div style={{
-                background: '#1a1a1a',
-                border: '1px solid #2a2a2a',
-                borderRadius: '16px',
-                width: '100%',
-                maxWidth: '440px',
-                maxHeight: '90vh',
-                overflowY: 'auto',
-            }}>
+            <div className="bg-white dark:bg-[#1A1210] border border-gray-200 dark:border-[#333] rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl relative">
 
                 {/* ── Header ── */}
-                <div style={{
-                    padding: '1.25rem 1.5rem',
-                    borderBottom: '1px solid #2a2a2a',
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-                }}>
+                <div className="p-6 border-b border-gray-100 dark:border-[#333] flex justify-between items-start">
                     <div>
-                        <p style={{ color: '#888', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.2rem' }}>
+                        <p className="text-gray-500 dark:text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1.5">
                             Transfer exactly
                         </p>
-                        <p style={{ fontWeight: 700, fontSize: '1.75rem', color: '#d4a574' }}>
+                        <p className="font-black text-3xl text-toneek-amber tracking-tighter">
                             {symbol}{amount.toLocaleString()}
                         </p>
                     </div>
                     <button
                         onClick={onClose}
                         aria-label="Close"
-                        style={{
-                            background: 'none', border: 'none', color: '#888',
-                            cursor: 'pointer', fontSize: '1.25rem', padding: '0.25rem',
-                            lineHeight: 1,
-                        }}
+                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors text-2xl leading-none p-1"
                     >✕</button>
                 </div>
 
                 {/* ── Bank detail fields ── */}
-                <div style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                    <p style={{ color: '#888', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.25rem' }}>
+                <div className="p-6 flex flex-col gap-3">
+                    <p className="text-gray-900 dark:text-gray-100 text-xs font-bold uppercase tracking-wider mb-1">
                         Transfer to:
                     </p>
 
                     {fields.map(({ label, value, field, note }) => (
                         <div
                             key={field}
-                            style={{
-                                background: '#222',
-                                border: '1px solid #2a2a2a',
-                                borderRadius: '8px',
-                                padding: '0.75rem 1rem',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                gap: '0.75rem',
-                            }}
+                            className="bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-[#333] rounded-xl p-4 flex justify-between items-center gap-3 transition-colors hover:border-toneek-amber/50"
                         >
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                                <p style={{ color: '#666', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.2rem' }}>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-gray-500 dark:text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1">
                                     {label}
                                 </p>
-                                <p style={{ fontWeight: 600, color: field === 'ref' ? '#d4a574' : '#f5f5f5', fontSize: '0.92rem', wordBreak: 'break-all' }}>
+                                <p className={`font-bold text-[15px] break-all tracking-tight ${field === 'ref' ? 'text-toneek-brown font-mono' : 'text-gray-900 dark:text-gray-100'}`}>
                                     {value}
                                 </p>
                                 {note && (
-                                    <p style={{ color: '#b8895a', fontSize: '0.75rem', marginTop: '0.2rem' }}>{note}</p>
+                                    <p className="text-toneek-brown dark:text-[#b8895a] text-[10px] font-bold mt-1.5 uppercase tracking-wide">{note}</p>
                                 )}
                             </div>
                             <button
                                 onClick={() => copy(value, field)}
                                 title={`Copy ${label}`}
-                                style={{
-                                    background: copied === field ? 'rgba(76,175,130,0.15)' : '#2a2a2a',
-                                    border: '1px solid',
-                                    borderColor: copied === field ? '#4caf82' : '#333',
-                                    borderRadius: '6px',
-                                    color: copied === field ? '#4caf82' : '#888',
-                                    cursor: 'pointer',
-                                    padding: '0.4rem 0.65rem',
-                                    fontSize: '0.8rem',
-                                    flexShrink: 0,
-                                    transition: 'all 0.2s',
-                                }}
+                                className={`flex-shrink-0 px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${
+                                    copied === field 
+                                        ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400' 
+                                        : 'bg-white dark:bg-[#2a2a2a] border-gray-200 dark:border-[#333] text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-[#444]'
+                                }`}
                             >
-                                {copied === field ? '✓' : 'Copy'}
+                                {copied === field ? '✓ Copied' : 'Copy'}
                             </button>
                         </div>
                     ))}
                 </div>
 
                 {/* ── Confirmation window note ── */}
-                <div style={{
-                    margin: '0 1.5rem',
-                    background: 'rgba(212,165,116,0.06)',
-                    border: '1px solid rgba(212,165,116,0.2)',
-                    borderRadius: '8px',
-                    padding: '0.85rem 1rem',
-                }}>
-                    <p style={{ color: '#c9a05a', fontSize: '0.82rem', lineHeight: '1.5' }}>
+                <div className="mx-6 bg-toneek-amber/10 border border-toneek-amber/20 rounded-xl p-4">
+                    <p className="text-toneek-brown dark:text-[#c9a05a] text-xs leading-relaxed font-medium">
                         <strong>Confirmation hours: 8am – 10pm daily.</strong> Transfers confirmed within 2 hours.
                         Transfers after 10pm confirmed from 8am the next day.
                     </p>
                 </div>
 
                 {/* ── Timer ── */}
-                <div style={{ padding: '0.75rem 1.5rem 0' }}>
-                    <p style={{ fontSize: '0.82rem', color: expired ? '#e05555' : '#888' }}>
+                <div className="px-6 pt-5 text-center">
+                    <p className={`text-[11px] font-bold uppercase tracking-widest ${expired ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}`}>
                         {expired
                             ? '⚠️ Session expired — generate a new session below'
                             : `Session expires in ${formatTime(timeLeft)}`}
@@ -268,78 +225,49 @@ export default function BankTransferModal({
                 </div>
 
                 {/* ── CTA area ── */}
-                <div style={{ padding: '1rem 1.5rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                <div className="p-6 flex flex-col gap-3">
                     {claimError && (
-                        <p style={{ color: '#e05555', fontSize: '0.85rem', background: 'rgba(224,85,85,0.08)', border: '1px solid rgba(224,85,85,0.2)', borderRadius: '6px', padding: '0.65rem 0.85rem' }}>
+                        <p className="text-red-600 dark:text-red-400 text-xs font-medium bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 rounded-lg p-3 text-center">
                             {claimError}
                         </p>
                     )}
 
-                    {/* Active (not claimed, not expired) */}
                     {!claimed && !expired && (
                         <button
                             id="modal-claim-sent"
                             onClick={handleClaimSent}
                             disabled={claiming}
-                            style={{
-                                width: '100%', padding: '1rem',
-                                background: 'transparent',
-                                border: '2px solid #2a2a2a',
-                                borderRadius: '10px',
-                                color: '#f5f5f5',
-                                fontWeight: 600,
-                                fontSize: '0.95rem',
-                                cursor: claiming ? 'not-allowed' : 'pointer',
-                                opacity: claiming ? 0.6 : 1,
-                                transition: 'border-color 0.2s, color 0.2s',
-                            }}
-                            onMouseEnter={e => { if (!claiming) (e.currentTarget as HTMLButtonElement).style.borderColor = '#4caf82' }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#2a2a2a' }}
+                            className={`w-full py-4 rounded-xl font-bold text-sm transition-all border-2 
+                                ${claiming 
+                                    ? 'bg-gray-100 dark:bg-[#222] border-gray-200 dark:border-[#333] text-gray-400 cursor-not-allowed' 
+                                    : 'bg-white dark:bg-[#1A1210] border-gray-900 dark:border-gray-100 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-[#222]'
+                                }
+                            `}
                         >
                             {claiming ? 'Registering…' : "I've sent the money"}
                         </button>
                     )}
 
-                    {/* Waiting for confirmation */}
                     {claimed && (
-                        <div style={{
-                            width: '100%', padding: '1rem',
-                            background: 'rgba(76,175,130,0.08)',
-                            border: '2px solid rgba(76,175,130,0.3)',
-                            borderRadius: '10px', textAlign: 'center',
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', marginBottom: '0.4rem' }}>
-                                <div style={{
-                                    width: '16px', height: '16px',
-                                    border: '2px solid #4caf82',
-                                    borderTopColor: 'transparent',
-                                    borderRadius: '50%',
-                                    animation: 'spin 0.8s linear infinite',
-                                }} />
-                                <span style={{ color: '#4caf82', fontWeight: 600, fontSize: '0.92rem' }}>
+                        <div className="w-full p-4 bg-green-50 dark:bg-green-900/10 border-2 border-green-200 dark:border-green-900/30 rounded-xl text-center mt-2">
+                            <div className="flex items-center justify-center gap-3 mb-2">
+                                <div className="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+                                <span className="text-green-700 dark:text-green-400 font-bold text-[13px] uppercase tracking-wider">
                                     Waiting for confirmation…
                                 </span>
                             </div>
-                            <p style={{ color: '#4caf82', fontSize: '0.78rem', opacity: 0.8 }}>
-                                You'll be redirected automatically once confirmed
+                            <p className="text-green-600/80 dark:text-green-400/80 text-[10px] uppercase font-bold tracking-widest mt-1">
+                                You'll be redirected automatically
                             </p>
                         </div>
                     )}
 
-                    {/* Expired and not yet claimed */}
                     {expired && !claimed && (
                         <>
                             <button
                                 id="modal-regenerate"
                                 onClick={handleRegenerate}
-                                style={{
-                                    width: '100%', padding: '0.9rem',
-                                    background: 'transparent',
-                                    border: '2px solid #2a2a2a',
-                                    borderRadius: '10px',
-                                    color: '#f5f5f5', fontWeight: 600,
-                                    fontSize: '0.9rem', cursor: 'pointer',
-                                }}
+                                className="w-full py-3.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold text-sm rounded-xl border-transparent border-2 hover:opacity-90 transition-opacity"
                             >
                                 Generate new session
                             </button>
@@ -347,14 +275,7 @@ export default function BankTransferModal({
                                 id="modal-already-sent"
                                 onClick={handleClaimSent}
                                 disabled={claiming}
-                                style={{
-                                    width: '100%', padding: '0.9rem',
-                                    background: 'transparent',
-                                    border: '2px solid rgba(212,165,116,0.4)',
-                                    borderRadius: '10px',
-                                    color: '#d4a574', fontWeight: 600,
-                                    fontSize: '0.9rem', cursor: 'pointer',
-                                }}
+                                className="w-full py-3.5 bg-transparent border-2 border-toneek-amber text-toneek-amber font-bold text-sm rounded-xl hover:bg-toneek-amber/10 transition-colors"
                             >
                                 I already sent the money
                             </button>
@@ -362,8 +283,6 @@ export default function BankTransferModal({
                     )}
                 </div>
 
-                {/* Spinner keyframe */}
-                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             </div>
         </div>
     )
