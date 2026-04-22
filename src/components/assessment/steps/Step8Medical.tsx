@@ -35,7 +35,6 @@ export default function Step8Medical() {
     const canProceed = pregnant_or_breastfeeding !== null && hormonal_contraception !== null && selected_meds.length > 0
 
     return (
-    return (
         <div className="w-full">
             <h2 className="text-gray-900 dark:text-gray-100 font-bold text-xl mb-2">A few health questions</h2>
             <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">This helps us make sure your formula is safe and appropriate for you.</p>

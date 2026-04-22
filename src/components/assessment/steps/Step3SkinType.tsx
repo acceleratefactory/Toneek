@@ -17,7 +17,6 @@ export default function Step3SkinType() {
     const { skin_type, setField, nextStep, prevStep } = useAssessmentStore()
 
     return (
-    return (
         <div className="w-full">
             <h2 className="text-gray-900 dark:text-gray-100 font-bold text-xl mb-2">By midday, how does your skin usually feel without any products on?</h2>
             <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">Think about a typical day — not your best or worst skin day.</p>

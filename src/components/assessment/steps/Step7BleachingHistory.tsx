@@ -35,7 +35,6 @@ export default function Step7BleachingHistory() {
     const canProceed = bleaching_history && (!showFollowUp || selected_effects.length > 0)
 
     return (
-    return (
         <div className="w-full">
             <h2 className="text-gray-900 dark:text-gray-100 font-bold text-xl mb-2">Have you ever used skin-lightening or toning products?</h2>
             <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">

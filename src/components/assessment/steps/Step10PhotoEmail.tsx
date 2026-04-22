@@ -80,7 +80,6 @@ export default function Step10PhotoEmail() {
     }
 
     return (
-    return (
         <div className="w-full">
             <h2 className="text-gray-900 dark:text-gray-100 font-bold text-xl mb-6">Almost done — where should we send your formula?</h2>
 

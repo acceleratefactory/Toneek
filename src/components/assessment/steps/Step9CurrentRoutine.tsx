@@ -41,7 +41,6 @@ export default function Step9CurrentRoutine() {
     const canProceed = current_product_count && routine_expectation
 
     return (
-    return (
         <div className="w-full">
             <h2 className="text-gray-900 dark:text-gray-100 font-bold text-xl mb-6">Tell us about your current skincare routine</h2>
 

@@ -31,7 +31,6 @@ export default function Step4SecondaryConcerns() {
     }
 
     return (
-    return (
         <div className="w-full">
             <h2 className="text-gray-900 dark:text-gray-100 font-bold text-xl mb-2">Any other concerns? Choose up to 3.</h2>
             <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">These will not change your formula but help us personalise your explanation.</p>
