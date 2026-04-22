@@ -6,7 +6,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import DashboardNav from '@/components/dashboard/DashboardNav'
+import DashboardShell from '@/components/dashboard/DashboardShell'
 import WelcomeDismiss from '@/components/dashboard/WelcomeDismiss'
 import AuthRefresher from '@/components/dashboard/AuthRefresher'
 
@@ -103,54 +103,40 @@ export default async function DashboardLayout({
     const isCancelled = profile?.subscription_status === 'cancelled'
 
     return (
-        <div style={{
-            minHeight: '100vh',
-            background: '#0f0f0f',
-            color: '#f5f5f5',
-            display: 'flex',
-            flexDirection: 'column',
-        }}>
+        <>
             {/* Client-side token auto-refresh — replaces middleware */}
             <AuthRefresher />
-            {/* Welcome banner — only on ?welcome=true */}
-            {showWelcome && (
-                <WelcomeBanner name={profile?.full_name} />
-            )}
 
-            {/* Cancelled subscription notice */}
-            {isCancelled && (
-                <div style={{
-                    background: 'rgba(224,85,85,0.08)',
-                    border: '1px solid rgba(224,85,85,0.25)',
-                    padding: '0.85rem 1.5rem',
-                    textAlign: 'center',
-                }}>
-                    <p style={{ color: '#e05555', fontSize: '0.88rem', margin: 0 }}>
-                        Your subscription has been cancelled.{' '}
-                        <a href="/subscribe" style={{ color: '#d4a574', textDecoration: 'underline' }}>
-                            Reactivate to continue your formula
-                        </a>
-                    </p>
-                </div>
-            )}
+            <DashboardShell userProfile={profile}>
+                {/* Welcome banner — only on ?welcome=true */}
+                {showWelcome && (
+                    <div className="mb-6">
+                        <WelcomeBanner name={profile?.full_name} />
+                    </div>
+                )}
 
-            <div style={{ display: 'flex', flex: 1 }}>
-                {/* Desktop sidebar */}
-                <aside className="dashboard-sidebar">
-                    <DashboardNav variant="sidebar" />
-                </aside>
+                {/* Cancelled subscription notice */}
+                {isCancelled && (
+                    <div style={{
+                        background: 'rgba(224,85,85,0.08)',
+                        border: '1px solid rgba(224,85,85,0.25)',
+                        padding: '0.85rem 1.5rem',
+                        textAlign: 'center',
+                        marginBottom: '1.5rem',
+                        borderRadius: '0.5rem'
+                    }}>
+                        <p style={{ color: '#e05555', fontSize: '0.88rem', margin: 0 }}>
+                            Your subscription has been cancelled.{' '}
+                            <a href="/subscribe" style={{ color: '#d4a574', textDecoration: 'underline' }}>
+                                Reactivate to continue your formula
+                            </a>
+                        </p>
+                    </div>
+                )}
 
-                {/* Main content */}
-                <main style={{ flex: 1, padding: '1.5rem', maxWidth: '760px', margin: '0 auto', width: '100%' }}>
-                    {children}
-                </main>
-            </div>
+                {children}
 
-            {/* Mobile bottom nav */}
-            <DashboardNav variant="bottom" />
-
-            {/* Bottom nav spacer on mobile */}
-            <div className="dashboard-bottom-spacer" style={{ height: '72px' }} aria-hidden="true" />
-        </div>
+            </DashboardShell>
+        </>
     )
 }
