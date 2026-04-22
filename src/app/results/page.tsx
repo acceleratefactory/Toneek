@@ -55,35 +55,36 @@ export default async function ResultsPage({
         ROUTINE_MESSAGES.two_to_three
 
     return (
-        <main className="results-page">
-            <div className="results-container">
+        <main className="min-h-screen bg-[#FCFAF8] dark:bg-[#1A1210] py-12 px-4 sm:px-6 font-sans">
+            <div className="max-w-3xl mx-auto space-y-6">
                 {/* Header */}
-                <div className="results-header">
-                    <span className="brand">Toneek</span>
-                    <h1 className="results-title">Your personalised formula is ready</h1>
+                <div className="flex flex-col items-center text-center mb-10">
+                    <img src="/logo.svg" alt="Toneek" className="h-12 w-auto mb-4 dark:hidden" />
+                    <img src="/logo-dark.svg" alt="Toneek" className="h-12 w-auto mb-4 hidden dark:block" />
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Your personalised formula is ready</h1>
                 </div>
 
                 {/* Skin OS Score */}
-                <section className="score-section" aria-label="Skin OS Score">
-                    <p className="score-label">Your Skin OS Score</p>
-                    <p className="score-value" id="skin-os-score">{assessment.skin_os_score ?? '—'}</p>
-                    <p className="score-hint">out of 100</p>
+                <section className="bg-white dark:bg-[#222] border border-gray-200 dark:border-[#333] rounded-2xl p-10 text-center shadow-sm">
+                    <p className="text-gray-500 dark:text-gray-400 text-[10px] font-bold uppercase tracking-[0.15em] mb-3">Your Skin OS Score</p>
+                    <p className="text-7xl font-black tracking-tighter text-toneek-amber">{assessment.skin_os_score ?? '—'}</p>
+                    <p className="text-gray-400 text-[10px] uppercase font-bold tracking-[0.1em] mt-2">out of 100</p>
                 </section>
 
                 {/* Formula */}
-                <section className="formula-section" aria-label="Formula details">
-                    <p className="formula-code-label">Formula</p>
-                    <p className="formula-code" id="formula-code">{assessment.formula_code}</p>
+                <section className="bg-white dark:bg-[#222] border border-gray-200 dark:border-[#333] rounded-2xl p-8 shadow-sm">
+                    <p className="text-gray-500 dark:text-gray-400 text-[10px] font-bold uppercase tracking-[0.15em] mb-2">Formula</p>
+                    <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 font-mono tracking-tight">{assessment.formula_code}</p>
                     {formula?.profile_description && (
-                        <p className="formula-description">{formula.profile_description}</p>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm mt-3 leading-relaxed">{formula.profile_description}</p>
                     )}
                 </section>
 
                 {/* Climate note */}
                 {assessment.climate_zone && (
-                    <section className="climate-section">
-                        <p className="section-label">Formulated for</p>
-                        <p className="climate-value">
+                    <section className="bg-white dark:bg-[#222] border border-gray-200 dark:border-[#333] rounded-2xl p-8 shadow-sm">
+                        <p className="text-gray-500 dark:text-gray-400 text-[10px] font-bold uppercase tracking-[0.15em] mb-2">Formulated for</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                             {CLIMATE_LABELS[assessment.climate_zone] ?? assessment.climate_zone}
                         </p>
                     </section>
@@ -91,16 +92,16 @@ export default async function ResultsPage({
 
                 {/* Active ingredients */}
                 {actives.length > 0 && (
-                    <section className="actives-section" aria-label="Active ingredients">
-                        <p className="section-label">Why this formula for you</p>
-                        <div className="actives-list">
+                    <section className="bg-white dark:bg-[#222] border border-gray-200 dark:border-[#333] rounded-2xl p-8 shadow-sm">
+                        <p className="text-gray-500 dark:text-gray-400 text-[10px] font-bold uppercase tracking-[0.15em] mb-6">Why this formula for you</p>
+                        <div className="flex flex-col gap-3">
                             {actives.map((active: any, i: number) => (
-                                <div key={i} className="active-card">
-                                    <div className="active-header">
-                                        <span className="active-name">{active.name}</span>
-                                        <span className="active-concentration">{active.concentration}{active.unit}</span>
+                                <div key={i} className="bg-toneek-amber/10 dark:bg-toneek-amber/5 border-l-4 border-toneek-amber p-4 rounded-r-lg">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="font-bold text-gray-900 dark:text-gray-100 text-sm">{active.name}</span>
+                                        <span className="text-xs font-bold text-toneek-brown dark:text-toneek-amber">{active.concentration}{active.unit}</span>
                                     </div>
-                                    <p className="active-rationale">{active.rationale}</p>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400">{active.rationale}</p>
                                 </div>
                             ))}
                         </div>
@@ -109,25 +110,28 @@ export default async function ResultsPage({
 
                 {/* Timeline */}
                 {formula?.outcome_timeline_weeks && (
-                    <section className="timeline-section" aria-label="Expected timeline">
-                        <p className="section-label">What to expect</p>
-                        <div className="timeline">
+                    <section className="bg-white dark:bg-[#222] border border-gray-200 dark:border-[#333] rounded-2xl p-8 shadow-sm">
+                        <p className="text-gray-500 dark:text-gray-400 text-[10px] font-bold uppercase tracking-[0.15em] mb-6">What to expect</p>
+                        <div className="flex flex-col gap-4 relative before:content-[''] before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-px before:bg-gray-200 dark:before:bg-[#333]">
                             {formula.week_2_expectation && (
-                                <div className="timeline-item">
-                                    <span className="week-label">Week 2</span>
-                                    <span className="week-text">{formula.week_2_expectation}</span>
+                                <div className="relative pl-8">
+                                    <div className="absolute left-[5px] top-1.5 w-2 h-2 rounded-full bg-toneek-amber"></div>
+                                    <span className="block text-xs font-bold text-gray-900 dark:text-gray-100 mb-1">Week 2</span>
+                                    <span className="block text-sm text-gray-600 dark:text-gray-400">{formula.week_2_expectation}</span>
                                 </div>
                             )}
                             {formula.week_4_expectation && (
-                                <div className="timeline-item">
-                                    <span className="week-label">Week 4</span>
-                                    <span className="week-text">{formula.week_4_expectation}</span>
+                                <div className="relative pl-8">
+                                    <div className="absolute left-[5px] top-1.5 w-2 h-2 rounded-full bg-toneek-amber"></div>
+                                    <span className="block text-xs font-bold text-gray-900 dark:text-gray-100 mb-1">Week 4</span>
+                                    <span className="block text-sm text-gray-600 dark:text-gray-400">{formula.week_4_expectation}</span>
                                 </div>
                             )}
                             {formula.week_8_expectation && (
-                                <div className="timeline-item">
-                                    <span className="week-label">Week {formula.outcome_timeline_weeks}</span>
-                                    <span className="week-text">{formula.week_8_expectation}</span>
+                                <div className="relative pl-8">
+                                    <div className="absolute left-[5px] top-1.5 w-2 h-2 rounded-full bg-toneek-amber"></div>
+                                    <span className="block text-xs font-bold text-gray-900 dark:text-gray-100 mb-1">Week {formula.outcome_timeline_weeks}</span>
+                                    <span className="block text-sm text-gray-600 dark:text-gray-400">{formula.week_8_expectation}</span>
                                 </div>
                             )}
                         </div>
@@ -135,16 +139,16 @@ export default async function ResultsPage({
                 )}
 
                 {/* Routine instruction */}
-                <section className="routine-section" aria-label="How to use">
-                    <p className="section-label">How to use your formula</p>
-                    <p className="routine-message">{routineMessage}</p>
+                <section className="bg-white dark:bg-[#222] border border-gray-200 dark:border-[#333] rounded-2xl p-8 shadow-sm">
+                    <p className="text-gray-500 dark:text-gray-400 text-[10px] font-bold uppercase tracking-[0.15em] mb-2">How to use your formula</p>
+                    <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed font-medium">{routineMessage}</p>
                 </section>
 
                 {/* Isotretinoin warning */}
                 {assessment.isotretinoin_flag && (
-                    <section className="warning-section" role="alert">
-                        <p className="warning-title">⚠ Isotretinoin note</p>
-                        <p className="warning-text">
+                    <section className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/20 rounded-2xl p-6 shadow-sm">
+                        <p className="text-red-700 dark:text-red-400 font-bold text-sm mb-2">⚠ Isotretinoin note</p>
+                        <p className="text-red-600 dark:text-red-300 text-xs leading-relaxed">
                             Because you are on isotretinoin, your formula has been adjusted to exclude any exfoliating acids.
                             Your formula is safe to use alongside your prescription.
                             Always confirm with your prescribing doctor.
@@ -153,12 +157,12 @@ export default async function ResultsPage({
                 )}
 
                 {/* CTA */}
-                <section className="cta-section">
-                    <p className="cta-label">Ready to get your formula made?</p>
-                    <a id="subscribe-cta" href={`/subscribe?assessment_id=${assessment.id}`} className="btn-primary">
+                <section className="bg-white dark:bg-[#222] border border-gray-200 dark:border-[#333] rounded-2xl p-10 text-center shadow-sm">
+                    <p className="text-gray-900 dark:text-gray-100 font-bold text-lg mb-6">Ready to get your formula made?</p>
+                    <a id="subscribe-cta" href={`/subscribe?assessment_id=${assessment.id}`} className="inline-block bg-[#3A2820] hover:bg-[#2A1D17] text-white font-bold py-3.5 mx-auto px-8 w-full sm:w-auto rounded-lg transition-colors">
                         Subscribe and get your formula
                     </a>
-                    <p className="cta-hint">
+                    <p className="text-gray-400 text-[11px] mt-4 max-w-sm mx-auto">
                         Payment by bank transfer only. Your formula is made to order once payment is confirmed.
                     </p>
                 </section>

@@ -44,30 +44,22 @@ export default async function SubscribePage({
     }
 
     return (
-        <main className="assessment-page">
-            <div className="assessment-container" style={{ maxWidth: '640px' }}>
-                <div className="assessment-header">
-                    <span className="brand">Toneek</span>
-                    <p className="tagline">Choose the plan that works for you</p>
+        <main className="min-h-screen bg-[#FCFAF8] dark:bg-[#1A1210] py-12 px-4 sm:px-6 font-sans">
+            <div className="max-w-3xl mx-auto space-y-6">
+                <div className="flex flex-col items-center text-center mb-8">
+                    <img src="/logo.svg" alt="Toneek" className="h-12 w-auto mb-4 dark:hidden" />
+                    <img src="/logo-dark.svg" alt="Toneek" className="h-12 w-auto mb-4 hidden dark:block" />
+                    <p className="text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest text-[10px]">Choose the plan that works for you</p>
                 </div>
 
-                <div style={{
-                    background: 'var(--surface)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '10px',
-                    padding: '1rem 1.25rem',
-                    marginBottom: '1.5rem',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                }}>
+                <div className="bg-white dark:bg-[#222] border border-gray-200 dark:border-[#333] rounded-2xl p-6 shadow-sm flex justify-between items-center">
                     <div>
-                        <p style={{ color: 'var(--muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Your formula</p>
-                        <p style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--foreground)' }}>{assessment.formula_code}</p>
+                        <p className="text-gray-500 dark:text-gray-400 text-[10px] font-bold uppercase tracking-[0.15em] mb-1">Your formula</p>
+                        <p className="font-bold text-lg text-gray-900 dark:text-gray-100 font-mono tracking-tight">{assessment.formula_code}</p>
                     </div>
-                    <div style={{ textAlign: 'right' }}>
-                        <p style={{ color: 'var(--muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Skin OS Score</p>
-                        <p style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--accent)' }}>{assessment.skin_os_score}</p>
+                    <div className="text-right">
+                        <p className="text-gray-500 dark:text-gray-400 text-[10px] font-bold uppercase tracking-[0.15em] mb-1">Skin OS Score</p>
+                        <p className="font-black text-2xl tracking-tighter text-toneek-amber">{assessment.skin_os_score}</p>
                     </div>
                 </div>
 
@@ -78,7 +70,7 @@ export default async function SubscribePage({
                     plans={plansData || []}
                 />
 
-                <p style={{ textAlign: 'center', color: 'var(--muted)', fontSize: '0.8rem', marginTop: '1.5rem', lineHeight: '1.6' }}>
+                <p className="text-center text-gray-400 dark:text-gray-500 text-[11px] mt-6 max-w-md mx-auto leading-relaxed font-medium">
                     Payment by bank transfer only. Your formula is made to order and dispatched within 5–7 business days of payment confirmation.
                 </p>
             </div>
