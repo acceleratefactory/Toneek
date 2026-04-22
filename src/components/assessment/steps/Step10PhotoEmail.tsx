@@ -80,30 +80,35 @@ export default function Step10PhotoEmail() {
     }
 
     return (
-        <div className="step step-10">
-            <h2 className="step-title">Almost done — where should we send your formula?</h2>
+    return (
+        <div className="w-full">
+            <h2 className="text-gray-900 dark:text-gray-100 font-bold text-xl mb-6">Almost done — where should we send your formula?</h2>
 
             {/* Email */}
-            <div className="field-group">
-                <label htmlFor="email">Your email address</label>
+            <div className="mb-6">
+                <label htmlFor="email" className="block text-gray-900 dark:text-gray-100 font-bold mb-2 text-sm">Your email address</label>
                 <input
                     id="email"
                     type="email"
                     value={email}
                     onChange={e => setField('email', e.target.value)}
                     placeholder="you@example.com"
-                    className="text-input"
+                    className="w-full bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-[#2a2a2a] rounded-lg p-3 text-gray-900 dark:text-gray-100 text-sm outline-none focus:border-toneek-amber transition-colors"
                 />
             </div>
 
             {/* Photo — optional, incentivised */}
-            <div className="field-group photo-optional">
-                <label className="question-label">Add a photo of your skin <span className="badge">Optional</span></label>
-                <p className="hint">
+            {/* Photo — optional, incentivised */}
+            <div className="mb-6">
+                <label className="block text-gray-900 dark:text-gray-100 font-bold mb-1 text-sm">
+                    Add a photo of your skin
+                    <span className="ml-2 inline-block bg-gray-100 dark:bg-[#2a2a2a] text-gray-600 dark:text-gray-400 text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded border border-gray-200 dark:border-[#333]">Optional</span>
+                </label>
+                <p className="text-gray-500 dark:text-gray-400 text-xs mb-3">
                     A photo helps us personalise your formula rationale and improves your confidence score.
                     It is stored securely and never shared.
                 </p>
-                <label htmlFor="photo-upload" className="photo-upload-label">
+                <label htmlFor="photo-upload" className="w-full bg-gray-50 dark:bg-[#222] border-2 border-dashed border-gray-300 dark:border-[#2a2a2a] rounded-lg p-6 text-center text-gray-500 dark:text-gray-400 cursor-pointer hover:border-toneek-amber dark:hover:border-toneek-amber hover:text-gray-900 dark:hover:text-gray-100 transition-colors block text-sm font-medium">
                     {store.photo_url ? '✓ Photo added' : 'Upload a photo'}
                     <input
                         id="photo-upload"
@@ -120,27 +125,32 @@ export default function Step10PhotoEmail() {
                     />
                 </label>
                 {store.photo_url && (
-                    <label className="option-btn option-selected" style={{ marginTop: '0.5rem' }}>
+                    <label className="mt-3 flex items-start gap-2 p-3 text-sm rounded-lg bg-toneek-amber/10 border-2 border-toneek-amber text-toneek-amber cursor-pointer">
                         <input
                             type="checkbox"
                             checked={photo_consent}
                             onChange={e => setField('photo_consent', e.target.checked)}
-                            style={{ marginRight: '0.5rem' }}
+                            className="mt-0.5"
                         />
-                        I consent to Toneek storing my photo for formula personalisation
+                        <span className="font-medium">I consent to Toneek storing my photo for formula personalisation</span>
                     </label>
                 )}
             </div>
 
             {/* How did you hear */}
-            <div className="field-group">
-                <label className="question-label">How did you hear about Toneek?</label>
-                <div className="option-list option-list-compact">
+            {/* How did you hear */}
+            <div className="mb-6 border-t border-gray-200 dark:border-[#2a2a2a] pt-6">
+                <label className="block text-gray-900 dark:text-gray-100 font-bold mb-2 text-sm">How did you hear about Toneek?</label>
+                <div className="grid grid-cols-2 gap-2">
                     {HOW_DID_YOU_HEAR_OPTIONS.map(opt => (
                         <button
                             key={opt.id}
                             id={`heard-${opt.id}`}
-                            className={`option-btn ${how_did_you_hear === opt.id ? 'option-selected' : ''}`}
+                            className={`text-left w-full p-3 rounded-lg border-2 transition-all font-medium text-xs outline-none ${
+                                how_did_you_hear === opt.id
+                                    ? 'bg-toneek-amber/10 border-toneek-amber text-toneek-amber'
+                                    : 'bg-gray-50 dark:bg-[#222] border-transparent text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                            }`}
                             onClick={() => setField('how_did_you_hear', opt.id)}
                         >
                             {opt.label}
@@ -149,13 +159,13 @@ export default function Step10PhotoEmail() {
                 </div>
             </div>
 
-            {error && <p className="error-message">{error}</p>}
+            {error && <p className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 rounded-lg p-3 text-sm mt-4 mb-2">{error}</p>}
 
-            <div className="step-nav">
-                <button id="step10-back" className="btn-secondary" onClick={prevStep} disabled={submitting}>Back</button>
+            <div className="flex gap-3 mt-8">
+                <button id="step10-back" className="w-[100px] py-3 rounded-lg font-bold text-gray-600 dark:text-gray-400 bg-transparent border border-gray-300 dark:border-[#2a2a2a] hover:bg-gray-50 dark:hover:bg-[#2a2a2a]/50 transition-colors disabled:opacity-50" onClick={prevStep} disabled={submitting}>Back</button>
                 <button
                     id="step10-submit"
-                    className="btn-primary btn-submit"
+                    className="flex-1 py-3 rounded-lg font-bold text-[#000000] bg-toneek-amber hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={!canSubmit || submitting}
                     onClick={handleSubmit}
                 >

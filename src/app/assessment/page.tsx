@@ -6,11 +6,11 @@ import AssessmentForm from '@/components/assessment/AssessmentForm'
 
 export default function AssessmentPage() {
     return (
-        <main className="assessment-page">
-            <div className="assessment-container">
-                <div className="assessment-header">
-                    <span className="brand">Toneek</span>
-                    <span className="tagline">Skin intelligence for melanin-rich skin</span>
+        <main className="min-h-screen font-sans bg-toneek-cream dark:bg-[#1A1210] flex items-start justify-center px-4 py-8 sm:py-16 transition-colors">
+            <div className="w-full max-w-[600px]">
+                <div className="text-center mb-10">
+                    <span className="block text-2xl font-bold text-toneek-amber tracking-tight mb-1">Toneek</span>
+                    <span className="text-gray-500 dark:text-gray-400 text-sm">Skin intelligence for melanin-rich skin</span>
                 </div>
                 <AssessmentForm />
             </div>

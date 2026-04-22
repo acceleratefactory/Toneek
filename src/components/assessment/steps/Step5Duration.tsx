@@ -24,44 +24,52 @@ export default function Step5Duration() {
     const canProceed = concern_duration && concern_trajectory
 
     return (
-        <div className="step step-5">
-            <h2 className="step-title">How long have you had this concern?</h2>
+        <div className="w-full">
+            <h2 className="text-gray-900 dark:text-gray-100 font-bold text-xl mb-6">How long have you had this concern?</h2>
 
-            <div className="option-list">
+            <div className="flex flex-col gap-2 mb-6">
                 {DURATIONS.map(d => (
                     <button
                         key={d.id}
                         id={`duration-${d.id}`}
-                        className={`option-btn option-btn-large ${concern_duration === d.id ? 'option-selected' : ''}`}
+                        className={`text-left w-full p-4 rounded-xl border-2 transition-all outline-none flex flex-col gap-1 ${
+                            concern_duration === d.id
+                                ? 'bg-toneek-amber/10 border-toneek-amber'
+                                : 'bg-gray-50 dark:bg-[#222] border-transparent hover:border-gray-300 dark:hover:border-gray-600'
+                        }`}
                         onClick={() => setField('concern_duration', d.id)}
                     >
-                        <span className="option-label">{d.label}</span>
-                        <span className="option-desc">{d.description}</span>
+                        <span className={`font-bold text-sm ${concern_duration === d.id ? 'text-toneek-amber' : 'text-gray-900 dark:text-gray-100'}`}>{d.label}</span>
+                        <span className="text-gray-500 dark:text-gray-400 text-xs">{d.description}</span>
                     </button>
                 ))}
             </div>
 
             {concern_duration && (
-                <>
-                    <h2 className="step-title" style={{ marginTop: '2rem' }}>And over that time, has it been…</h2>
-                    <div className="option-list">
+                <div className="mt-8 border-t border-gray-200 dark:border-[#2a2a2a] pt-6">
+                    <h2 className="text-gray-900 dark:text-gray-100 font-bold text-xl mb-6">And over that time, has it been…</h2>
+                    <div className="flex flex-col gap-2">
                         {TRAJECTORIES.map(t => (
                             <button
                                 key={t.id}
                                 id={`trajectory-${t.id}`}
-                                className={`option-btn ${concern_trajectory === t.id ? 'option-selected' : ''}`}
+                                className={`text-left w-full p-3.5 rounded-lg border-2 transition-all font-medium text-sm outline-none ${
+                                    concern_trajectory === t.id
+                                        ? 'bg-toneek-amber/10 border-toneek-amber text-toneek-amber'
+                                        : 'bg-gray-50 dark:bg-[#222] border-transparent text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                                }`}
                                 onClick={() => setField('concern_trajectory', t.id)}
                             >
                                 {t.label}
                             </button>
                         ))}
                     </div>
-                </>
+                </div>
             )}
 
-            <div className="step-nav">
-                <button id="step5-back" className="btn-secondary" onClick={prevStep}>Back</button>
-                <button id="step5-next" className="btn-primary" disabled={!canProceed} onClick={nextStep}>Continue</button>
+            <div className="flex gap-3 mt-8">
+                <button id="step5-back" className="w-[120px] py-3 rounded-lg font-bold text-gray-600 dark:text-gray-400 bg-transparent border border-gray-300 dark:border-[#2a2a2a] hover:bg-gray-50 dark:hover:bg-[#2a2a2a]/50 transition-colors" onClick={prevStep}>Back</button>
+                <button id="step5-next" className="flex-1 py-3 rounded-lg font-bold text-[#000000] bg-toneek-amber hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed" disabled={!canProceed} onClick={nextStep}>Continue</button>
             </div>
         </div>
     )

@@ -7,12 +7,12 @@ import { useState } from 'react'
 import { useAssessmentStore } from '@/store/assessmentStore'
 
 const CLIMATE_PROFILES = [
-    { id: 'humid_tropical', label: 'Hot and humid all year', description: 'Like Lagos, Accra, Miami, Kingston', icon: '🌴' },
-    { id: 'semi_arid', label: 'Hot and dry', description: 'Like Abuja, Dubai, Johannesburg (dry season)', icon: '☀️' },
-    { id: 'temperate_maritime', label: 'Mild and damp, central heating in winter', description: 'Like London, Amsterdam, Dublin', icon: '🌧️' },
-    { id: 'cold_continental', label: 'Cold winters, humid summers', description: 'Like New York, Chicago, Toronto', icon: '❄️' },
-    { id: 'mediterranean', label: 'Hot dry summers, mild wet winters', description: 'Like Cape Town, Los Angeles, Sydney', icon: '⛅' },
-    { id: 'equatorial', label: 'Extremely hot and humid all year', description: 'Like Douala, Kinshasa, Freetown', icon: '🌿' },
+    { id: 'humid_tropical', label: 'Hot and humid all year', description: 'Like Lagos, Accra, Miami, Kingston' },
+    { id: 'semi_arid', label: 'Hot and dry', description: 'Like Abuja, Dubai, Johannesburg (dry season)' },
+    { id: 'temperate_maritime', label: 'Mild and damp, central heating in winter', description: 'Like London, Amsterdam, Dublin' },
+    { id: 'cold_continental', label: 'Cold winters, humid summers', description: 'Like New York, Chicago, Toronto' },
+    { id: 'mediterranean', label: 'Hot dry summers, mild wet winters', description: 'Like Cape Town, Los Angeles, Sydney' },
+    { id: 'equatorial', label: 'Extremely hot and humid all year', description: 'Like Douala, Kinshasa, Freetown' },
 ]
 
 const YEARS_OPTIONS = [
@@ -68,24 +68,24 @@ export default function Step1Location() {
     const canProceed = country_of_residence && city_of_residence && climate_zone && years_in_current_location
 
     return (
-        <div className="step step-1">
-            <h2 className="step-title">Where do you currently live?</h2>
-            <p className="step-subtitle">Your climate directly affects your skin and shapes your formula.</p>
+        <div className="w-full max-w-full">
+            <h2 className="text-gray-900 dark:text-gray-100 font-bold text-xl mb-2">Where do you currently live?</h2>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">Your climate directly affects your skin and shapes your formula.</p>
 
-            <div className="field-group">
-                <label htmlFor="country">Country</label>
+            <div className="mb-6">
+                <label htmlFor="country" className="block text-gray-900 dark:text-gray-100 font-bold mb-2 text-sm">Country</label>
                 <input
                     id="country"
                     type="text"
                     value={country_of_residence}
                     onChange={e => setField('country_of_residence', e.target.value)}
                     placeholder="e.g. Nigeria, United Kingdom"
-                    className="text-input"
+                    className="w-full bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-[#2a2a2a] rounded-lg p-3 text-gray-900 dark:text-gray-100 text-sm outline-none focus:border-toneek-amber transition-colors"
                 />
             </div>
 
-            <div className="field-group">
-                <label htmlFor="city">City</label>
+            <div className="mb-6">
+                <label htmlFor="city" className="block text-gray-900 dark:text-gray-100 font-bold mb-2 text-sm">City</label>
                 <input
                     id="city"
                     type="text"
@@ -93,42 +93,49 @@ export default function Step1Location() {
                     onChange={e => setField('city_of_residence', e.target.value)}
                     onBlur={handleCityBlur}
                     placeholder="e.g. Lagos, London"
-                    className="text-input"
+                    className="w-full bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-[#2a2a2a] rounded-lg p-3 text-gray-900 dark:text-gray-100 text-sm outline-none focus:border-toneek-amber transition-colors"
                 />
-                {resolving && <span className="hint">Resolving climate zone…</span>}
+                {resolving && <span className="block text-gray-400 text-xs mt-2">Resolving climate zone…</span>}
                 {climate_zone && !resolving && (
-                    <span className="hint success">Climate zone detected ✓</span>
+                    <span className="block text-green-600 dark:text-green-500 text-xs mt-2 font-medium">Climate zone detected ✓</span>
                 )}
             </div>
 
             {cityNotFound && (
-                <div className="climate-manual">
-                    <p className="step-subtitle">We could not find your city. Which best describes your climate?</p>
-                    <div className="card-grid">
+                <div className="mb-6">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">We could not find your city. Which best describes your climate?</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {CLIMATE_PROFILES.map(profile => (
                             <button
                                 key={profile.id}
                                 id={`climate-${profile.id}`}
-                                className={`card ${climate_zone === profile.id ? 'card-selected' : ''}`}
+                                className={`text-left w-full p-4 rounded-xl border-2 transition-all outline-none flex flex-col gap-1 ${
+                                    climate_zone === profile.id
+                                        ? 'bg-toneek-amber/10 border-toneek-amber'
+                                        : 'bg-gray-50 dark:bg-[#222] border-transparent hover:border-gray-300 dark:hover:border-gray-600'
+                                }`}
                                 onClick={() => setField('climate_zone', profile.id)}
                             >
-                                <span className="card-icon">{profile.icon}</span>
-                                <span className="card-label">{profile.label}</span>
-                                <span className="card-desc">{profile.description}</span>
+                                <span className={`font-bold text-sm ${climate_zone === profile.id ? 'text-toneek-amber' : 'text-gray-900 dark:text-gray-100'}`}>{profile.label}</span>
+                                <span className="text-gray-500 dark:text-gray-400 text-xs">{profile.description}</span>
                             </button>
                         ))}
                     </div>
                 </div>
             )}
 
-            <div className="field-group">
-                <label>How long have you lived there?</label>
-                <div className="option-list">
+            <div className="mb-6">
+                <label className="block text-gray-900 dark:text-gray-100 font-bold mb-2 text-sm">How long have you lived there?</label>
+                <div className="flex flex-col gap-2">
                     {YEARS_OPTIONS.map(opt => (
                         <button
                             key={opt.id}
                             id={`years-${opt.id}`}
-                            className={`option-btn ${years_in_current_location === opt.id ? 'option-selected' : ''}`}
+                            className={`text-left w-full p-3.5 rounded-lg border-2 transition-all font-medium text-sm outline-none ${
+                                years_in_current_location === opt.id
+                                    ? 'bg-toneek-amber/10 border-toneek-amber text-toneek-amber'
+                                    : 'bg-gray-50 dark:bg-[#222] border-transparent text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                            }`}
                             onClick={() => setField('years_in_current_location', opt.id)}
                         >
                             {opt.label}
@@ -138,14 +145,18 @@ export default function Step1Location() {
             </div>
 
             {showDiasporaQuestions && (
-                <div className="field-group">
-                    <label>Have you noticed any of these since moving? Select all that apply.</label>
-                    <div className="option-list">
+                <div className="mb-6">
+                    <label className="block text-gray-900 dark:text-gray-100 font-bold mb-2 text-sm">Have you noticed any of these since moving? Select all that apply.</label>
+                    <div className="flex flex-col gap-2">
                         {TRANSITION_OPTIONS.map(opt => (
                             <button
                                 key={opt.id}
                                 id={`transition-${opt.id}`}
-                                className={`option-btn ${(climate_transition_effects as string[]).includes(opt.id) ? 'option-selected' : ''}`}
+                                className={`text-left w-full p-3.5 rounded-lg border-2 transition-all font-medium text-sm outline-none ${
+                                    (climate_transition_effects as string[]).includes(opt.id)
+                                        ? 'bg-toneek-amber/10 border-toneek-amber text-toneek-amber'
+                                        : 'bg-gray-50 dark:bg-[#222] border-transparent text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                                }`}
                                 onClick={() => toggleTransitionEffect(opt.id)}
                             >
                                 {opt.label}
@@ -155,14 +166,16 @@ export default function Step1Location() {
                 </div>
             )}
 
-            <button
-                id="step1-next"
-                className="btn-primary"
-                disabled={!canProceed}
-                onClick={nextStep}
-            >
-                Continue
-            </button>
+            <div className="mt-8">
+                <button
+                    id="step1-next"
+                    className="w-full py-3 rounded-lg font-bold text-[#000000] bg-toneek-amber hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!canProceed}
+                    onClick={nextStep}
+                >
+                    Continue
+                </button>
+            </div>
         </div>
     )
 }
