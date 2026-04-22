@@ -60,9 +60,11 @@ export default async function ProfilePage() {
     ]
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-
-            <h1 style={{ fontSize: '1.3rem', fontWeight: 700, color: '#f5f5f5' }}>My Profile</h1>
+        <div className="flex flex-col gap-6 font-sans">
+            {/* ── Top Header Banner (Zoho Style) ── */}
+            <div className="bg-white dark:bg-[#261B18] pt-6 px-10 rounded-b-xl shadow-sm border-b border-gray-200 dark:border-[#3A2820] -mt-8 sm:-mt-8 mx-[-1rem] sm:mx-[-2rem] mb-2 relative pb-6">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Profile</h1>
+            </div>
 
             {/* Editable form */}
             <ProfileForm
@@ -74,11 +76,11 @@ export default async function ProfilePage() {
             />
 
             {/* Read-only section */}
-            <section style={{ background: '#1a1a1a', border: '1px solid #222', borderRadius: '12px', padding: '1.25rem 1.5rem' }}>
-                <p style={{ color: '#666', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>
+            <section className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#222] rounded-xl p-6 shadow-sm">
+                <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider mb-4 font-bold">
                     Skin profile (read-only)
                 </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                <div className="flex flex-col gap-0 border-t border-gray-100 dark:border-gray-800">
                     {READ_ONLY.map(({ label, value }) => (
                         <div key={label} style={{
                             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -92,43 +94,33 @@ export default async function ProfilePage() {
                         </div>
                     ))}
                 </div>
-                <p style={{ color: '#444', fontSize: '0.75rem', marginTop: '0.75rem', lineHeight: '1.4' }}>
+                <p className="text-gray-400 dark:text-gray-500 text-xs mt-3 leading-relaxed">
                     These values are set by your assessment and updated when you reassess.
                 </p>
             </section>
 
             {/* Reassessment eligibility */}
-            <section style={{
-                background: reassessEligible ? 'rgba(212,165,116,0.06)' : '#1a1a1a',
-                border: `1px solid ${reassessEligible ? 'rgba(212,165,116,0.25)' : '#222'}`,
-                borderRadius: '12px',
-                padding: '1.25rem 1.5rem',
-            }}>
-                <p style={{ color: '#666', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
+            <section className={`border rounded-xl p-6 shadow-sm ${reassessEligible ? 'bg-toneek-amber/10 border-toneek-amber/30' : 'bg-white dark:bg-[#1a1a1a] border-gray-200 dark:border-[#222]'}`}>
+                <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider mb-2 font-bold">
                     Update your assessment
                 </p>
                 {reassessEligible ? (
                     <>
-                        <p style={{ color: '#ccc', fontSize: '0.88rem', lineHeight: '1.5', marginBottom: '1rem' }}>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed mb-4">
                             Your skin profile can now be updated. If your condition, routine, or circumstances have changed, a new assessment will trigger a formula review.
                         </p>
                         <a
                             href="/assessment"
                             id="reassess-link"
-                            style={{
-                                display: 'inline-block', padding: '0.65rem 1.25rem',
-                                background: '#d4a574', color: '#0f0f0f',
-                                borderRadius: '8px', textDecoration: 'none',
-                                fontWeight: 700, fontSize: '0.85rem',
-                            }}
+                            className="inline-block px-5 py-2.5 bg-toneek-amber text-[#000000] rounded-lg font-bold text-sm hover:opacity-90 transition-opacity"
                         >
                             Start reassessment →
                         </a>
                     </>
                 ) : (
-                    <p style={{ color: '#666', fontSize: '0.85rem', lineHeight: '1.5' }}>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
                         You can update your skin assessment from{' '}
-                        <strong style={{ color: '#888' }}>{eligibleDateStr}</strong> — 6 weeks after your last assessment.
+                        <strong className="text-gray-800 dark:text-gray-300">{eligibleDateStr}</strong> — 6 weeks after your last assessment.
                     </p>
                 )}
             </section>

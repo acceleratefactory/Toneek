@@ -96,18 +96,20 @@ export default async function SubscriptionPage() {
     }
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-
-            <h1 style={{ fontSize: '1.3rem', fontWeight: 700, color: '#f5f5f5' }}>My Plan</h1>
+        <div className="flex flex-col gap-6 font-sans">
+            {/* ── Top Header Banner (Zoho Style) ── */}
+            <div className="bg-white dark:bg-[#261B18] pt-6 px-10 rounded-b-xl shadow-sm border-b border-gray-200 dark:border-[#3A2820] -mt-8 sm:-mt-8 mx-[-1rem] sm:mx-[-2rem] mb-2 relative pb-6">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Plan</h1>
+            </div>
 
             {/* Plan summary card */}
-            <section style={{ background: '#1a1a1a', border: '1px solid #222', borderRadius: '12px', padding: '1.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+            <section className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#222] rounded-xl p-6 shadow-sm">
+                <div className="flex justify-between items-start mb-6">
                     <div>
-                        <p style={{ color: '#666', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.3rem' }}>
+                        <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider mb-2 font-bold">
                             Current plan
                         </p>
-                        <p style={{ fontWeight: 700, fontSize: '1.2rem', color: '#f5f5f5' }}>
+                        <p className="font-bold text-2xl text-gray-900 dark:text-gray-100">
                             {PLAN_LABELS[subscription.plan_tier ?? ''] ?? subscription.plan_tier}
                         </p>
                     </div>
@@ -115,23 +117,16 @@ export default async function SubscriptionPage() {
                         background: `${cfg.colour}18`,
                         color: cfg.colour,
                         border: `1px solid ${cfg.colour}40`,
-                        borderRadius: '20px',
-                        padding: '0.3rem 0.85rem',
-                        fontSize: '0.78rem',
-                        fontWeight: 600,
-                    }}>
+                    }} className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap bg-opacity-20">
                         {cfg.label}
                     </span>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                <div className="flex flex-col gap-0 border-t border-gray-100 dark:border-gray-800">
                     {details.map(({ label, value }) => (
-                        <div key={label} style={{
-                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                            padding: '0.6rem 0', borderBottom: '1px solid #1f1f1f',
-                        }}>
-                            <span style={{ color: '#666', fontSize: '0.85rem' }}>{label}</span>
-                            <span style={{ color: '#f5f5f5', fontSize: '0.85rem', fontWeight: 500 }}>{value}</span>
+                        <div key={label} className="flex justify-between items-center py-3 border-b border-gray-50 dark:border-[#1f1f1f] last:border-0">
+                            <span className="text-gray-500 dark:text-gray-400 text-sm font-medium">{label}</span>
+                            <span className="text-gray-800 dark:text-gray-200 text-sm font-bold">{value}</span>
                         </div>
                     ))}
                 </div>

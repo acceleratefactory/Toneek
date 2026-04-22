@@ -1,8 +1,5 @@
 'use client'
 // src/components/dashboard/ProfileForm.tsx
-// Editable profile fields: full name, phone, city, country, notification prefs.
-// Calls PATCH /api/profile/update on save.
-
 import { useState } from 'react'
 
 interface ProfileFormProps {
@@ -55,38 +52,28 @@ export default function ProfileForm({
     }
 
     const field = (label: string, id: string, value: string, onChange: (v: string) => void, placeholder?: string) => (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-            <label htmlFor={id} style={{ color: '#888', fontSize: '0.8rem' }}>{label}</label>
+        <div className="flex flex-col gap-1.5 focus-within:text-toneek-amber">
+            <label htmlFor={id} className="text-gray-500 dark:text-gray-400 text-xs font-medium">{label}</label>
             <input
                 id={id}
                 type="text"
                 value={value}
                 onChange={e => onChange(e.target.value)}
                 placeholder={placeholder}
-                style={{
-                    background: '#222',
-                    border: '1px solid #2a2a2a',
-                    borderRadius: '8px',
-                    padding: '0.7rem 0.9rem',
-                    color: '#f5f5f5',
-                    fontSize: '0.9rem',
-                    outline: 'none',
-                    width: '100%',
-                    boxSizing: 'border-box',
-                }}
+                className="bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-[#2a2a2a] rounded-lg px-3.5 py-2.5 text-gray-900 dark:text-gray-100 text-sm outline-none w-full box-border focus:border-toneek-amber dark:focus:border-toneek-amber transition-colors"
                 onFocus={e => (e.currentTarget.style.borderColor = '#d4a574')}
-                onBlur={e => (e.currentTarget.style.borderColor = '#2a2a2a')}
+                onBlur={e => (e.currentTarget.style.borderColor = '')}
             />
         </div>
     )
 
     return (
-        <section style={{ background: '#1a1a1a', border: '1px solid #222', borderRadius: '12px', padding: '1.25rem 1.5rem' }}>
-            <p style={{ color: '#666', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1rem' }}>
+        <section className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#222] rounded-xl p-6 shadow-sm">
+            <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider mb-4 font-bold">
                 Your details
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+            <div className="flex flex-col gap-4">
                 {field('Full name',    'profile-name',    fullName, setFullName, 'Your full name')}
                 {field('Phone (WhatsApp)', 'profile-phone', phone, setPhone, '+234 800 000 0000')}
                 {field('City',         'profile-city',    city,     setCity,     'Your city')}
@@ -94,28 +81,19 @@ export default function ProfileForm({
             </div>
 
             {error && (
-                <p style={{ color: '#e05555', fontSize: '0.82rem', marginTop: '0.75rem', background: 'rgba(224,85,85,0.08)', borderRadius: '6px', padding: '0.6rem 0.8rem' }}>
+                <p className="text-red-600 dark:text-red-400 text-sm mt-4 bg-red-50 dark:bg-red-900/10 rounded-lg p-3">
                     {error}
                 </p>
             )}
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '1.25rem' }}>
+            <div className="flex items-center gap-4 mt-6">
                 <button
                     id="save-profile"
                     onClick={handleSave}
                     disabled={saving || !isDirty}
-                    style={{
-                        padding: '0.7rem 1.5rem',
-                        background: saved ? '#4caf82' : '#d4a574',
-                        color: '#0f0f0f',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontWeight: 700,
-                        fontSize: '0.88rem',
-                        cursor: saving || !isDirty ? 'not-allowed' : 'pointer',
-                        opacity: !isDirty && !saving ? 0.5 : 1,
-                        transition: 'background 0.2s',
-                    }}
+                    className={`px-5 py-2.5 rounded-lg font-bold text-sm transition-colors ${
+                        saved ? 'bg-green-500 text-white' : 'bg-toneek-amber text-[#000000]'
+                    } ${saving || !isDirty ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:opacity-90'}`}
                 >
                     {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save changes'}
                 </button>
@@ -129,7 +107,7 @@ export default function ProfileForm({
                             setCountry(initialCountry)
                             setError('')
                         }}
-                        style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: '0.85rem' }}
+                        className="bg-transparent border-none text-gray-500 dark:text-gray-400 text-sm cursor-pointer hover:underline"
                     >
                         Cancel
                     </button>

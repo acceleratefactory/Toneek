@@ -158,9 +158,9 @@ function CheckinContent() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
             {/* Header */}
-            <div>
-                <h1 style={{ fontSize: '1.3rem', fontWeight: 700, color: '#f5f5f5' }}>Week {week} Check-in</h1>
-                <p style={{ color: '#666', fontSize: '0.85rem', marginTop: '0.2rem' }}>Step {step} of {TOTAL_STEPS}</p>
+            <div className="bg-white dark:bg-[#261B18] pt-6 px-10 rounded-b-xl shadow-sm border-b border-gray-200 dark:border-[#3A2820] -mt-8 sm:-mt-8 mx-[-1rem] sm:mx-[-2rem] mb-2 relative pb-6">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Week {week} Check-in</h1>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Step {step} of {TOTAL_STEPS}</p>
             </div>
 
             {/* Progress bar */}

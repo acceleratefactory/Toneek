@@ -118,42 +118,38 @@ export default async function FormulaPage() {
     const currentScore = latest.skin_os_score ?? 50
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-
-            {/* ── Header ── */}
-            <div>
-                <h1 style={{ fontSize: '1.3rem', fontWeight: 700, color: '#f5f5f5', marginBottom: '0.2rem' }}>
-                    My Formula
-                </h1>
-                {previous.length > 0 && (
-                    <p style={{ color: '#666', fontSize: '0.8rem' }}>
-                        Updated {new Date(latest.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
-                    </p>
-                )}
+        <div className="flex flex-col gap-6 font-sans">
+            {/* ── Top Header Banner (Zoho Style) ── */}
+            <div className="bg-white dark:bg-[#261B18] pt-6 px-10 rounded-b-xl shadow-sm border-b border-gray-200 dark:border-[#3A2820] -mt-8 sm:-mt-8 mx-[-1rem] sm:mx-[-2rem] mb-2 relative pb-6">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Formula</h1>
+                        {previous.length > 0 && (
+                            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+                                Updated {new Date(latest.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                            </p>
+                        )}
+                    </div>
+                </div>
             </div>
 
             {/* ── Skin OS Score ── */}
             <section
                 aria-label="Skin OS Score"
-                style={{
-                    background: '#1a1a1a',
-                    border: '1px solid #222',
-                    borderRadius: '12px',
-                    padding: '1.5rem',
-                }}
+                className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#222] rounded-xl p-6 shadow-sm"
             >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
-                        <p style={{ color: '#666', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.4rem' }}>
+                        <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider mb-2 font-bold">
                             Skin OS Score
                         </p>
-                        <p id="skin-os-score" style={{ fontSize: '3.5rem', fontWeight: 800, color: scoreColour(currentScore), lineHeight: 1, marginBottom: '0.25rem' }}>
+                        <p id="skin-os-score" style={{ color: scoreColour(currentScore) }} className="text-5xl font-black mb-1">
                             {currentScore}
                         </p>
-                        <p style={{ color: scoreColour(currentScore), fontSize: '0.85rem', fontWeight: 600 }}>
+                        <p style={{ color: scoreColour(currentScore) }} className="text-sm font-bold">
                             {scoreLabel(currentScore)}
                         </p>
-                        <p style={{ color: '#555', fontSize: '0.75rem', marginTop: '0.2rem' }}>out of 100</p>
+                        <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">out of 100</p>
                     </div>
 
                     {/* Sparkline if multiple data points */}
@@ -166,27 +162,22 @@ export default async function FormulaPage() {
             {/* ── Formula identity ── */}
             <section
                 aria-label="Formula details"
-                style={{
-                    background: '#1a1a1a',
-                    border: '1px solid #222',
-                    borderRadius: '12px',
-                    padding: '1.25rem 1.5rem',
-                }}
+                className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#222] rounded-xl p-6 shadow-sm"
             >
-                <p style={{ color: '#666', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
+                <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider mb-2 font-bold">
                     Your formula
                 </p>
-                <p id="formula-code" style={{ fontWeight: 700, fontSize: '1.4rem', color: '#f5f5f5', marginBottom: '0.2rem' }}>
+                <p id="formula-code" className="font-mono font-bold text-2xl text-toneek-brown dark:text-gray-100 mb-2">
                     {latest.formula_code}
                 </p>
                 {formula?.profile_description && (
-                    <p style={{ color: '#888', fontSize: '0.88rem', lineHeight: '1.4' }}>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
                         {formula.profile_description}
                     </p>
                 )}
                 {latest.climate_zone && (
-                    <p style={{ color: '#666', fontSize: '0.82rem', marginTop: '0.75rem' }}>
-                        <span style={{ color: '#555' }}>Formulated for </span>
+                    <p className="text-gray-500 dark:text-gray-400 text-xs mt-3">
+                        <span>Formulated for </span>
                         {CLIMATE_DESCRIPTIONS[latest.climate_zone] ?? latest.climate_zone}
                     </p>
                 )}
@@ -194,11 +185,11 @@ export default async function FormulaPage() {
 
             {/* ── Why this formula ── */}
             {latest.formula_rationale && (
-                <section style={{ background: '#1a1a1a', border: '1px solid #222', borderRadius: '12px', padding: '1.25rem 1.5rem' }}>
-                    <p style={{ color: '#666', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.6rem' }}>
+                <section className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#222] rounded-xl p-6 shadow-sm">
+                    <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider mb-2 font-bold">
                         Why this formula for you
                     </p>
-                    <p style={{ color: '#ccc', fontSize: '0.88rem', lineHeight: '1.6' }}>
+                    <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
                         {latest.formula_rationale}
                     </p>
                 </section>
@@ -206,35 +197,24 @@ export default async function FormulaPage() {
 
             {/* ── Active ingredients ── */}
             {actives.length > 0 && (
-                <section aria-label="Active ingredients" style={{ background: '#1a1a1a', border: '1px solid #222', borderRadius: '12px', padding: '1.25rem 1.5rem' }}>
-                    <p style={{ color: '#666', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>
+                <section aria-label="Active ingredients" className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#222] rounded-xl p-6 shadow-sm">
+                    <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider mb-4 font-bold">
                         Active ingredients
                     </p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                    <div className="flex flex-col gap-3">
                         {actives.map((active: any, i: number) => (
-                            <div key={i} style={{
-                                background: '#222',
-                                borderRadius: '8px',
-                                padding: '0.75rem 1rem',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'flex-start',
-                                gap: '1rem',
-                            }}>
-                                <div style={{ flex: 1 }}>
-                                    <p style={{ fontWeight: 600, color: '#f5f5f5', fontSize: '0.92rem', marginBottom: '0.2rem' }}>
+                            <div key={i} className="bg-gray-50 dark:bg-[#222] rounded-lg p-4 flex justify-between items-start gap-4">
+                                <div className="flex-1">
+                                    <p className="font-bold text-gray-900 dark:text-gray-100 text-sm mb-1">
                                         {active.name}
                                     </p>
                                     {active.rationale && (
-                                        <p style={{ color: '#888', fontSize: '0.8rem', lineHeight: '1.4' }}>
+                                        <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed">
                                             {active.rationale}
                                         </p>
                                     )}
                                 </div>
-                                <span style={{
-                                    color: '#d4a574', fontWeight: 700, fontSize: '0.9rem',
-                                    flexShrink: 0, fontVariantNumeric: 'tabular-nums',
-                                }}>
+                                <span className="text-toneek-amber font-mono font-bold text-sm flex-shrink-0">
                                     {active.concentration}{active.unit}
                                 </span>
                             </div>
@@ -244,11 +224,11 @@ export default async function FormulaPage() {
             )}
 
             {/* ── Expected timeline ── */}
-            <section aria-label="Expected timeline" style={{ background: '#1a1a1a', border: '1px solid #222', borderRadius: '12px', padding: '1.25rem 1.5rem' }}>
-                <p style={{ color: '#666', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>
+            <section aria-label="Expected timeline" className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#222] rounded-xl p-6 shadow-sm">
+                <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider mb-4 font-bold">
                     What to expect
                 </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                <div className="flex flex-col gap-0">
                     {TIMELINE.map((item, i) => {
                         const outcome = outcomes?.find(o => o.check_in_week === item.week)
                         const done = !!outcome
@@ -274,16 +254,16 @@ export default async function FormulaPage() {
                                         <div style={{ width: '1px', flex: 1, background: '#2a2a2a', minHeight: '24px' }} />
                                     )}
                                 </div>
-                                <div style={{ paddingTop: '0.25rem', flex: 1 }}>
-                                    <p style={{ fontWeight: 600, color: done ? '#4caf82' : '#888', fontSize: '0.85rem', marginBottom: '0.2rem' }}>
+                                <div className="pt-1 flex-1">
+                                    <p className={`font-bold text-sm mb-1 ${done ? 'text-toneek-forest' : 'text-gray-500 dark:text-gray-400'}`}>
                                         Week {item.week}
                                         {done && outcome?.improvement_score && (
-                                            <span style={{ fontWeight: 400, color: '#4caf82', marginLeft: '0.5rem' }}>
+                                            <span className="font-normal text-toneek-forest ml-2">
                                                 — score {outcome.improvement_score}/10
                                             </span>
                                         )}
                                     </p>
-                                    <p style={{ color: '#666', fontSize: '0.8rem', lineHeight: '1.4' }}>
+                                    <p className="text-gray-600 dark:text-gray-400 text-xs leading-relaxed">
                                         {item.description}
                                     </p>
                                 </div>
@@ -294,66 +274,49 @@ export default async function FormulaPage() {
             </section>
 
             {/* ── Reformulation eligibility ── */}
-            <section style={{
-                background: isEligible ? 'rgba(212,165,116,0.06)' : '#1a1a1a',
-                border: `1px solid ${isEligible ? 'rgba(212,165,116,0.3)' : '#222'}`,
-                borderRadius: '12px',
-                padding: '1.25rem 1.5rem',
-            }}>
-                <p style={{ color: '#666', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
+            <section className={`border rounded-xl p-6 shadow-sm ${isEligible ? 'bg-toneek-amber/10 border-toneek-amber/30' : 'bg-white dark:bg-[#1a1a1a] border-gray-200 dark:border-[#222]'}`}>
+                <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider mb-2 font-bold">
                     Formula review
                 </p>
                 {isEligible ? (
                     <>
-                        <p style={{ color: '#d4a574', fontWeight: 600, fontSize: '0.92rem', marginBottom: '0.5rem' }}>
+                        <p className="text-toneek-amber font-bold text-sm mb-2">
                             Your formula is eligible for review
                         </p>
-                        <p style={{ color: '#888', fontSize: '0.82rem', lineHeight: '1.5', marginBottom: '1rem' }}>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed mb-4">
                             Six weeks of data allows us to refine your formula based on your skin's response.
                         </p>
                         <a
                             href="/assessment"
                             id="start-reassessment"
-                            style={{
-                                display: 'inline-block',
-                                padding: '0.65rem 1.25rem',
-                                background: '#d4a574',
-                                color: '#0f0f0f',
-                                borderRadius: '8px',
-                                textDecoration: 'none',
-                                fontWeight: 700,
-                                fontSize: '0.85rem',
-                            }}
+                            className="inline-block px-5 py-2.5 bg-toneek-amber text-[#000000] rounded-lg font-bold text-sm hover:opacity-90 transition-opacity"
                         >
                             Update my skin assessment →
                         </a>
                     </>
                 ) : (
-                    <p style={{ color: '#666', fontSize: '0.85rem', lineHeight: '1.5' }}>
-                        Your formula can be reviewed and updated from <strong style={{ color: '#888' }}>{eligibleDateStr}</strong> — after 6 weeks of use.
+                    <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                        Your formula can be reviewed and updated from <strong className="text-gray-800 dark:text-gray-300">{eligibleDateStr}</strong> — after 6 weeks of use.
                     </p>
                 )}
             </section>
 
             {/* ── Previous formulas (collapsible) ── */}
             {previous.length > 0 && (
-                <section style={{ background: '#1a1a1a', border: '1px solid #222', borderRadius: '12px', padding: '1.25rem 1.5rem' }}>
-                    <p style={{ color: '#666', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>
+                <section className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#222] rounded-xl p-6 shadow-sm">
+                    <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider mb-4 font-bold">
                         Formula history
                     </p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div className="flex flex-col gap-2">
                         {previous.map((prev, i) => (
-                            <div key={prev.id} style={{
-                                background: '#222', borderRadius: '8px', padding: '0.75rem 1rem',
-                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                            }}>
+                            <div key={prev.id} className="bg-gray-50 dark:bg-[#222] rounded-lg p-3 flex justify-between items-center px-4">
                                 <div>
-                                    <p style={{ color: '#888', fontWeight: 600, fontSize: '0.88rem' }}>{prev.formula_code}</p>
-                                    <p style={{ color: '#555', fontSize: '0.75rem' }}>
+                                    <p className="text-gray-700 dark:text-gray-300 font-bold text-sm">{prev.formula_code}</p>
+                                    <p className="text-gray-500 dark:text-gray-500 text-xs mt-0.5">
                                         {new Date(prev.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
                                     </p>
                                 </div>
-                                <span style={{ color: '#555', fontSize: '0.8rem' }}>
+                                <span className="text-gray-500 dark:text-gray-400 text-sm font-medium">
                                     Score: {prev.skin_os_score ?? '—'}
                                 </span>
                             </div>

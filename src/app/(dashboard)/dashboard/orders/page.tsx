@@ -65,9 +65,11 @@ export default async function OrdersPage() {
     const SYMBOLS: Record<string, string> = { NGN: '₦', GBP: '£', USD: '$', EUR: '€', GHS: 'GH₵', CAD: 'CA$' }
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-
-            <h1 style={{ fontSize: '1.3rem', fontWeight: 700, color: '#f5f5f5' }}>My Orders</h1>
+        <div className="flex flex-col gap-6 font-sans">
+            {/* ── Top Header Banner (Zoho Style) ── */}
+            <div className="bg-white dark:bg-[#261B18] pt-6 px-10 rounded-b-xl shadow-sm border-b border-gray-200 dark:border-[#3A2820] -mt-8 sm:-mt-8 mx-[-1rem] sm:mx-[-2rem] mb-2 relative pb-6">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Orders</h1>
+            </div>
 
             {/* ── Held order banner — most important UI ── */}
             {heldOrder && HELD_MESSAGES[heldOrder.dispatch_held_reason!] && (() => {
@@ -75,41 +77,19 @@ export default async function OrdersPage() {
                 return (
                     <div
                         role="alert"
-                        style={{
-                            background: 'rgba(224,154,58,0.08)',
-                            border: '2px solid rgba(224,154,58,0.4)',
-                            borderRadius: '12px',
-                            padding: '1rem 1.25rem',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            gap: '1rem',
-                            flexWrap: 'wrap',
-                        }}
+                        className="bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-200 dark:border-orange-900/50 rounded-xl p-5 flex justify-between items-center gap-4 flex-wrap"
                     >
                         <div>
-                            <p style={{ color: '#e09a3a', fontWeight: 700, fontSize: '0.92rem', marginBottom: '0.25rem' }}>
+                            <p className="text-orange-600 dark:text-orange-400 font-bold text-sm mb-1">
                                 ⏸ Order on hold
                             </p>
-                            <p style={{ color: '#c48830', fontSize: '0.85rem', lineHeight: '1.4' }}>
+                            <p className="text-orange-800 dark:text-orange-300 text-sm leading-relaxed">
                                 {text} Complete it now so we can dispatch your formula.
                             </p>
                         </div>
                         <a
-                            href={`/dashboard/checkin?week=${week}`}
                             id="held-order-checkin-cta"
-                            style={{
-                                display: 'inline-block',
-                                padding: '0.65rem 1.1rem',
-                                background: '#e09a3a',
-                                color: '#0f0f0f',
-                                borderRadius: '8px',
-                                textDecoration: 'none',
-                                fontWeight: 700,
-                                fontSize: '0.85rem',
-                                flexShrink: 0,
-                                whiteSpace: 'nowrap',
-                            }}
+                            className="inline-block px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-bold text-sm whitespace-nowrap transition-colors"
                         >
                             Complete Week {week} check-in →
                         </a>
@@ -119,17 +99,14 @@ export default async function OrdersPage() {
 
             {/* ── Orders list ── */}
             {!orders || orders.length === 0 ? (
-                <div style={{
-                    background: '#1a1a1a', border: '1px solid #222', borderRadius: '12px',
-                    padding: '2.5rem', textAlign: 'center',
-                }}>
-                    <p style={{ color: '#666', fontSize: '0.9rem' }}>No orders yet.</p>
-                    <p style={{ color: '#555', fontSize: '0.82rem', marginTop: '0.4rem' }}>
+                <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#222] rounded-xl p-10 text-center shadow-sm">
+                    <p className="text-gray-700 dark:text-gray-300 font-medium">No orders yet.</p>
+                    <p className="text-gray-500 dark:text-gray-500 text-sm mt-2">
                         Your first order is created once your payment is confirmed.
                     </p>
                 </div>
             ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div className="flex flex-col gap-4">
                     {orders.map(order => {
                         const cfg    = STATUS_CONFIG[order.status] ?? { label: order.status, colour: '#888', bg: 'rgba(136,136,136,0.1)' }
                         const isHeld = !!order.dispatch_held_reason
@@ -138,20 +115,15 @@ export default async function OrdersPage() {
                             <div
                                 key={order.id}
                                 id={`order-${order.id}`}
-                                style={{
-                                    background: '#1a1a1a',
-                                    border: `1px solid ${isHeld ? 'rgba(224,154,58,0.3)' : '#222'}`,
-                                    borderRadius: '12px',
-                                    padding: '1.25rem 1.5rem',
-                                }}
+                                className={`rounded-xl p-6 shadow-sm border ${isHeld ? 'bg-orange-50/50 dark:bg-orange-900/10 border-orange-200 dark:border-orange-500/30' : 'bg-white dark:bg-[#1a1a1a] border-gray-200 dark:border-[#222]'}`}
                             >
                                 {/* Top row — ref + status badge */}
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                                <div className="flex justify-between items-start gap-3 mb-4">
                                     <div>
-                                        <p style={{ fontFamily: 'monospace', color: '#f5f5f5', fontWeight: 700, fontSize: '0.92rem', letterSpacing: '0.02em' }}>
+                                        <p className="font-mono font-bold text-gray-900 dark:text-gray-100 text-sm tracking-wider">
                                             {order.payment_reference ?? order.id.slice(0, 8).toUpperCase()}
                                         </p>
-                                        <p style={{ color: '#555', fontSize: '0.75rem', marginTop: '0.1rem' }}>
+                                        <p className="text-gray-500 dark:text-gray-500 text-xs mt-1">
                                             {formatDate(order.created_at)}
                                         </p>
                                     </div>
@@ -159,52 +131,46 @@ export default async function OrdersPage() {
                                         background: cfg.bg,
                                         color: cfg.colour,
                                         border: `1px solid ${cfg.colour}30`,
-                                        borderRadius: '20px',
-                                        padding: '0.25rem 0.75rem',
-                                        fontSize: '0.75rem',
-                                        fontWeight: 600,
-                                        flexShrink: 0,
-                                        whiteSpace: 'nowrap',
-                                    }}>
+                                    }} className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap bg-opacity-20">
                                         {cfg.label}
                                     </span>
                                 </div>
 
                                 {/* Detail rows */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                                <div className="flex flex-col gap-2 border-t border-gray-100 dark:border-gray-800 pt-4 mt-2">
                                     {order.formula_code && (
-                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ color: '#666', fontSize: '0.82rem' }}>Formula</span>
-                                            <span style={{ color: '#d4a574', fontSize: '0.82rem', fontWeight: 600 }}>{order.formula_code}</span>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-gray-500 dark:text-gray-400 text-xs">Formula</span>
+                                            <span className="font-bold text-toneek-amber text-xs">{order.formula_code}</span>
                                         </div>
                                     )}
                                     {order.plan_tier && (
-                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ color: '#666', fontSize: '0.82rem' }}>Plan</span>
-                                            <span style={{ color: '#888', fontSize: '0.82rem', textTransform: 'capitalize' }}>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-gray-500 dark:text-gray-400 text-xs">Plan</span>
+                                            <span className="text-gray-700 dark:text-gray-300 text-xs capitalize">
                                                 {order.plan_tier.replace(/_/g, ' ')}
                                             </span>
                                         </div>
                                     )}
                                     {order.payment_amount && (
-                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ color: '#666', fontSize: '0.82rem' }}>Amount</span>
-                                            <span style={{ color: '#888', fontSize: '0.82rem' }}>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-gray-500 dark:text-gray-400 text-xs">Amount</span>
+                                            <span className="text-gray-700 dark:text-gray-300 text-xs">
                                                 {SYMBOLS[order.currency] ?? ''}{order.payment_amount?.toLocaleString()}
                                             </span>
                                         </div>
                                     )}
                                     {order.dispatched_at && (
-                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ color: '#666', fontSize: '0.82rem' }}>Dispatched</span>
-                                            <span style={{ color: '#4caf82', fontSize: '0.82rem' }}>{formatDate(order.dispatched_at)}</span>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-gray-500 dark:text-gray-400 text-xs">Dispatched</span>
+                                            <span className="text-green-600 dark:text-green-400 font-medium text-xs">{formatDate(order.dispatched_at)}</span>
                                         </div>
                                     )}
                                     {order.tracking_number && (
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span style={{ color: '#666', fontSize: '0.82rem' }}>Tracking</span>
-                                            <span style={{ color: '#888', fontSize: '0.82rem', fontFamily: 'monospace' }}>
-                                                {order.courier && <span style={{ marginRight: '0.4rem' }}>{order.courier}</span>}
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-gray-500 dark:text-gray-400 text-xs">Tracking</span>
+                                            <span className="font-mono text-gray-700 dark:text-gray-300 text-xs">
+                                                {order.courier && <span className="mr-2 opacity-80">{order.courier}</span>}
                                                 {order.tracking_number}
                                             </span>
                                         </div>
@@ -213,15 +179,7 @@ export default async function OrdersPage() {
 
                                 {/* Held inline note */}
                                 {isHeld && (
-                                    <div style={{
-                                        marginTop: '0.85rem',
-                                        background: 'rgba(224,154,58,0.06)',
-                                        border: '1px solid rgba(224,154,58,0.2)',
-                                        borderRadius: '6px',
-                                        padding: '0.6rem 0.85rem',
-                                        fontSize: '0.78rem',
-                                        color: '#c48830',
-                                    }}>
+                                    <div className="mt-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-500/30 rounded-lg p-3 text-xs text-orange-700 dark:text-orange-400 font-medium">
                                         Order held pending check-in
                                     </div>
                                 )}
