@@ -163,8 +163,12 @@ export default function DashboardShell({ children, userProfile }: { children: Re
                 onClick={() => setActiveDropdown(activeDropdown === 'profile' ? null : 'profile')}
                 className={`flex items-center gap-3 pl-2 pr-1 py-1 rounded-full transition-colors ${isDarkMode ? 'hover:bg-[#302420]' : 'hover:bg-gray-50'}`}
                >
-                 <div className="h-8 w-8 rounded-full bg-toneek-amber flex items-center justify-center text-[#ffffff] font-bold text-sm">
-                   {userProfile?.full_name?.charAt(0) || 'U'}
+                 <div className="h-8 w-8 rounded-full bg-toneek-amber flex items-center justify-center text-[#ffffff] font-bold text-sm overflow-hidden border border-toneek-amber">
+                   {userProfile?.avatar_url ? (
+                       <img src={userProfile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                   ) : (
+                       userProfile?.full_name?.charAt(0) || 'U'
+                   )}
                  </div>
                  <span className={`text-sm font-medium hidden sm:block ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
                    {userProfile?.full_name?.split(' ')[0] || 'Customer'}

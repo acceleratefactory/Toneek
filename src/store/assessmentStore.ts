@@ -45,10 +45,13 @@ interface AssessmentState {
     current_actives: string[]
     routine_expectation: string
 
-    // Step 10 — Photo + email + acquisition
+    // Step 10 — Contact, Photo + acquisition
+    full_name: string
+    phone: string
+    whatsapp: string
+    email: string
     photo_url: string
     photo_consent: boolean
-    email: string
     how_did_you_hear: string
 
     // Computed / derived (set after submit returns)
@@ -105,9 +108,12 @@ const initialState = {
     routine_expectation: '',
 
     // Step 10
+    full_name: '',
+    phone: '',
+    whatsapp: '',
+    email: '',
     photo_url: '',
     photo_consent: false,
-    email: '',
     how_did_you_hear: '',
 
     // Derived

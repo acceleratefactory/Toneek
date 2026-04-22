@@ -19,12 +19,21 @@ const HOW_DID_YOU_HEAR_OPTIONS = [
 
 export default function Step10PhotoEmail() {
     const store = useAssessmentStore()
-    const { email, how_did_you_hear, photo_consent, setField, prevStep } = store
+    const { 
+        full_name, phone, whatsapp, email, 
+        how_did_you_hear, photo_consent, 
+        setField, prevStep 
+    } = store
     const router = useRouter()
     const [submitting, setSubmitting] = useState(false)
     const [error, setError] = useState('')
 
-    const canSubmit = email && email.includes('@') && how_did_you_hear
+    const canSubmit = 
+        full_name.trim().length >= 2 && 
+        phone.trim().length >= 5 && 
+        whatsapp.trim().length >= 5 && 
+        email && email.includes('@') && 
+        how_did_you_hear
 
     const handleSubmit = async () => {
         if (!canSubmit) return
@@ -52,6 +61,10 @@ export default function Step10PhotoEmail() {
             current_product_count: store.current_product_count,
             current_actives: store.current_actives,
             routine_expectation: store.routine_expectation,
+            // Step 10
+            full_name: store.full_name,
+            phone: store.phone,
+            whatsapp: store.whatsapp,
             photo_url: store.photo_url,
             photo_consent: store.photo_consent,
             email: store.email,
@@ -81,19 +94,62 @@ export default function Step10PhotoEmail() {
 
     return (
         <div className="w-full">
-            <h2 className="text-gray-900 dark:text-gray-100 font-bold text-xl mb-6">Almost done — where should we send your formula?</h2>
+            <h2 className="text-gray-900 dark:text-gray-100 font-bold text-xl mb-6">Almost done — your contact details</h2>
 
-            {/* Email */}
-            <div className="mb-6">
-                <label htmlFor="email" className="block text-gray-900 dark:text-gray-100 font-bold mb-2 text-sm">Your email address</label>
-                <input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={e => setField('email', e.target.value)}
-                    placeholder="you@example.com"
-                    className="w-full bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-[#2a2a2a] rounded-lg p-3 text-gray-900 dark:text-gray-100 text-sm outline-none focus:border-toneek-amber transition-colors"
-                />
+            <div className="flex flex-col gap-4 mb-6">
+                {/* Full Name */}
+                <div>
+                    <label htmlFor="full_name" className="block text-gray-900 dark:text-gray-100 font-bold mb-2 text-sm">Full name</label>
+                    <input
+                        id="full_name"
+                        type="text"
+                        value={full_name}
+                        onChange={e => setField('full_name', e.target.value)}
+                        placeholder="Kemi Adebayo"
+                        className="w-full bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-[#2a2a2a] rounded-lg p-3 text-gray-900 dark:text-gray-100 text-sm outline-none focus:border-toneek-amber transition-colors"
+                    />
+                </div>
+
+                {/* Email */}
+                <div>
+                    <label htmlFor="email" className="block text-gray-900 dark:text-gray-100 font-bold mb-2 text-sm">Your email address</label>
+                    <input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={e => setField('email', e.target.value)}
+                        placeholder="you@example.com"
+                        className="w-full bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-[#2a2a2a] rounded-lg p-3 text-gray-900 dark:text-gray-100 text-sm outline-none focus:border-toneek-amber transition-colors"
+                    />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Mobile Phone */}
+                    <div>
+                        <label htmlFor="phone" className="block text-gray-900 dark:text-gray-100 font-bold mb-2 text-sm">Mobile number</label>
+                        <input
+                            id="phone"
+                            type="tel"
+                            value={phone}
+                            onChange={e => setField('phone', e.target.value)}
+                            placeholder="0800 000 0000"
+                            className="w-full bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-[#2a2a2a] rounded-lg p-3 text-gray-900 dark:text-gray-100 text-sm outline-none focus:border-toneek-amber transition-colors"
+                        />
+                    </div>
+
+                    {/* WhatsApp */}
+                    <div>
+                        <label htmlFor="whatsapp" className="block text-gray-900 dark:text-gray-100 font-bold mb-2 text-sm">WhatsApp number</label>
+                        <input
+                            id="whatsapp"
+                            type="tel"
+                            value={whatsapp}
+                            onChange={e => setField('whatsapp', e.target.value)}
+                            placeholder="0800 000 0000"
+                            className="w-full bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-[#2a2a2a] rounded-lg p-3 text-gray-900 dark:text-gray-100 text-sm outline-none focus:border-toneek-amber transition-colors"
+                        />
+                    </div>
+                </div>
             </div>
 
             {/* Photo — optional, incentivised */}

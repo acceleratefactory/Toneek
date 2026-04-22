@@ -28,7 +28,7 @@ export default async function ProfilePage() {
     // Fetch profile
     const { data: profile } = await supabase
         .from('profiles')
-        .select('id, full_name, email, phone, city, country, subscription_status, subscription_tier')
+        .select('id, full_name, email, phone, city, country, subscription_status, subscription_tier, avatar_url')
         .eq('id', session.user.id)
         .single()
 
@@ -73,6 +73,7 @@ export default async function ProfilePage() {
                 initialPhone={profile?.phone ?? ''}
                 initialCity={profile?.city ?? ''}
                 initialCountry={profile?.country ?? ''}
+                initialAvatarUrl={profile?.avatar_url ?? ''}
             />
 
             {/* Read-only section */}

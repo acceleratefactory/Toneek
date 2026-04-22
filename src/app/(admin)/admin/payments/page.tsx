@@ -13,11 +13,14 @@ async function getPayments() {
   // Map profile names manually
   const enriched = await Promise.all((orders ?? []).map(async (o: any) => {
     let name = 'Unknown Customer'
+    let contactDetail = ''
     if (o.user_id) {
-       const { data: profile } = await adminClient.from('profiles').select('full_name').eq('id', o.user_id).single()
+       const { data: profile } = await adminClient.from('profiles').select('full_name, phone, whatsapp').eq('id', o.user_id).single()
        if (profile?.full_name) name = profile.full_name
+       if (profile?.whatsapp) contactDetail = profile.whatsapp
+       else if (profile?.phone) contactDetail = profile.phone
     }
-    return { ...o, customer_name: name }
+    return { ...o, customer_name: name, customer_contact: contactDetail }
   }))
 
   return enriched
@@ -70,8 +73,9 @@ export default async function AdminPaymentsPage() {
                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">
                      {payment.payment_reference || '—'}
                    </td>
-                   <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                     {payment.customer_name}
+                   <td className="px-6 py-4 whitespace-nowrap">
+                     <div className="text-sm font-bold text-gray-900">{payment.customer_name}</div>
+                     {payment.customer_contact && <div className="text-[10px] text-green-700 font-bold tracking-wider mt-0.5 uppercase">📞 {payment.customer_contact}</div>}
                    </td>
                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">
                      {payment.currency} {payment.payment_amount?.toLocaleString() || '—'}

@@ -15,7 +15,7 @@ async function getCustomers(tab: string) {
     const { data } = await adminClient
       .from('profiles')
       .select(`
-        id, full_name, email, country, subscription_status, subscription_tier, 
+        id, full_name, email, country, subscription_status, subscription_tier, phone, whatsapp,
         created_at, data_quality_score,
         skin_assessments(formula_code, skin_os_score, risk_score),
         skin_outcomes(recorded_at)
@@ -176,6 +176,12 @@ export default async function AdminCustomersPage({
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-bold text-gray-900">{c.full_name}</div>
                           <div className="text-xs text-gray-500 mt-0.5">{c.email}</div>
+                          {(c.whatsapp || c.phone) && (
+                            <div className="flex gap-2 mt-1.5">
+                              {c.whatsapp && <span className="text-[10px] text-green-700 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded font-bold uppercase">WA: {c.whatsapp}</span>}
+                              {c.phone && c.phone !== c.whatsapp && <span className="text-[10px] text-gray-600 bg-gray-50 border border-gray-200 px-1.5 py-0.5 rounded font-bold uppercase">Ph: {c.phone}</span>}
+                            </div>
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {c.country}

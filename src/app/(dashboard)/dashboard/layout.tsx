@@ -38,7 +38,7 @@ async function getSessionAndProfile() {
 
     const { data: profile } = await supabase
         .from('profiles')
-        .select('id, full_name, email, subscription_status, subscription_tier')
+        .select('id, full_name, email, subscription_status, subscription_tier, avatar_url')
         .eq('id', session.user.id)
         .single()
 

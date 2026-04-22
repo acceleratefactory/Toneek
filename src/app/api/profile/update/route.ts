@@ -27,16 +27,17 @@ export async function PATCH(request: NextRequest) {
         }
 
         const body = await request.json()
-        const { full_name, phone, city, country } = body
+        const { full_name, phone, city, country, avatar_url } = body
 
         // Only allow the authenticated user to update their own profile
         const { error } = await supabase
             .from('profiles')
             .update({
-                ...(full_name !== undefined && { full_name: full_name.trim() }),
-                ...(phone     !== undefined && { phone:     phone.trim()     }),
-                ...(city      !== undefined && { city:      city.trim()      }),
-                ...(country   !== undefined && { country:   country.trim()   }),
+                ...(full_name  !== undefined && { full_name:  full_name.trim() }),
+                ...(phone      !== undefined && { phone:      phone.trim()     }),
+                ...(city       !== undefined && { city:       city.trim()      }),
+                ...(country    !== undefined && { country:    country.trim()   }),
+                ...(avatar_url !== undefined && { avatar_url: avatar_url       }),
             })
             .eq('id', session.user.id)
 

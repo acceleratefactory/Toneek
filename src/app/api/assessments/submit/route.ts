@@ -95,6 +95,11 @@ export async function POST(request: NextRequest) {
             // Acquisition
             how_did_you_hear: assessment.how_did_you_hear,
 
+            // Contact Details
+            full_name: assessment.full_name ?? null,
+            phone: assessment.phone ?? null,
+            whatsapp: assessment.whatsapp ?? null,
+
             // Email — stored for anonymous user lookup before magic link confirmed
             email: assessment.email ? assessment.email.toLowerCase().trim() : null,
         })
@@ -127,6 +132,16 @@ export async function POST(request: NextRequest) {
             .from('skin_assessments')
             .update({ user_id: linkData.user.id })
             .eq('id', assessmentRecord.id)
+
+        // Force synchronisation of contact details right into the global Profile dynamically
+        await adminClient
+            .from('profiles')
+            .update({ 
+                full_name: assessment.full_name,
+                phone: assessment.phone,
+                whatsapp: assessment.whatsapp
+            })
+            .eq('id', linkData.user.id)
     }
 
     // Send magic link email via Resend
