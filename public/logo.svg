@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="60" viewBox="0 0 240 60" role="img">
+  <title>Toneek</title>
+  <desc>Toneek logo — skin intelligence for melanin-rich skin</desc>
+  <defs>
+    <linearGradient id="mg" x1="0.5" y1="1" x2="0.5" y2="0">
+      <stop offset="0%" stop-color="#2A0F06"/>
+      <stop offset="48%" stop-color="#7B3518"/>
+      <stop offset="100%" stop-color="#C87D3E"/>
+    </linearGradient>
+  </defs>
+  <!-- Symbol: tapered hexagon -->
+  <path d="M30,4 L52,17 L52,43 L30,56 L8,43 L8,17 Z"
+    fill="url(#mg)" stroke="#2A0F06" stroke-width="1.5"/>
+  <!-- Three skin-layer arcs -->
+  <path d="M15,22 Q30,15 45,22"
+    fill="none" stroke="#F7F1EB" stroke-opacity="0.30" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M14,31 Q30,23 46,31"
+    fill="none" stroke="#F7F1EB" stroke-opacity="0.22" stroke-width="2" stroke-linecap="round"/>
+  <path d="M15,40 Q30,32 45,40"
+    fill="none" stroke="#F7F1EB" stroke-opacity="0.17" stroke-width="1.6" stroke-linecap="round"/>
+  <!-- Wordmark -->
+  <text x="64" y="41"
+    font-family="'Jost','Raleway','Trebuchet MS',system-ui,sans-serif"
+    font-weight="500" font-size="32" letter-spacing="2"
+    fill="#2A0F06">toneek</text>
+</svg>

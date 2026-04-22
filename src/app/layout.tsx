@@ -17,6 +17,12 @@ const mono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "Toneek — Skin intelligence for melanin-rich skin",
   description: "Personalised skincare formulas for melanin-rich skin, matched to your climate, skin type, and concern.",
+  icons: {
+    icon: [
+      { url: '/favicon.svg', media: '(prefers-color-scheme: light)' },
+      { url: '/favicon-dark.svg', media: '(prefers-color-scheme: dark)' },
+    ]
+  }
 };
 
 export default function RootLayout({

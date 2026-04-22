@@ -8,8 +8,9 @@ export default function AssessmentPage() {
     return (
         <main className="min-h-screen font-sans bg-toneek-cream dark:bg-[#1A1210] flex items-start justify-center px-4 py-8 sm:py-16 transition-colors">
             <div className="w-full max-w-[600px]">
-                <div className="text-center mb-10">
-                    <span className="block text-2xl font-bold text-toneek-amber tracking-tight mb-1">Toneek</span>
+                <div className="flex flex-col items-center justify-center mb-10">
+                    <img src="/logo.svg" alt="Toneek" className="h-10 w-auto dark:hidden mb-2" />
+                    <img src="/logo-dark.svg" alt="Toneek" className="h-10 w-auto hidden dark:block mb-2" />
                     <span className="text-gray-500 dark:text-gray-400 text-sm">Skin intelligence for melanin-rich skin</span>
                 </div>
                 <AssessmentForm />
