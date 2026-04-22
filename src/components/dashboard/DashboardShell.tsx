@@ -8,15 +8,20 @@ import {
   Menu,
   ChevronLeft,
   Moon,
-  Sun
+  Sun,
+  FlaskConical,
+  Package,
+  CheckSquare,
+  User,
+  CreditCard
 } from 'lucide-react'
 
 const NAV_ITEMS = [
-    { href: '/dashboard',              label: 'My Formula',  icon: '🧪', id: 'nav-formula'  },
-    { href: '/dashboard/orders',       label: 'My Orders',   icon: '📦', id: 'nav-orders'   },
-    { href: '/dashboard/checkin',      label: 'Check-in',    icon: '✅', id: 'nav-checkin'  },
-    { href: '/dashboard/profile',      label: 'My Profile',  icon: '👤', id: 'nav-profile'  },
-    { href: '/dashboard/subscription', label: 'Plan',        icon: '💳', id: 'nav-plan'     },
+    { href: '/dashboard',              label: 'My Formula',  icon: FlaskConical, id: 'nav-formula'  },
+    { href: '/dashboard/orders',       label: 'My Orders',   icon: Package,      id: 'nav-orders'   },
+    { href: '/dashboard/checkin',      label: 'Check-in',    icon: CheckSquare,  id: 'nav-checkin'  },
+    { href: '/dashboard/profile',      label: 'My Profile',  icon: User,         id: 'nav-profile'  },
+    { href: '/dashboard/subscription', label: 'Plan',        icon: CreditCard,   id: 'nav-plan'     },
 ]
 
 export default function DashboardShell({ children, userProfile }: { children: React.ReactNode, userProfile: any }) {
@@ -104,7 +109,9 @@ export default function DashboardShell({ children, userProfile }: { children: Re
                   } ${!isSidebarOpen ? 'justify-center' : ''}`}
                   title={!isSidebarOpen ? link.label : undefined}
                 >
-                  <span className={`text-xl ${isActive ? '' : 'opacity-80'}`}>{link.icon}</span>
+                  <span className={`flex-shrink-0 ${isActive ? '' : 'opacity-80'}`}>
+                    <link.icon size={20} />
+                  </span>
                   {isSidebarOpen && <span className="truncate">{link.label}</span>}
                 </Link>
               )

@@ -128,22 +128,22 @@ function CheckinContent() {
     if (result) {
         return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                <div style={{ background: '#1a1a1a', border: '1px solid #4caf82', borderRadius: '12px', padding: '2rem', textAlign: 'center' }}>
-                    <p style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>✅</p>
-                    <h2 style={{ color: '#4caf82', fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+                <div className="bg-white dark:bg-[#1a1a1a] border border-green-500/50 dark:border-green-500 rounded-xl p-8 text-center shadow-sm">
+                    <p className="text-5xl mb-2">✅</p>
+                    <h2 className="text-green-600 dark:text-green-500 text-xl font-bold mb-2">
                         Week {week} check-in complete
                     </h2>
-                    <p style={{ color: '#888', fontSize: '0.88rem', marginBottom: '1rem' }}>
-                        Your score: <strong style={{ color: '#f5f5f5' }}>{result.score}/10</strong>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
+                        Your score: <strong className="text-gray-900 dark:text-gray-100">{result.score}/10</strong>
                     </p>
                     {result.orderReleased && (
-                        <div style={{ background: 'rgba(76,175,130,0.08)', border: '1px solid rgba(76,175,130,0.3)', borderRadius: '8px', padding: '0.85rem 1rem', marginBottom: '1rem' }}>
-                            <p style={{ color: '#4caf82', fontSize: '0.88rem', fontWeight: 600 }}>
+                        <div className="bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 rounded-lg py-3 px-4 mb-4">
+                            <p className="text-green-700 dark:text-green-400 text-sm font-bold">
                                 📦 Your next order has been queued for dispatch
                             </p>
                         </div>
                     )}
-                    <a href="/dashboard/formula" style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: '#d4a574', color: '#0f0f0f', borderRadius: '8px', textDecoration: 'none', fontWeight: 700, fontSize: '0.9rem' }}>
+                    <a href="/dashboard/formula" className="inline-block px-6 py-3 bg-toneek-amber text-[#000000] rounded-lg font-bold text-sm hover:opacity-90 transition-opacity">
                         View my formula →
                     </a>
                 </div>
@@ -164,42 +164,35 @@ function CheckinContent() {
             </div>
 
             {/* Progress bar */}
-            <div style={{ background: '#1a1a1a', borderRadius: '4px', height: '4px', overflow: 'hidden' }}>
-                <div style={{ background: '#d4a574', height: '100%', width: `${(step / TOTAL_STEPS) * 100}%`, transition: 'width 0.3s ease' }} />
+            <div className="bg-gray-200 dark:bg-[#1a1a1a] rounded-sm h-1 overflow-hidden">
+                <div className="bg-toneek-amber h-full transition-all duration-300" style={{ width: `${(step / TOTAL_STEPS) * 100}%` }} />
             </div>
 
             {/* ── Step 1: Improvement score ── */}
             {step === 1 && (
-                <section style={{ background: '#1a1a1a', border: '1px solid #222', borderRadius: '12px', padding: '1.5rem' }}>
-                    <p style={{ color: '#ccc', fontWeight: 600, fontSize: '1rem', marginBottom: '1rem' }}>
+                <section className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#222] rounded-xl p-6 shadow-sm">
+                    <p className="text-gray-800 dark:text-gray-200 font-bold text-base mb-4">
                         How is your skin compared to when you started?
                     </p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div className="flex flex-col gap-2">
                         {SCORE_OPTIONS.map(opt => (
                             <button
                                 key={opt.value}
                                 id={`score-${opt.value}`}
                                 onClick={() => setScore(opt.value)}
-                                style={{
-                                    background: score === opt.value ? 'rgba(212,165,116,0.12)' : '#222',
-                                    border: `1.5px solid ${score === opt.value ? '#d4a574' : '#2a2a2a'}`,
-                                    borderRadius: '10px',
-                                    padding: '0.85rem 1rem',
-                                    textAlign: 'left',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    transition: 'all 0.15s',
-                                }}
+                                className={`text-left w-full flex justify-between items-center rounded-lg p-3.5 transition-all outline-none border-2 ${
+                                    score === opt.value
+                                        ? 'bg-toneek-amber/10 border-toneek-amber'
+                                        : 'bg-gray-50 dark:bg-[#222] border-transparent hover:border-gray-300 dark:hover:border-gray-600'
+                                }`}
                             >
                                 <div>
-                                    <p style={{ color: score === opt.value ? '#d4a574' : '#f5f5f5', fontWeight: 600, fontSize: '0.92rem', marginBottom: '0.15rem' }}>
+                                    <p className={`font-bold text-sm mb-0.5 ${score === opt.value ? 'text-toneek-amber' : 'text-gray-900 dark:text-gray-100'}`}>
                                         {opt.value}. {opt.label}
                                     </p>
-                                    <p style={{ color: '#666', fontSize: '0.78rem' }}>{opt.sub}</p>
+                                    <p className="text-gray-500 dark:text-gray-400 text-xs">{opt.sub}</p>
                                 </div>
-                                {score === opt.value && <span style={{ color: '#d4a574', fontSize: '1.1rem' }}>●</span>}
+                                {score === opt.value && <span className="text-toneek-amber text-lg">●</span>}
                             </button>
                         ))}
                     </div>
@@ -207,8 +200,9 @@ function CheckinContent() {
                         id="step1-next"
                         onClick={() => setStep(2)}
                         disabled={!score}
-                        className="btn-primary"
-                        style={{ width: '100%', marginTop: '1.25rem', opacity: !score ? 0.5 : 1 }}
+                        className={`w-full mt-6 py-3 rounded-lg font-bold text-sm transition-all ${
+                            score ? 'bg-toneek-amber text-[#000000] cursor-pointer hover:opacity-90' : 'bg-gray-200 dark:bg-gray-800 text-gray-500 cursor-not-allowed opacity-50'
+                        }`}
                     >
                         Continue
                     </button>
@@ -217,32 +211,29 @@ function CheckinContent() {
 
             {/* ── Step 2: Adverse reactions ── */}
             {step === 2 && (
-                <section style={{ background: '#1a1a1a', border: '1px solid #222', borderRadius: '12px', padding: '1.5rem' }}>
-                    <p style={{ color: '#ccc', fontWeight: 600, fontSize: '1rem', marginBottom: '1rem' }}>
+                <section className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#222] rounded-xl p-6 shadow-sm">
+                    <p className="text-gray-800 dark:text-gray-200 font-bold text-base mb-4">
                         Any burning, peeling, or unusual reactions?
                     </p>
-                    <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
+                    <div className="flex gap-3 mb-4">
                         {[{ v: true, label: 'Yes' }, { v: false, label: 'No' }].map(({ v, label }) => (
                             <button
                                 key={label}
                                 id={`reaction-${label.toLowerCase()}`}
                                 onClick={() => setHasReaction(v)}
-                                style={{
-                                    flex: 1, padding: '0.85rem',
-                                    background: hasReaction === v ? 'rgba(212,165,116,0.12)' : '#222',
-                                    border: `1.5px solid ${hasReaction === v ? '#d4a574' : '#2a2a2a'}`,
-                                    borderRadius: '10px',
-                                    color: hasReaction === v ? '#d4a574' : '#f5f5f5',
-                                    fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
-                                }}
+                                className={`flex-1 py-3 rounded-lg font-bold text-sm transition-all outline-none border-2 ${
+                                    hasReaction === v
+                                        ? 'bg-toneek-amber/10 border-toneek-amber text-toneek-amber'
+                                        : 'bg-gray-50 dark:bg-[#222] border-transparent text-gray-900 dark:text-gray-100 hover:border-gray-300 dark:hover:border-gray-600'
+                                }`}
                             >
                                 {label}
                             </button>
                         ))}
                     </div>
                     {hasReaction === true && (
-                        <div style={{ marginBottom: '1rem' }}>
-                            <label style={{ color: '#888', fontSize: '0.82rem', display: 'block', marginBottom: '0.4rem' }}>
+                        <div className="mb-4">
+                            <label className="block text-gray-500 dark:text-gray-400 text-xs font-medium mb-1.5 mt-2">
                                 Tell us what you noticed
                             </label>
                             <textarea
@@ -251,18 +242,19 @@ function CheckinContent() {
                                 onChange={e => setReactionDetail(e.target.value)}
                                 placeholder="e.g. slight redness on cheeks for 2 days after application..."
                                 rows={3}
-                                style={{ width: '100%', background: '#222', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '0.7rem', color: '#f5f5f5', fontSize: '0.88rem', resize: 'vertical', boxSizing: 'border-box' }}
+                                className="w-full bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-[#2a2a2a] rounded-lg p-3 text-gray-900 dark:text-gray-100 text-sm outline-none resize-y focus:border-toneek-amber dark:focus:border-toneek-amber transition-colors"
                             />
                         </div>
                     )}
-                    <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-                        <button onClick={() => setStep(1)} style={{ flex: 1, padding: '0.75rem', background: 'transparent', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#888', cursor: 'pointer' }}>Back</button>
+                    <div className="flex gap-3 mt-2">
+                        <button onClick={() => setStep(1)} className="flex-1 py-3 bg-transparent border border-gray-300 dark:border-[#2a2a2a] rounded-lg text-gray-600 dark:text-gray-400 font-medium text-sm hover:bg-gray-50 dark:hover:bg-[#2a2a2a]/50 transition-colors">Back</button>
                         <button
                             id="step2-next"
                             onClick={() => setStep(3)}
                             disabled={hasReaction === null}
-                            className="btn-primary"
-                            style={{ flex: 2, opacity: hasReaction === null ? 0.5 : 1 }}
+                            className={`flex-[2] py-3 rounded-lg font-bold text-sm transition-all ${
+                                hasReaction !== null ? 'bg-toneek-amber text-[#000000] cursor-pointer hover:opacity-90' : 'bg-gray-200 dark:bg-gray-800 text-gray-500 cursor-not-allowed opacity-50'
+                            }`}
                         >
                             Continue
                         </button>
@@ -272,12 +264,12 @@ function CheckinContent() {
 
             {/* ── Step 3: Changes since last ── */}
             {step === 3 && (
-                <section style={{ background: '#1a1a1a', border: '1px solid #222', borderRadius: '12px', padding: '1.5rem' }}>
-                    <p style={{ color: '#ccc', fontWeight: 600, fontSize: '1rem', marginBottom: '0.4rem' }}>
+                <section className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#222] rounded-xl p-6 shadow-sm">
+                    <p className="text-gray-800 dark:text-gray-200 font-bold text-base mb-1">
                         Has anything changed since your last check-in?
                     </p>
-                    <p style={{ color: '#666', fontSize: '0.8rem', marginBottom: '1rem' }}>Select all that apply</p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
+                    <p className="text-gray-500 dark:text-gray-400 text-xs mb-4">Select all that apply</p>
+                    <div className="flex flex-col gap-2 mb-4">
                         {CHANGES_OPTIONS.map(opt => {
                             const active = changes.includes(opt.id)
                             return (
@@ -285,13 +277,11 @@ function CheckinContent() {
                                     key={opt.id}
                                     id={`change-${opt.id}`}
                                     onClick={() => toggleChange(opt.id)}
-                                    style={{
-                                        padding: '0.75rem 1rem', textAlign: 'left', cursor: 'pointer',
-                                        background: active ? 'rgba(212,165,116,0.1)' : '#222',
-                                        border: `1.5px solid ${active ? '#d4a574' : '#2a2a2a'}`,
-                                        borderRadius: '8px', color: active ? '#d4a574' : '#ccc',
-                                        fontSize: '0.88rem', transition: 'all 0.15s',
-                                    }}
+                                    className={`text-left w-full rounded-lg p-3 text-sm font-medium transition-all outline-none border-2 ${
+                                        active
+                                            ? 'bg-toneek-amber/10 border-toneek-amber text-toneek-amber'
+                                            : 'bg-gray-50 dark:bg-[#222] border-transparent text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                                    }`}
                                 >
                                     {opt.label}
                                 </button>
@@ -299,22 +289,23 @@ function CheckinContent() {
                         })}
                     </div>
                     {movedCity && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginBottom: '1rem' }}>
-                            <p style={{ color: '#d4a574', fontSize: '0.82rem', fontWeight: 600 }}>Where did you move to?</p>
+                        <div className="flex flex-col gap-2 mb-4 bg-toneek-amber/5 border border-toneek-amber/20 p-4 rounded-lg">
+                            <p className="text-toneek-amber text-xs font-bold mb-1">Where did you move to?</p>
                             <input placeholder="New city" value={newCity} onChange={e => setNewCity(e.target.value)}
-                                style={{ background: '#222', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '0.65rem 0.85rem', color: '#f5f5f5', fontSize: '0.88rem' }} />
+                                className="w-full bg-white dark:bg-[#222] border border-gray-200 dark:border-[#2a2a2a] rounded-md px-3 py-2 text-gray-900 dark:text-gray-100 text-sm outline-none focus:border-toneek-amber transition-colors" />
                             <input placeholder="New country" value={newCountry} onChange={e => setNewCountry(e.target.value)}
-                                style={{ background: '#222', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '0.65rem 0.85rem', color: '#f5f5f5', fontSize: '0.88rem' }} />
+                                className="w-full bg-white dark:bg-[#222] border border-gray-200 dark:border-[#2a2a2a] rounded-md px-3 py-2 text-gray-900 dark:text-gray-100 text-sm outline-none focus:border-toneek-amber transition-colors" />
                         </div>
                     )}
-                    <div style={{ display: 'flex', gap: '0.75rem' }}>
-                        <button onClick={() => setStep(2)} style={{ flex: 1, padding: '0.75rem', background: 'transparent', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#888', cursor: 'pointer' }}>Back</button>
+                    <div className="flex gap-3">
+                        <button onClick={() => setStep(2)} className="flex-1 py-3 bg-transparent border border-gray-300 dark:border-[#2a2a2a] rounded-lg text-gray-600 dark:text-gray-400 font-medium text-sm hover:bg-gray-50 dark:hover:bg-[#2a2a2a]/50 transition-colors">Back</button>
                         <button
                             id="step3-next"
                             onClick={() => setStep(4)}
                             disabled={changes.length === 0}
-                            className="btn-primary"
-                            style={{ flex: 2, opacity: changes.length === 0 ? 0.5 : 1 }}
+                            className={`flex-[2] py-3 rounded-lg font-bold text-sm transition-all ${
+                                changes.length > 0 ? 'bg-toneek-amber text-[#000000] cursor-pointer hover:opacity-90' : 'bg-gray-200 dark:bg-gray-800 text-gray-500 cursor-not-allowed opacity-50'
+                            }`}
                         >
                             Continue
                         </button>
@@ -324,51 +315,51 @@ function CheckinContent() {
 
             {/* ── Step 4: Photo upload ── */}
             {step === 4 && (
-                <section style={{ background: '#1a1a1a', border: '1px solid #222', borderRadius: '12px', padding: '1.5rem' }}>
-                    <p style={{ color: '#ccc', fontWeight: 600, fontSize: '1rem', marginBottom: '0.4rem' }}>
-                        Upload a progress photo <span style={{ color: '#555', fontWeight: 400 }}>(optional)</span>
+                <section className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#222] rounded-xl p-6 shadow-sm">
+                    <p className="text-gray-800 dark:text-gray-200 font-bold text-base mb-1">
+                        Upload a progress photo <span className="text-gray-500 font-normal">(optional)</span>
                     </p>
                     {(week === 4 || week === 8) && (
-                        <div style={{ background: 'rgba(212,165,116,0.06)', border: '1px solid rgba(212,165,116,0.2)', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1rem' }}>
-                            <p style={{ color: '#d4a574', fontSize: '0.82rem' }}>
+                        <div className="bg-toneek-amber/10 border border-toneek-amber/20 rounded-lg p-3 my-4">
+                            <p className="text-toneek-amber text-xs">
                                 📸 Photos help us recalculate your Skin OS Score accurately at Week {week}.
                             </p>
                         </div>
                     )}
-                    <input ref={fileRef} type="file" accept="image/*" onChange={handlePhotoChange}
-                        style={{ display: 'none' }} id="photo-upload-input" />
+                    <input ref={fileRef} type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" id="photo-upload-input" />
                     {photoPreview ? (
-                        <div style={{ marginBottom: '1rem' }}>
-                            <img src={photoPreview} alt="Preview" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #2a2a2a' }} />
+                        <div className="mb-4 text-center">
+                            <img src={photoPreview} alt="Preview" className="w-full max-h-[200px] object-cover rounded-lg border border-gray-200 dark:border-[#2a2a2a]" />
                             <button onClick={() => { setPhotoFile(null); setPhotoPreview(null) }}
-                                style={{ marginTop: '0.5rem', background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: '0.82rem' }}>
+                                className="mt-2 bg-transparent border-none text-red-500 text-xs font-semibold cursor-pointer hover:underline">
                                 Remove photo
                             </button>
                         </div>
                     ) : (
                         <button onClick={() => fileRef.current?.click()}
-                            style={{ width: '100%', padding: '1.5rem', background: '#222', border: '2px dashed #2a2a2a', borderRadius: '10px', color: '#666', cursor: 'pointer', fontSize: '0.88rem', marginBottom: '1rem' }}>
+                            className="w-full py-10 bg-gray-50 flex items-center justify-center dark:bg-[#222] border-2 border-dashed border-gray-300 dark:border-[#2a2a2a] rounded-xl text-gray-500 text-sm font-medium cursor-pointer mb-4 mt-4 hover:bg-gray-100 dark:hover:bg-[#2a2a2a]/50 transition-colors">
                             + Tap to upload a photo
                         </button>
                     )}
                     {error && (
-                        <p style={{ color: '#e05555', fontSize: '0.82rem', marginBottom: '0.75rem', background: 'rgba(224,85,85,0.08)', borderRadius: '6px', padding: '0.6rem 0.8rem' }}>
+                        <p className="text-red-600 dark:text-red-400 text-sm mb-4 bg-red-50 dark:bg-red-900/10 rounded-lg p-3">
                             {error}
                         </p>
                     )}
-                    <div style={{ display: 'flex', gap: '0.75rem' }}>
-                        <button onClick={() => setStep(3)} style={{ flex: 1, padding: '0.75rem', background: 'transparent', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#888', cursor: 'pointer' }}>Back</button>
+                    <div className="flex gap-3 mt-2">
+                        <button onClick={() => setStep(3)} className="flex-1 py-3 bg-transparent border border-gray-300 dark:border-[#2a2a2a] rounded-lg text-gray-600 dark:text-gray-400 font-medium text-sm hover:bg-gray-50 dark:hover:bg-[#2a2a2a]/50 transition-colors">Back</button>
                         <button
                             id="submit-checkin"
                             onClick={handleSubmit}
                             disabled={submitting}
-                            className="btn-primary"
-                            style={{ flex: 2, opacity: submitting ? 0.6 : 1 }}
+                            className={`flex-[2] py-3 rounded-lg font-bold text-sm transition-all ${
+                                !submitting ? 'bg-toneek-amber text-[#000000] cursor-pointer hover:opacity-90' : 'bg-toneek-amber/50 text-[#000000] cursor-not-allowed'
+                            }`}
                         >
                             {submitting ? 'Submitting…' : 'Submit check-in'}
                         </button>
                     </div>
-                    <p style={{ color: '#555', fontSize: '0.75rem', textAlign: 'center', marginTop: '0.75rem', cursor: 'pointer' }}
+                    <p className="text-gray-500 text-xs text-center mt-4 cursor-pointer hover:text-gray-700 dark:hover:text-gray-300"
                         onClick={handleSubmit}>
                         Skip photo and submit →
                     </p>
