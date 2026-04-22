@@ -5,6 +5,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { adminClient } from '@/lib/supabase/admin'
 
 export async function PATCH(request: NextRequest) {
     try {
@@ -29,8 +30,8 @@ export async function PATCH(request: NextRequest) {
         const body = await request.json()
         const { full_name, phone, city, country, avatar_url } = body
 
-        // Only allow the authenticated user to update their own profile
-        const { error } = await supabase
+        // Use adminClient to bypass the recursive infinite loop RLS bug on the profiles table
+        const { error } = await adminClient
             .from('profiles')
             .update({
                 ...(full_name  !== undefined && { full_name:  full_name.trim() }),

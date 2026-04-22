@@ -72,14 +72,23 @@ export async function GET(request: NextRequest) {
     }
 
     // ── Invalidate token FIRST — prevents race condition on double-click ───────
-    await adminClient
+    const { error: updateError } = await adminClient
         .from('orders')
         .update({
-            payment_status:      'payment_confirmed',
+            payment_status:      'confirmed',
             payment_token_used:  true,
             payment_confirmed_at: new Date().toISOString()
         })
         .eq('id', order.id)
+
+    if (updateError) {
+        return html(`<div class="box">
+            <div class="icon">❌</div>
+            <h2 class="warn">Update Failed</h2>
+            <p>Database error: could not update order status.</p>
+            <p style="font-size:12px;color:#999;margin-top:10px">${updateError.message}</p>
+        </div>`)
+    }
 
     // ── Activate subscription (only if user_id exists) ────────────────────────
     if (order.user_id) {
