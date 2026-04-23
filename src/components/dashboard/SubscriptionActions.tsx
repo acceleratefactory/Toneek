@@ -81,15 +81,15 @@ export default function SubscriptionActions({ subscriptionId, currentPlan, statu
         <>
             {/* Success message */}
             {success && (
-                <div className="bg-toneek-sage/20 border border-toneek-sage/40 rounded-lg p-4">
-                    <p className="text-toneek-forest text-sm font-medium leading-relaxed">✓ {success}</p>
+                <div className="bg-[#4caf82]/10 border border-[#4caf82]/30 rounded-lg p-4">
+                    <p className="text-[#4caf82] text-sm font-medium leading-relaxed">✓ {success}</p>
                 </div>
             )}
 
             {/* Error message */}
             {error && !modal && (
-                <div className="bg-toneek-errorbg border border-toneek-error/20 rounded-lg p-3">
-                    <p className="text-toneek-error font-medium text-sm">{error}</p>
+                <div className="bg-[#e05555]/10 border border-[#e05555]/20 rounded-lg p-3">
+                    <p className="text-[#e05555] font-medium text-sm">{error}</p>
                 </div>
             )}
 
@@ -128,7 +128,7 @@ export default function SubscriptionActions({ subscriptionId, currentPlan, statu
                             <button
                                 id="cancel-subscription"
                                 onClick={() => { setError(''); setCancelReason(''); setModal('cancel') }}
-                                className="p-3 rounded-lg bg-transparent border-2 border-toneek-error/30 text-toneek-error font-bold text-sm cursor-pointer hover:bg-toneek-errorbg transition-colors"
+                                className="p-3 rounded-lg bg-transparent border-2 border-[#e05555]/30 text-[#e05555] font-bold text-sm cursor-pointer hover:bg-[#e05555]/10 transition-colors"
                             >
                                 Cancel subscription
                             </button>
@@ -144,7 +144,7 @@ export default function SubscriptionActions({ subscriptionId, currentPlan, statu
                     <p className="text-gray-600 dark:text-[#888] text-sm leading-relaxed mb-6">
                         Your next delivery will be skipped. Your subscription resumes automatically after 30 days.
                     </p>
-                    {error && <p className="text-toneek-error text-xs font-medium mb-3">{error}</p>}
+                    {error && <p className="text-[#e05555] text-xs font-medium mb-3">{error}</p>}
                     <div className="flex gap-3">
                         <button onClick={() => setModal(null)} className="flex-1 p-3 bg-transparent border border-gray-300 dark:border-[#2a2a2a] rounded-lg text-gray-600 dark:text-[#888] font-bold cursor-pointer hover:bg-gray-50 dark:hover:bg-[#222] transition-colors">
                             Cancel
@@ -174,7 +174,7 @@ export default function SubscriptionActions({ subscriptionId, currentPlan, statu
                                 onClick={() => setCancelReason(r.id)}
                                 className={`p-3 text-left border-2 rounded-lg text-sm font-medium cursor-pointer transition-all ${
                                     cancelReason === r.id 
-                                        ? 'bg-toneek-errorbg border-toneek-error text-toneek-error'
+                                        ? 'bg-[#e05555]/10 border-[#e05555] text-[#e05555]'
                                         : 'bg-gray-50 border-gray-100 dark:bg-[#222] dark:border-transparent text-gray-700 dark:text-[#ccc] hover:border-gray-200 dark:hover:border-gray-600'
                                 }`}
                             >
@@ -182,7 +182,7 @@ export default function SubscriptionActions({ subscriptionId, currentPlan, statu
                             </button>
                         ))}
                     </div>
-                    {error && <p className="text-toneek-error text-xs font-medium mb-3">{error}</p>}
+                    {error && <p className="text-[#e05555] text-xs font-medium mb-3">{error}</p>}
                     <div className="flex gap-3">
                         <button onClick={() => setModal(null)} className="flex-1 p-3 bg-transparent border border-gray-300 dark:border-[#2a2a2a] rounded-lg text-gray-600 dark:text-[#888] font-bold cursor-pointer hover:bg-gray-50 dark:hover:bg-[#222] transition-colors">
                             Keep my subscription
@@ -191,7 +191,7 @@ export default function SubscriptionActions({ subscriptionId, currentPlan, statu
                             id="confirm-cancel"
                             onClick={handleCancel}
                             disabled={loading || !cancelReason}
-                            className="flex-1 p-3 bg-toneek-error border-none rounded-lg text-white font-bold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-toneek-error/90 transition-colors"
+                            className="flex-1 p-3 bg-[#e05555] border-none rounded-lg text-white font-bold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#c94c4c] transition-colors"
                         >
                             {loading ? 'Cancelling…' : 'Confirm cancel'}
                         </button>

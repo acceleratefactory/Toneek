@@ -51,14 +51,18 @@ export default async function SubscriptionPage() {
     // Fetch latest formula from assessments
     const { data: assessment } = await supabase
         .from('skin_assessments')
-        .select('formula_code')
+        .select('id, formula_code')
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle()
 
     if (!subscription) {
-        redirect('/subscribe')
+        if (assessment?.id) {
+            redirect(`/subscribe?assessment_id=${assessment.id}`)
+        } else {
+            redirect('/assessment')
+        }
     }
 
     const startedAt   = new Date(subscription.started_at)
