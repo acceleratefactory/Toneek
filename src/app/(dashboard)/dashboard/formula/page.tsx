@@ -66,6 +66,16 @@ export default async function FormulaPage() {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) redirect('/assessment')
 
+    // Fetch user profile to check subscription status
+    const { data: profile } = await adminClient
+        .from('profiles')
+        .select('subscription_status')
+        .eq('id', session.user.id)
+        .single()
+    
+    // Show the subscribe block only if they haven't subscribed or if they cancelled
+    const needsSubscription = !profile?.subscription_status || profile.subscription_status === 'never' || profile.subscription_status === 'cancelled'
+
     // Fetch all assessments for this user, newest first
     const { data: assessments, error: fetchError } = await adminClient
         .from('skin_assessments')
@@ -322,6 +332,24 @@ export default async function FormulaPage() {
                             </div>
                         ))}
                     </div>
+                </section>
+            )}
+
+            {/* ── Subscribe Call to Action ── */}
+            {needsSubscription && (
+                <section className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#222] rounded-xl p-8 shadow-sm text-center">
+                    <p className="font-bold text-gray-900 dark:text-gray-100 text-lg mb-6">
+                        Ready to get your formula made?
+                    </p>
+                    <a
+                        href="/subscribe"
+                        className="inline-block px-8 py-3 bg-[#382218] hover:bg-[#2A1911] text-white rounded-lg font-bold transition-opacity shadow-sm"
+                    >
+                        Subscribe and get your formula
+                    </a>
+                    <p className="text-[#a1a1aa] dark:text-gray-500 text-[10px] mt-4 uppercase tracking-wider">
+                        Payment by bank transfer only. Your formula is made to order once payment is confirmed.
+                    </p>
                 </section>
             )}
 
