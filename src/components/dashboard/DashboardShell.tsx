@@ -7,6 +7,7 @@ import {
   LogOut,
   Menu,
   ChevronLeft,
+  ChevronRight,
   Moon,
   Sun,
   FlaskConical,
@@ -100,18 +101,21 @@ export default function DashboardShell({ children, userProfile }: { children: Re
         ${isSidebarOpen ? 'translate-x-0 w-64 shadow-2xl md:shadow-none' : '-translate-x-full w-64 md:translate-x-0 md:w-20'} 
         transition-all duration-300 ease-in-out bg-toneek-brown border-r border-[#2C130A] flex flex-col flex-shrink-0
       `}>
-        <div className="h-16 flex items-center justify-between px-4 border-b border-[#2C130A]">
+        
+        {/* Floating Border Toggle (Desktop Only) */}
+        <button 
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="hidden md:flex absolute -right-[14px] top-6 z-50 h-7 w-7 items-center justify-center rounded-full bg-white dark:bg-[#1A1210] border border-gray-200 dark:border-[#3A2820] shadow-md text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-all cursor-pointer"
+        >
+          {isSidebarOpen ? <ChevronLeft size={16} strokeWidth={2.5} /> : <ChevronRight size={16} strokeWidth={2.5} />}
+        </button>
+
+        <div className="h-16 flex items-center justify-center px-4 border-b border-[#2C130A]">
           {isSidebarOpen ? (
-            <img src="/logo-dark.svg" alt="Toneek" className="h-10 w-auto ml-3 object-contain" />
+            <img src="/logo-dark.svg" alt="Toneek" className="h-10 w-auto object-contain" />
           ) : (
-             <img src="/favicon.svg" alt="Toneek" className="h-8 w-8 mx-auto object-contain" />
+             <img src="/favicon.svg" alt="Toneek" className="h-8 w-8 object-contain" />
           )}
-          <button 
-             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-             className="text-stone-400 hover:text-toneek-cream p-1 rounded-md hover:bg-[#2C130A] transition-colors hidden md:block"
-          >
-             {isSidebarOpen ? <ChevronLeft size={20} /> : <Menu size={20} />}
-          </button>
         </div>
         <div className="flex-1 overflow-y-auto overflow-x-hidden py-6 flex flex-col gap-2 px-3">
           {NAV_ITEMS.map((link) => {
