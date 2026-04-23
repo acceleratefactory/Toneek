@@ -342,7 +342,7 @@ export default async function FormulaPage() {
                         Ready to get your formula made?
                     </p>
                     <a
-                        href="/subscribe"
+                        href={`/subscribe?assessment_id=${latest.id}`}
                         className="inline-block px-8 py-3 bg-[#382218] hover:bg-[#2A1911] text-white rounded-lg font-bold transition-opacity shadow-sm"
                     >
                         Subscribe and get your formula

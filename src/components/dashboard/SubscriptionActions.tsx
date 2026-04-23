@@ -70,12 +70,8 @@ export default function SubscriptionActions({ subscriptionId, currentPlan, statu
     // ── Modals ────────────────────────────────────────────────────────────────
 
     const overlay = (content: React.ReactNode) => (
-        <div style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '1rem', zIndex: 1000,
-        }} onClick={e => { if (e.target === e.currentTarget) setModal(null) }}>
-            <div style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '16px', width: '100%', maxWidth: '400px', padding: '1.5rem' }}>
+        <div className="fixed inset-0 bg-black/85 flex items-center justify-center p-4 z-[1000]" onClick={e => { if (e.target === e.currentTarget) setModal(null) }}>
+            <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#2a2a2a] shadow-xl rounded-2xl w-full max-w-[400px] p-6 relative">
                 {content}
             </div>
         </div>
@@ -85,39 +81,32 @@ export default function SubscriptionActions({ subscriptionId, currentPlan, statu
         <>
             {/* Success message */}
             {success && (
-                <div style={{ background: 'rgba(76,175,130,0.08)', border: '1px solid rgba(76,175,130,0.3)', borderRadius: '10px', padding: '1rem 1.25rem' }}>
-                    <p style={{ color: '#4caf82', fontSize: '0.88rem', lineHeight: '1.5' }}>✓ {success}</p>
+                <div className="bg-toneek-sage/20 border border-toneek-sage/40 rounded-lg p-4">
+                    <p className="text-toneek-forest text-sm font-medium leading-relaxed">✓ {success}</p>
                 </div>
             )}
 
             {/* Error message */}
             {error && !modal && (
-                <div style={{ background: 'rgba(224,85,85,0.08)', border: '1px solid rgba(224,85,85,0.2)', borderRadius: '8px', padding: '0.75rem 1rem' }}>
-                    <p style={{ color: '#e05555', fontSize: '0.85rem' }}>{error}</p>
+                <div className="bg-toneek-errorbg border border-toneek-error/20 rounded-lg p-3">
+                    <p className="text-toneek-error font-medium text-sm">{error}</p>
                 </div>
             )}
 
             {/* Action buttons */}
             {!success && !isCancelling && (
-                <section style={{ background: '#1a1a1a', border: '1px solid #222', borderRadius: '12px', padding: '1.25rem 1.5rem' }}>
-                    <p style={{ color: '#666', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1rem' }}>
+                <section className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#222] rounded-xl p-6 shadow-sm">
+                    <p className="text-gray-500 dark:text-[#666] text-xs uppercase tracking-wider mb-4 font-bold">
                         Manage plan
                     </p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                    <div className="flex flex-col gap-3">
 
                         {/* Upgrade — only for essentials */}
                         {isActive && currentPlan === 'essentials' && (
                             <a
                                 href="/subscribe"
                                 id="upgrade-plan"
-                                style={{
-                                    display: 'block', textAlign: 'center',
-                                    padding: '0.85rem', borderRadius: '10px',
-                                    background: 'rgba(212,165,116,0.1)',
-                                    border: '1.5px solid rgba(212,165,116,0.4)',
-                                    color: '#d4a574', fontWeight: 600,
-                                    fontSize: '0.9rem', textDecoration: 'none',
-                                }}
+                                className="block text-center p-3 rounded-lg bg-toneek-brown/5 border-2 border-toneek-brown/20 text-toneek-brown font-bold text-sm hover:bg-toneek-brown/10 transition-colors"
                             >
                                 ⬆ Upgrade to Full Protocol
                             </a>
@@ -128,11 +117,7 @@ export default function SubscriptionActions({ subscriptionId, currentPlan, statu
                             <button
                                 id="pause-subscription"
                                 onClick={() => { setError(''); setModal('pause') }}
-                                style={{
-                                    padding: '0.85rem', borderRadius: '10px',
-                                    background: 'transparent', border: '1.5px solid #2a2a2a',
-                                    color: '#ccc', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer',
-                                }}
+                                className="p-3 rounded-lg bg-transparent border-2 border-gray-200 dark:border-[#2a2a2a] text-gray-700 dark:text-[#ccc] font-bold text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-[#222] transition-colors"
                             >
                                 ⏸ {isPaused ? 'Subscription is paused' : 'Pause for 30 days'}
                             </button>
@@ -143,11 +128,7 @@ export default function SubscriptionActions({ subscriptionId, currentPlan, statu
                             <button
                                 id="cancel-subscription"
                                 onClick={() => { setError(''); setCancelReason(''); setModal('cancel') }}
-                                style={{
-                                    padding: '0.85rem', borderRadius: '10px',
-                                    background: 'transparent', border: '1.5px solid rgba(224,85,85,0.3)',
-                                    color: '#e05555', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer',
-                                }}
+                                className="p-3 rounded-lg bg-transparent border-2 border-toneek-error/30 text-toneek-error font-bold text-sm cursor-pointer hover:bg-toneek-errorbg transition-colors"
                             >
                                 Cancel subscription
                             </button>
@@ -159,20 +140,20 @@ export default function SubscriptionActions({ subscriptionId, currentPlan, statu
             {/* ── Pause modal ── */}
             {modal === 'pause' && overlay(
                 <>
-                    <h3 style={{ color: '#f5f5f5', fontSize: '1.05rem', fontWeight: 700, marginBottom: '0.75rem' }}>Pause for 30 days?</h3>
-                    <p style={{ color: '#888', fontSize: '0.88rem', lineHeight: '1.5', marginBottom: '1.5rem' }}>
+                    <h3 className="text-gray-900 dark:text-[#f5f5f5] text-lg font-bold mb-2">Pause for 30 days?</h3>
+                    <p className="text-gray-600 dark:text-[#888] text-sm leading-relaxed mb-6">
                         Your next delivery will be skipped. Your subscription resumes automatically after 30 days.
                     </p>
-                    {error && <p style={{ color: '#e05555', fontSize: '0.82rem', marginBottom: '0.75rem' }}>{error}</p>}
-                    <div style={{ display: 'flex', gap: '0.75rem' }}>
-                        <button onClick={() => setModal(null)} style={{ flex: 1, padding: '0.8rem', background: 'transparent', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#888', cursor: 'pointer' }}>
+                    {error && <p className="text-toneek-error text-xs font-medium mb-3">{error}</p>}
+                    <div className="flex gap-3">
+                        <button onClick={() => setModal(null)} className="flex-1 p-3 bg-transparent border border-gray-300 dark:border-[#2a2a2a] rounded-lg text-gray-600 dark:text-[#888] font-bold cursor-pointer hover:bg-gray-50 dark:hover:bg-[#222] transition-colors">
                             Cancel
                         </button>
                         <button
                             id="confirm-pause"
                             onClick={handlePause}
                             disabled={loading}
-                            style={{ flex: 1, padding: '0.8rem', background: '#e09a3a', border: 'none', borderRadius: '8px', color: '#0f0f0f', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 }}
+                            className="flex-1 p-3 bg-toneek-amber border-none rounded-lg text-black font-bold cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed hover:bg-toneek-amber/90 transition-colors"
                         >
                             {loading ? 'Pausing…' : 'Confirm pause'}
                         </button>
@@ -183,36 +164,34 @@ export default function SubscriptionActions({ subscriptionId, currentPlan, statu
             {/* ── Cancel modal ── */}
             {modal === 'cancel' && overlay(
                 <>
-                    <h3 style={{ color: '#f5f5f5', fontSize: '1.05rem', fontWeight: 700, marginBottom: '0.5rem' }}>Before you go</h3>
-                    <p style={{ color: '#888', fontSize: '0.85rem', marginBottom: '1rem' }}>What's the reason for cancelling?</p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '1rem' }}>
+                    <h3 className="text-gray-900 dark:text-[#f5f5f5] text-lg font-bold mb-2">Before you go</h3>
+                    <p className="text-gray-600 dark:text-[#888] text-sm mb-4">What's the reason for cancelling?</p>
+                    <div className="flex flex-col gap-2 mb-4">
                         {CANCEL_REASONS.map(r => (
                             <button
                                 key={r.id}
                                 id={`cancel-reason-${r.id}`}
                                 onClick={() => setCancelReason(r.id)}
-                                style={{
-                                    padding: '0.7rem 0.9rem', textAlign: 'left',
-                                    background: cancelReason === r.id ? 'rgba(224,85,85,0.1)' : '#222',
-                                    border: `1.5px solid ${cancelReason === r.id ? '#e05555' : '#2a2a2a'}`,
-                                    borderRadius: '8px', color: cancelReason === r.id ? '#e05555' : '#ccc',
-                                    fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.15s',
-                                }}
+                                className={`p-3 text-left border-2 rounded-lg text-sm font-medium cursor-pointer transition-all ${
+                                    cancelReason === r.id 
+                                        ? 'bg-toneek-errorbg border-toneek-error text-toneek-error'
+                                        : 'bg-gray-50 border-gray-100 dark:bg-[#222] dark:border-transparent text-gray-700 dark:text-[#ccc] hover:border-gray-200 dark:hover:border-gray-600'
+                                }`}
                             >
                                 {r.label}
                             </button>
                         ))}
                     </div>
-                    {error && <p style={{ color: '#e05555', fontSize: '0.82rem', marginBottom: '0.75rem' }}>{error}</p>}
-                    <div style={{ display: 'flex', gap: '0.75rem' }}>
-                        <button onClick={() => setModal(null)} style={{ flex: 1, padding: '0.8rem', background: 'transparent', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#888', cursor: 'pointer' }}>
+                    {error && <p className="text-toneek-error text-xs font-medium mb-3">{error}</p>}
+                    <div className="flex gap-3">
+                        <button onClick={() => setModal(null)} className="flex-1 p-3 bg-transparent border border-gray-300 dark:border-[#2a2a2a] rounded-lg text-gray-600 dark:text-[#888] font-bold cursor-pointer hover:bg-gray-50 dark:hover:bg-[#222] transition-colors">
                             Keep my subscription
                         </button>
                         <button
                             id="confirm-cancel"
                             onClick={handleCancel}
                             disabled={loading || !cancelReason}
-                            style={{ flex: 1, padding: '0.8rem', background: '#e05555', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: 700, cursor: loading || !cancelReason ? 'not-allowed' : 'pointer', opacity: loading || !cancelReason ? 0.5 : 1 }}
+                            className="flex-1 p-3 bg-toneek-error border-none rounded-lg text-white font-bold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-toneek-error/90 transition-colors"
                         >
                             {loading ? 'Cancelling…' : 'Confirm cancel'}
                         </button>

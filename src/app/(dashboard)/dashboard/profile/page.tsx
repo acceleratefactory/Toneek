@@ -83,13 +83,9 @@ export default async function ProfilePage() {
                 </p>
                 <div className="flex flex-col gap-0 border-t border-gray-100 dark:border-gray-800">
                     {READ_ONLY.map(({ label, value }) => (
-                        <div key={label} style={{
-                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                            padding: '0.65rem 0',
-                            borderBottom: '1px solid #1f1f1f',
-                        }}>
-                            <span style={{ color: '#666', fontSize: '0.85rem' }}>{label}</span>
-                            <span style={{ color: '#f5f5f5', fontSize: '0.85rem', fontWeight: 500, textTransform: 'capitalize' }}>
+                        <div key={label} className="flex justify-between items-center py-3 border-b border-gray-100 dark:border-[#1f1f1f]">
+                            <span className="text-gray-500 dark:text-[#666] text-sm">{label}</span>
+                            <span className="text-gray-900 dark:text-[#f5f5f5] text-sm font-medium capitalize">
                                 {value.replace(/_/g, ' ')}
                             </span>
                         </div>
