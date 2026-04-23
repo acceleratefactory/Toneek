@@ -26,9 +26,16 @@ const NAV_ITEMS = [
 
 export default function DashboardShell({ children, userProfile }: { children: React.ReactNode, userProfile: any }) {
   const pathname = usePathname()
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<'profile' | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    // Auto-open sidebar by default on desktop screens
+    if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+      setIsSidebarOpen(true)
+    }
+  }, [])
   
   // Theme Toggle Logic
   const [isDarkMode, setIsDarkMode] = useState(false)
@@ -79,8 +86,20 @@ export default function DashboardShell({ children, userProfile }: { children: Re
 
   return (
     <div className={`flex h-screen overflow-hidden font-sans ${isDarkMode ? 'bg-[#1A1210] text-[#F0E6DF]' : 'bg-toneek-cream text-toneek-brown'}`}>
-      {/* Sidebar - Matches Admin style */}
-      <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} transition-all duration-300 ease-in-out bg-toneek-brown border-r border-[#2C130A] flex flex-col flex-shrink-0 z-20`}>
+      {/* Mobile Overlay Backdrop */}
+      {isSidebarOpen && (
+        <div 
+          className="md:hidden fixed inset-0 bg-black/60 z-30 transition-opacity"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - Responsive Overlay on Mobile, Static on Desktop */}
+      <aside className={`
+        fixed md:relative inset-y-0 left-0 z-40 transform 
+        ${isSidebarOpen ? 'translate-x-0 w-64 shadow-2xl md:shadow-none' : '-translate-x-full w-64 md:translate-x-0 md:w-20'} 
+        transition-all duration-300 ease-in-out bg-toneek-brown border-r border-[#2C130A] flex flex-col flex-shrink-0
+      `}>
         <div className="h-16 flex items-center justify-between px-4 border-b border-[#2C130A]">
           {isSidebarOpen ? (
             <img src="/logo-dark.svg" alt="Toneek" className="h-10 w-auto ml-3 object-contain" />
@@ -102,11 +121,12 @@ export default function DashboardShell({ children, userProfile }: { children: Re
                   key={link.label} 
                   id={`sidebar-${link.id}`}
                   href={link.href}
+                  onClick={() => { if (typeof window !== 'undefined' && window.innerWidth < 768) setIsSidebarOpen(false) }}
                   className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors ${
                     isActive 
                       ? 'bg-toneek-amber text-[#000000] shadow-md' 
                       : 'text-stone-400 hover:bg-[#2C130A] hover:text-toneek-cream'
-                  } ${!isSidebarOpen ? 'justify-center' : ''}`}
+                  } ${!isSidebarOpen ? 'md:justify-center' : ''}`}
                   title={!isSidebarOpen ? link.label : undefined}
                 >
                   <span className={`flex-shrink-0 ${isActive ? '' : 'opacity-80'}`}>
@@ -120,7 +140,7 @@ export default function DashboardShell({ children, userProfile }: { children: Re
           <div className="p-3 border-t border-[#2C130A]">
             <button 
                onClick={handleLogout}
-               className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-[#D05C51] hover:bg-[#2C130A] transition-colors ${!isSidebarOpen ? 'justify-center' : ''}`}
+               className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-[#D05C51] hover:bg-[#2C130A] transition-colors ${!isSidebarOpen ? 'md:justify-center' : ''}`}
                title={!isSidebarOpen ? "Log Out" : undefined}
             >
               <LogOut size={20} className="flex-shrink-0" />
