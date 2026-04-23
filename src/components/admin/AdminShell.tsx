@@ -16,6 +16,7 @@ import {
   LogOut,
   Menu,
   ChevronLeft,
+  ChevronRight,
   Loader2,
   Tags
 } from 'lucide-react'
@@ -95,19 +96,22 @@ export default function AdminShell({ children, userProfile }: { children: React.
   return (
     <div className="flex h-screen bg-toneek-cream overflow-hidden font-sans">
       {/* Sidebar */}
-      <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} transition-all duration-300 ease-in-out bg-toneek-brown border-r border-[#2C130A] flex flex-col flex-shrink-0 z-20`}>
-        <div className="h-16 flex items-center justify-between px-4 border-b border-[#2C130A]">
+      <aside className={`relative ${isSidebarOpen ? 'w-64' : 'w-20'} transition-all duration-300 ease-in-out bg-toneek-brown border-r border-[#2C130A] flex flex-col flex-shrink-0 z-20`}>
+        
+        {/* Floating Border Toggle */}
+        <button 
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="absolute -right-[14px] top-6 z-50 h-7 w-7 flex items-center justify-center rounded-full bg-white border border-gray-200 shadow-md text-gray-500 hover:text-gray-900 transition-all cursor-pointer"
+        >
+          {isSidebarOpen ? <ChevronLeft size={16} strokeWidth={2.5} /> : <ChevronRight size={16} strokeWidth={2.5} />}
+        </button>
+
+        <div className="h-16 flex items-center justify-center px-4 border-b border-[#2C130A]">
           {isSidebarOpen ? (
-            <img src="/logo-dark.svg" alt="Toneek" className="h-10 w-auto ml-3 object-contain" />
+            <img src="/logo-dark.svg" alt="Toneek" className="h-10 w-auto object-contain" />
           ) : (
-             <span className="text-xl font-bold text-toneek-cream tracking-tight mx-auto">TA</span>
+             <img src="/favicon.svg" alt="Toneek" className="h-8 w-8 object-contain" />
           )}
-          <button 
-             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-             className="text-stone-400 hover:text-toneek-cream p-1 rounded-md hover:bg-[#2C130A]"
-          >
-             {isSidebarOpen ? <ChevronLeft size={20} /> : <Menu size={20} />}
-          </button>
         </div>
         <div className="flex-1 overflow-y-auto overflow-x-hidden py-6 flex flex-col gap-2 px-3">
           {links.map((link) => {
