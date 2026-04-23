@@ -85,7 +85,7 @@ export default function DashboardShell({ children, userProfile }: { children: Re
           {isSidebarOpen ? (
             <img src="/logo-dark.svg" alt="Toneek" className="h-10 w-auto ml-3 object-contain" />
           ) : (
-             <span className="text-xl font-bold text-toneek-cream tracking-tight mx-auto">TK</span>
+             <img src="/favicon.svg" alt="Toneek" className="h-8 w-8 mx-auto object-contain" />
           )}
           <button 
              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -141,7 +141,7 @@ export default function DashboardShell({ children, userProfile }: { children: Re
             >
               <Menu size={20} />
             </button>
-            <h2 className={`font-bold text-lg hidden sm:block ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{NAV_ITEMS.find(i => pathname === i.href || (i.href !== '/dashboard' && pathname.startsWith(i.href)))?.label || 'Dashboard'}</h2>
+            {/* Redundant page title moved to actual page body */}
           </div>
           
           <div className="flex items-center justify-end" ref={dropdownRef}>
