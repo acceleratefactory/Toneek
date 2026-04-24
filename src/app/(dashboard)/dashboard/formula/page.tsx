@@ -143,12 +143,19 @@ export default async function FormulaPage() {
     let hasDueCheckin = false
     let dueCheckinWeek = 0
 
+    const getExpectation = (week: number) => {
+        if (week === 2) return formula?.week_2_expectation || 'Skin inflammation calming, barrier beginning to stabilise.'
+        if (week === 4) return formula?.week_4_expectation || 'Visible improvement beginning — uneven tone starting to lift.'
+        return formula?.week_8_expectation || 'Measurable change in primary concern. Skin OS Score recalculated.'
+    }
+
     const timelineNodes: TimelineNode[] = TIMELINE.map((item, index) => {
         const expectedDate = new Date(assessedAt.getTime() + item.week * 7 * 24 * 60 * 60 * 1000)
         const outcome = outcomes?.find(o => o.check_in_week === item.week)
+        const desc = getExpectation(item.week)
         
         if (outcome) {
-            return { week: item.week, state: 'COMPLETED', score: outcome.improvement_score }
+            return { week: item.week, state: 'COMPLETED', score: outcome.improvement_score, description: desc }
         }
         
         // Ensure strictly sequential completion
@@ -159,7 +166,7 @@ export default async function FormulaPage() {
              if (index === 0 || previousOutcome) {
                  hasDueCheckin = true
                  if (dueCheckinWeek === 0) dueCheckinWeek = item.week
-                 return { week: item.week, state: 'DUE_NOW', dateText: 'Due now' }
+                 return { week: item.week, state: 'DUE_NOW', dateText: 'Due now', description: desc }
              }
         }
         
@@ -167,7 +174,8 @@ export default async function FormulaPage() {
         return { 
             week: item.week, 
             state: isLocked ? 'LOCKED' : 'PENDING', 
-            dateText: `Available ${expectedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` 
+            dateText: `Available ${expectedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`,
+            description: desc 
         }
     })
 
@@ -181,23 +189,25 @@ export default async function FormulaPage() {
     return (
         <div className="flex flex-col font-sans mb-12">
             
-            {/* Header Row */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-                <div className="flex items-center gap-4">
-                    {photoUrl && (
-                        <img src={photoUrl} alt="Profile" className="w-12 h-12 rounded-full border-2 border-[#E8E0DA] object-cover" />
-                    )}
+            {/* ── Top Header Banner (Zoho Style) ── */}
+            <div className="bg-[#FAF8F5] dark:bg-[#261B18] pt-6 px-10 rounded-b-xl shadow-[0_2px_10px_rgba(42,15,6,0.04)] border-b border-[#E8E0DA] dark:border-[#3A2820] -mt-4 sm:-mt-8 mx-[-1rem] sm:mx-[-2rem] mb-8 relative pb-6">
+                <div className="flex justify-between items-start">
                     <div>
-                        <h1 className="text-[24px] font-semibold text-[#2A0F06] font-sans flex items-center gap-3">
+                        <h1 className="text-2xl font-bold text-[#2A0F06] font-sans flex items-center gap-3">
                             My Formula
-                            <span className="bg-[#2A0F06] text-white font-mono text-[13px] px-2.5 py-1 rounded-md tracking-tight">
+                            <span className="bg-[#2A0F06] text-white font-mono text-[13px] px-2.5 py-1.5 rounded-md tracking-tight">
                                 {latest.formula_code}
                             </span>
                         </h1>
+                        <p className="text-[#8C7B72] dark:text-gray-400 text-[13px] mt-1.5 font-medium tracking-wide">
+                            Last updated: {new Date(latest.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </p>
                     </div>
-                </div>
-                <div className="text-[12px] text-[#8C7B72]">
-                    Last updated: {new Date(latest.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    {photoUrl && (
+                        <div className="hidden sm:block">
+                            <img src={photoUrl} alt="Profile" className="w-14 h-14 rounded-full border-4 border-white shadow-sm object-cover" />
+                        </div>
+                    )}
                 </div>
             </div>
 

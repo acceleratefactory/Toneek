@@ -11,6 +11,7 @@ export interface TimelineNode {
   state: CheckinState
   score?: number // e.g. 8 (out of 10) if completed
   dateText?: string // "Available 24 April"
+  description?: string
 }
 
 interface CheckinTimelineProps {
@@ -94,6 +95,12 @@ export default function CheckinTimeline({ nodes, delayMs = 0 }: CheckinTimelineP
                 <h6 className="text-[15px] font-semibold text-gray-900 dark:text-[#F0E6DF] font-sans">
                   Week {node.week}
                 </h6>
+                
+                {node.description && (
+                  <p className="text-gray-600 dark:text-gray-400 text-[13px] mt-1 leading-snug">
+                    {node.description}
+                  </p>
+                )}
                 
                 {/* State based rendering */}
                 {isCompleted && node.score !== undefined && (
