@@ -74,7 +74,8 @@ export default async function ResultsPage({
     // Determine the photo URL (supbabase storage URL vs raw)
     let photoUrl = assessment.intake_photo_url
     if (photoUrl && !photoUrl.startsWith('http')) {
-        photoUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://x.supabase.co'}/storage/v1/object/public/checkin-photos/${photoUrl}`
+        const { data: publicUrlData } = adminClient.storage.from('checkin-photos').getPublicUrl(photoUrl)
+        photoUrl = publicUrlData?.publicUrl || null
     }
 
     return (

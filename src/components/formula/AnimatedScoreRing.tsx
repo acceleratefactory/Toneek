@@ -66,8 +66,8 @@ export default function AnimatedScoreRing({
   const labelSize = size >= 160 ? 13 : 11
 
   return (
-    <div className="flex flex-col items-center gap-1">
-      <svg width={size} height={size} className="-rotate-90">
+    <div className="relative flex flex-col items-center justify-center" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90 absolute top-0 left-0">
         {/* Background track */}
         <circle
           cx={size / 2}
@@ -92,10 +92,7 @@ export default function AnimatedScoreRing({
         />
       </svg>
       {/* Score number overlaid */}
-      <div
-        className="absolute flex flex-col items-center justify-center"
-        style={{ width: size, height: size, marginTop: `-${size}px` }}
-      >
+      <div className="relative flex flex-col items-center justify-center z-10 pointer-events-none">
         <span
           style={{
             fontSize,
@@ -103,6 +100,7 @@ export default function AnimatedScoreRing({
             color: colour,
             fontFamily: "'Jost', system-ui",
             lineHeight: 1,
+            marginTop: showLabel && label ? '10px' : '0px',
           }}
         >
           {displayScore}
@@ -110,10 +108,11 @@ export default function AnimatedScoreRing({
         {showLabel && label && (
           <span
             style={{
-              fontSize: labelSize,
-              color: '#8C7B72',
-              fontFamily: "'Jost', system-ui",
-              marginTop: 4,
+               fontSize: labelSize,
+               color: '#8C7B72',
+               fontFamily: "'Jost', system-ui",
+               marginTop: 4,
+               fontWeight: 600,
             }}
           >
             {label}
