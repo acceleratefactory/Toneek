@@ -66,6 +66,7 @@ export default function Step10PhotoEmail() {
             phone: store.phone,
             whatsapp: store.whatsapp,
             photo_url: store.photo_url,
+            photo_base64: store.photo_base64,
             photo_consent: store.photo_consent,
             email: store.email,
             how_did_you_hear: store.how_did_you_hear,
@@ -171,10 +172,16 @@ export default function Step10PhotoEmail() {
                         accept="image/*"
                         style={{ display: 'none' }}
                         onChange={e => {
-                            if (e.target.files?.[0]) {
+                            const file = e.target.files?.[0]
+                            if (file) {
                                 setField('photo_consent', true)
-                                // photo upload to Supabase Storage handled in submit route
                                 setField('photo_url', 'pending_upload')
+                                
+                                const reader = new FileReader()
+                                reader.onloadend = () => {
+                                    setField('photo_base64', reader.result)
+                                }
+                                reader.readAsDataURL(file)
                             }
                         }}
                     />

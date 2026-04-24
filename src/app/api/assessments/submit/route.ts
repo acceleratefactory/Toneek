@@ -23,6 +23,35 @@ export async function POST(request: NextRequest) {
     })
     const formulaResult = await formulaRes.json()
 
+    // Step 2.5: Process Base64 Image Upload
+    let finalPhotoUrl = null;
+    if (assessment.photo_base64 && assessment.photo_base64.startsWith('data:image')) {
+        try {
+            const matches = assessment.photo_base64.match(/^data:image\/([a-zA-Z+0-9/]+);base64,(.+)$/);
+            if (matches && matches.length === 3) {
+                // Ensure correct extension e.g. from image/png, image/jpeg
+                const extension = matches[1].replace('jpeg', 'jpg').split('+')[0];
+                const base64Content = matches[2];
+                const buffer = Buffer.from(base64Content, 'base64');
+                const filename = `${Date.now().toString(36)}=${Math.random().toString(36).substr(2)}.${extension}`;
+                
+                const { data, error } = await adminClient.storage
+                    .from('checkin-photos')
+                    .upload(filename, buffer, {
+                        contentType: `image/${matches[1]}`,
+                        upsert: false
+                    });
+                    
+                if (!error && data?.path) {
+                    finalPhotoUrl = data.path;
+                } else {
+                    console.error('Storage upload error:', error);
+                }
+            }
+        } catch (e) {
+            console.error('Base64 photo upload error:', e);
+        }
+    }
     // Step 3: Write full assessment to DB using admin client (bypasses RLS)
     const { data: assessmentRecord, error: insertError } = await adminClient
         .from('skin_assessments')
@@ -87,9 +116,7 @@ export async function POST(request: NextRequest) {
             is_flagged_for_review: (formulaResult.risk_score ?? 0) > 0.75,
 
             // Photo
-            intake_photo_url: assessment.photo_url && assessment.photo_url !== 'pending_upload'
-                ? assessment.photo_url
-                : null,
+            intake_photo_url: finalPhotoUrl || null,
             photo_consent: assessment.photo_consent ?? false,
 
             // Acquisition

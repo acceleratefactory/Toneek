@@ -51,6 +51,7 @@ interface AssessmentState {
     whatsapp: string
     email: string
     photo_url: string
+    photo_base64: string
     photo_consent: boolean
     how_did_you_hear: string
 
@@ -113,6 +114,7 @@ const initialState = {
     whatsapp: '',
     email: '',
     photo_url: '',
+    photo_base64: '',
     photo_consent: false,
     how_did_you_hear: '',
 
