@@ -79,9 +79,9 @@ export default async function ResultsPage({
     // Determine the photo URL (supbabase storage URL vs raw)
     let photoUrl = assessment.intake_photo_url
     if (photoUrl && !photoUrl.startsWith('http')) {
-        const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
         const cleanPath = photoUrl.replace(/^checkin-photos\//, '').replace(/^\//, '')
-        photoUrl = `${baseUrl}/storage/v1/object/public/checkin-photos/${cleanPath}`
+        const { data } = adminClient.storage.from('checkin-photos').getPublicUrl(cleanPath)
+        photoUrl = data?.publicUrl || photoUrl // fallback to raw string if generation completely fails
     }
 
     return (
@@ -128,6 +128,7 @@ export default async function ResultsPage({
                 <FormulaCard 
                     formulaCode={assessment.formula_code || 'TNK-0X'}
                     formulaName={formula?.profile_description || 'Custom Clinical Formulation'}
+                    formulaRationale={assessment.formula_rationale}
                     climateZone={CLIMATE_LABELS[assessment.climate_zone] ?? assessment.climate_zone ?? 'Your Climate'}
                     pathPills={pathPills}
                     delayMs={800}

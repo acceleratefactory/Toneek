@@ -6,6 +6,7 @@ interface FormulaCardProps {
   formulaName: string
   climateZone: string
   pathPills: string[] // e.g. ["Lagos", "Dry", "Dryness"]
+  formulaRationale?: string
   delayMs?: number
 }
 
@@ -14,6 +15,7 @@ export default function FormulaCard({
   formulaName,
   climateZone,
   pathPills,
+  formulaRationale,
   delayMs = 0
 }: FormulaCardProps) {
   
@@ -39,9 +41,16 @@ export default function FormulaCard({
           {formulaName}
         </p>
         
-        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-[#A3938C] bg-gray-50 dark:bg-[#261B18] px-3 py-2 rounded-lg inline-flex">
-          <ClimateIcon size={16} className="text-toneek-amber" />
-          <span>Formulated for {climateZone}</span>
+        <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-[#A3938C] bg-gray-50 dark:bg-[#261B18] px-3 py-2 rounded-lg inline-flex w-fit">
+              <ClimateIcon size={16} className="text-toneek-amber" />
+              <span>Formulated for {climateZone}</span>
+            </div>
+            {formulaRationale && (
+                <p className="text-[13px] text-gray-500 dark:text-[#A3938C] leading-snug max-w-sm mt-1">
+                   {formulaRationale}
+                </p>
+            )}
         </div>
       </div>
 

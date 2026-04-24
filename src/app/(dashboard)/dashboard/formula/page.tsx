@@ -185,9 +185,9 @@ export default async function FormulaPage() {
 
     let photoUrl = latest.intake_photo_url
     if (photoUrl && !photoUrl.startsWith('http')) {
-        const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
         const cleanPath = photoUrl.replace(/^checkin-photos\//, '').replace(/^\//, '')
-        photoUrl = `${baseUrl}/storage/v1/object/public/checkin-photos/${cleanPath}`
+        const { data } = adminClient.storage.from('checkin-photos').getPublicUrl(cleanPath)
+        photoUrl = data?.publicUrl || photoUrl // fallback to raw string if generation completely fails
     }
 
     return (
@@ -245,6 +245,7 @@ export default async function FormulaPage() {
                         <FormulaCard 
                             formulaCode={latest.formula_code}
                             formulaName={formula?.profile_description || 'Active Protocol'}
+                            formulaRationale={latest.formula_rationale}
                             climateZone={CLIMATE_DESCRIPTIONS[latest.climate_zone] || latest.climate_zone || 'Your Location'}
                             pathPills={pathPills}
                             delayMs={300}
