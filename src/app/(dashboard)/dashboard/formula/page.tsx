@@ -312,16 +312,5 @@ export default async function FormulaPage() {
                 </div>
             </div>
         </div>
-    )                      className="inline-block px-8 py-3 bg-[#382218] hover:bg-[#2A1911] text-white rounded-lg font-bold transition-opacity shadow-sm"
-                    >
-                        Subscribe and get your formula
-                    </a>
-                    <p className="text-[#a1a1aa] dark:text-gray-500 text-[10px] mt-4 uppercase tracking-wider">
-                        Payment by bank transfer only. Your formula is made to order once payment is confirmed.
-                    </p>
-                </section>
-            )}
-
-        </div>
     )
 }
