@@ -105,8 +105,19 @@ export default async function FormulaPage() {
             </div>
         )
     }
+    const latest = assessments[0]
+    const formula = (latest as any).formula_codes
+    const actives: any[] = latest.active_modules ?? formula?.active_modules ?? []
+    const previous = assessments.slice(1)
 
-    const latest     = assessments[0]    // Reformulation eligibility
+    // Fetch skin outcomes for chart and timeline
+    const { data: outcomes } = await adminClient
+        .from('skin_outcomes')
+        .select('check_in_week, improvement_score, recorded_at, new_skin_os_score')
+        .eq('user_id', session.user.id)
+        .order('recorded_at', { ascending: true })
+
+    // Reformulation eligibility
     const assessedAt = new Date(latest.created_at)
     const eligibleAt = new Date(assessedAt.getTime() + 42 * 24 * 60 * 60 * 1000)
     const isEligible = new Date() >= eligibleAt
