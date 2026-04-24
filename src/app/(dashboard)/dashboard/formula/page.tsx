@@ -144,9 +144,13 @@ export default async function FormulaPage() {
     let dueCheckinWeek = 0
 
     const getExpectation = (week: number) => {
-        if (week === 2) return formula?.week_2_expectation || 'Skin inflammation calming, barrier beginning to stabilise.'
-        if (week === 4) return formula?.week_4_expectation || 'Visible improvement beginning — uneven tone starting to lift.'
-        return formula?.week_8_expectation || 'Measurable change in primary concern. Skin OS Score recalculated.'
+        const customW2 = formula?.week_2_expectation || formula?.base_formula?.week_2_expectation
+        const customW4 = formula?.week_4_expectation || formula?.base_formula?.week_4_expectation
+        const customW8 = formula?.week_8_expectation || formula?.base_formula?.week_8_expectation
+
+        if (week === 2) return customW2 || 'Skin inflammation calming, barrier beginning to stabilise.'
+        if (week === 4) return customW4 || 'Visible improvement beginning — uneven tone starting to lift.'
+        return customW8 || 'Measurable change in primary concern. Skin OS Score recalculated.'
     }
 
     const timelineNodes: TimelineNode[] = TIMELINE.map((item, index) => {
@@ -179,11 +183,11 @@ export default async function FormulaPage() {
         }
     })
 
-    // Grab assessment profile photo if stored
     let photoUrl = latest.intake_photo_url
     if (photoUrl && !photoUrl.startsWith('http')) {
-        const { data: publicUrlData } = adminClient.storage.from('checkin-photos').getPublicUrl(photoUrl)
-        photoUrl = publicUrlData?.publicUrl || null
+        const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+        const cleanPath = photoUrl.replace(/^checkin-photos\//, '').replace(/^\//, '')
+        photoUrl = `${baseUrl}/storage/v1/object/public/checkin-photos/${cleanPath}`
     }
 
     return (
@@ -215,123 +219,128 @@ export default async function FormulaPage() {
                 <HeldOrderBanner checkinWeekRequired={dueCheckinWeek} />
             )}
 
-            {/* Desktop 40/60 Split Container */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-y-12 md:gap-x-10 items-start">
+            {/* ── Admin-Style Block Layout ── */}
+            <div className="flex flex-col gap-8">
                 
-                {/* ── LEFT COLUMN (approx 40%) ── */}
-                <div className="md:col-span-5 flex flex-col gap-8">
-                    
-                    {/* Main Score Ring Profile */}
-                    <div className="flex flex-col items-center">
+                {/* ── TOP METRICS ROW ── */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Main Score Ring Profile Card */}
+                    <div className="bg-white dark:bg-[#1A1210] rounded-xl shadow-[0_2px_10px_rgba(42,15,6,0.04)] border border-[#E8E0DA] dark:border-[#3A2820] p-8 flex flex-col justify-between items-center text-center">
+                        <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest self-start w-full text-left mb-6">Aggregate Skin OS</h5>
                         <AnimatedScoreRing score={currentScore} size={180} showLabel={false} delay={100} />
                         
-                        <div className="mt-4 flex flex-col items-center gap-2">
+                        <div className="mt-8 flex flex-col items-center gap-2">
                            {scoreDiff > 0 ? (
-                                <p className="text-toneek-forest font-semibold text-sm">↑ Skin health improving</p>
+                                <p className="text-toneek-forest font-semibold text-[15px]">↑ Skin health improving</p>
                            ) : scoreDiff < 0 ? (
-                                <p className="text-[#C13B2E] font-semibold text-sm">↓ Consistency required</p>
+                                <p className="text-[#C13B2E] font-semibold text-[15px]">↓ Consistency required</p>
                            ) : (
-                                <p className="text-[#8C7B72] font-semibold text-sm">→ Assessing baseline</p>
+                                <p className="text-[#8C7B72] font-semibold text-[15px]">→ Assessing baseline</p>
                            )}
                         </div>
                     </div>
 
-                    {/* Formula Card */}
-                    <FormulaCard 
-                        formulaCode={latest.formula_code}
-                        formulaName={formula?.profile_description || 'Active Protocol'}
-                        climateZone={CLIMATE_DESCRIPTIONS[latest.climate_zone] || latest.climate_zone || 'Your Location'}
-                        pathPills={pathPills}
-                        delayMs={300}
-                    />
+                    {/* Formula Architecture & Review Card */}
+                    <div className="flex flex-col gap-6">
+                        <FormulaCard 
+                            formulaCode={latest.formula_code}
+                            formulaName={formula?.profile_description || 'Active Protocol'}
+                            climateZone={CLIMATE_DESCRIPTIONS[latest.climate_zone] || latest.climate_zone || 'Your Location'}
+                            pathPills={pathPills}
+                            delayMs={300}
+                        />
 
-                    {/* Metric Grid (4 small rings) */}
-                    <MetricGrid assessment={latest} delayMs={500} />
-                    
-                    {/* Reformulation / Formula Review Panel */}
-                    <div className={`mt-2 rounded-xl p-5 border ${isEligible ? 'bg-toneek-amber/10 border-toneek-amber/30' : 'bg-white dark:bg-[#1A1210] border-gray-100 dark:border-[#3A2820]'}`}>
-                        <div className="flex justify-between items-center mb-2">
-                            <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Formula Review Date</h5>
-                        </div>
-                        {isEligible ? (
-                            <div>
-                                <p className="text-toneek-forest font-bold text-[13px] mb-3">Formula review available now ✓</p>
-                                <a href="/assessment" className="inline-block border border-[#2A0F06] text-[#2A0F06] hover:bg-[#2A0F06] hover:text-white px-4 py-1.5 rounded-md text-[13px] font-bold transition-colors">
-                                    Request review
-                                </a>
+                        {/* Formula Review Sub-Card */}
+                        <div className={`rounded-xl p-6 border shadow-[0_2px_10px_rgba(42,15,6,0.04)] ${isEligible ? 'bg-[#FCF9F5] border-[#E8E0DA]' : 'bg-white dark:bg-[#1A1210] border-[#E8E0DA] dark:border-[#3A2820]'}`}>
+                            <div className="flex justify-between items-center mb-3">
+                                <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Formula Review Schedule</h5>
                             </div>
-                        ) : (
-                            <p className="text-gray-400 text-[13px]">
-                                Formula can be reviewed from {eligibleDateStr}
-                            </p>
-                        )}
+                            {isEligible ? (
+                                <div className="flex justify-between items-center bg-toneek-amber/10 p-3 rounded-md">
+                                    <p className="text-toneek-forest font-bold text-[14px]">Formula review available now ✓</p>
+                                    <a href="/assessment" className="inline-block bg-[#2A0F06] text-white px-5 py-2 rounded-md text-[13px] font-bold transition-colors">
+                                        Request review
+                                    </a>
+                                </div>
+                            ) : (
+                                <p className="text-gray-500 text-[14px] font-medium mt-1">
+                                    Your formula can be reviewed and seamlessly updated from <span className="text-[#2A0F06] font-bold">{eligibleDateStr}</span> — after 6 weeks of active use.
+                                </p>
+                            )}
+                        </div>
                     </div>
                 </div>
 
-
-                {/* ── RIGHT COLUMN (approx 60%) ── */}
-                <div className="md:col-span-7 flex flex-col gap-10">
-                    
-                    {/* Progress Chart */}
-                    <div className="animate-slide-up opacity-0" style={{ animationDelay: '400ms', animationFillMode: 'forwards' }}>
-                        <div className="flex justify-between items-center mb-4">
-                           <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Progress Over Time</h5>
+                {/* ── METRIC GRID ROW ── */}
+                <div className="w-full">
+                    <MetricGrid assessment={latest} delayMs={500} />
+                </div>
+                
+                {/* ── PROGRESS & TIMELINE ROW ── */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Progress Chart Card */}
+                    <div className="bg-white dark:bg-[#1A1210] rounded-xl shadow-[0_2px_10px_rgba(42,15,6,0.04)] border border-[#E8E0DA] dark:border-[#3A2820] p-8 animate-slide-up opacity-0" style={{ animationDelay: '400ms', animationFillMode: 'forwards' }}>
+                        <div className="flex flex-col mb-6">
+                           <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1">Progress Over Time</h5>
+                           <p className="text-sm text-gray-400">Tracked via your clinical check-ins</p>
                         </div>
-                        <ProgressChart data={chartData} currentScore={currentScore} />
-                        {outcomes && outcomes.length > 1 && (
-                            <p className="text-toneek-forest text-[13px] font-semibold mt-3 flex items-center gap-1">
-                                ↑ Your skin is responding well
-                            </p>
-                        )}
+                        <div className="mt-4">
+                            <ProgressChart data={chartData} currentScore={currentScore} />
+                            {outcomes && outcomes.length > 1 && (
+                                <p className="text-toneek-forest text-[13px] font-semibold mt-4 flex items-center justify-center gap-1 w-full text-center">
+                                    ↑ Your skin is responding positively to the formula
+                                </p>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Active Ingredients Visual Panel */}
-                    {actives.length > 0 && (
-                        <div className="animate-slide-up opacity-0" style={{ animationDelay: '600ms', animationFillMode: 'forwards' }}>
-                            <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-4">Active System Constituents</h5>
-                            <div className="flex flex-col gap-3">
-                                {actives.map((active: any, i: number) => {
-                                    const maxLimits: Record<string, number> = {
-                                        'Niacinamide': 10, 'Azelaic Acid': 15, 'Salicylic Acid': 2,
-                                        'Tranexamic Acid': 5, 'Bakuchiol': 2, 'Kojic Acid': 2,
-                                        'Centella Asiatica': 5, 'Peptide Blend': 5
-                                    }
-                                    return (
-                                        <IngredientCard 
-                                            key={i}
-                                            name={active.name}
-                                            role={active.role || 'TARGETED ACTIVE'}
-                                            concentration={parseFloat(active.concentration) || 0}
-                                            maxSafeLimit={maxLimits[active.name] || 10}
-                                            rationale={active.rationale}
-                                            delayMs={600 + (Math.floor(i) * 100)}
-                                        />
-                                    )
-                                })}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Checkin Status Timeline */}
-                    <div className="animate-slide-up opacity-0 mt-4" style={{ animationDelay: '800ms', animationFillMode: 'forwards' }}>
-                        <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-4">Clinical Check-in Schedule</h5>
+                    {/* Timeline Card */}
+                    <div className="bg-white dark:bg-[#1A1210] rounded-xl shadow-[0_2px_10px_rgba(42,15,6,0.04)] border border-[#E8E0DA] dark:border-[#3A2820] p-8 animate-slide-up opacity-0" style={{ animationDelay: '800ms', animationFillMode: 'forwards' }}>
+                        <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-6">Clinical Check-in Schedule</h5>
                         <CheckinTimeline nodes={timelineNodes} delayMs={800} />
                     </div>
-
-                    {/* Needs Subscription Banner */}
-                    {needsSubscription && (
-                        <div className="bg-[#FEF3E2] border border-[#D4700A] p-6 rounded-xl mt-4 text-center">
-                            <p className="font-bold text-[#2A0F06] text-lg mb-3">Formula synthesized. Proceed to checkout.</p>
-                            <a href={`/subscribe?assessment_id=${latest.id}`} className="inline-block px-8 py-3 bg-[#382218] hover:bg-[#2A0F06] text-white rounded-lg font-bold transition-all shadow-md">
-                                Subscribe to commence protocol
-                            </a>
-                            <p className="text-[#8C7B72] text-[11px] mt-3 uppercase tracking-wider">
-                                Secure direct fulfillment · Premium formulation
-                            </p>
-                        </div>
-                    )}
-
                 </div>
+
+                {/* ── ACTIVE CONSTITUENTS BLOCK ── */}
+                {actives.length > 0 && (
+                    <div className="animate-slide-up opacity-0 mt-2" style={{ animationDelay: '600ms', animationFillMode: 'forwards' }}>
+                        <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-4 pl-1">Active System Constituents</h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {actives.map((active: any, i: number) => {
+                                const maxLimits: Record<string, number> = {
+                                    'Niacinamide': 10, 'Azelaic Acid': 15, 'Salicylic Acid': 2,
+                                    'Tranexamic Acid': 5, 'Bakuchiol': 2, 'Kojic Acid': 2,
+                                    'Centella Asiatica': 5, 'Peptide Blend': 5
+                                }
+                                return (
+                                    <IngredientCard 
+                                        key={i}
+                                        name={active.name}
+                                        role={active.role || 'TARGETED ACTIVE'}
+                                        concentration={parseFloat(active.concentration) || 0}
+                                        maxSafeLimit={maxLimits[active.name] || 10}
+                                        rationale={active.rationale}
+                                        delayMs={600 + (Math.floor(i) * 100)}
+                                    />
+                                )
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                {/* ── SUBSCRIPTION BANNER ── */}
+                {needsSubscription && (
+                    <div className="bg-[#FEF3E2] border border-[#D4700A] p-8 rounded-xl mt-4 text-center shadow-[0_2px_10px_rgba(42,15,6,0.04)]">
+                        <p className="font-bold text-[#2A0F06] text-xl mb-4">Formula synthesized. Proceed to checkout.</p>
+                        <a href={`/subscribe?assessment_id=${latest.id}`} className="inline-block px-10 py-3.5 bg-[#382218] hover:bg-[#2A0F06] text-white rounded-lg font-bold transition-all shadow-md">
+                            Subscribe to commence protocol
+                        </a>
+                        <p className="text-[#8C7B72] text-[11px] mt-4 uppercase tracking-wider font-semibold">
+                            Secure direct fulfillment · Premium formulation
+                        </p>
+                    </div>
+                )}
+
             </div>
         </div>
     )

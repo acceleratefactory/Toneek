@@ -66,16 +66,22 @@ export default async function ResultsPage({
     ]
 
     // Construct static timeline nodes for preview
-    const timelineNodes = []
-    if (formula?.week_2_expectation) timelineNodes.push({ week: 2, state: 'PENDING' as const, dateText: formula.week_2_expectation })
-    if (formula?.week_4_expectation) timelineNodes.push({ week: 4, state: 'PENDING' as const, dateText: formula.week_4_expectation })
-    if (formula?.week_8_expectation) timelineNodes.push({ week: formula.outcome_timeline_weeks || 8, state: 'PENDING' as const, dateText: formula.week_8_expectation })
+    const customW2 = formula?.week_2_expectation || formula?.base_formula?.week_2_expectation || 'Skin inflammation calming, barrier beginning to stabilise.'
+    const customW4 = formula?.week_4_expectation || formula?.base_formula?.week_4_expectation || 'Visible improvement beginning — uneven tone starting to lift.'
+    const customW8 = formula?.week_8_expectation || formula?.base_formula?.week_8_expectation || 'Measurable change in primary concern. Skin OS Score recalculated.'
+
+    const timelineNodes = [
+        { week: 2, state: 'PENDING' as const, description: customW2 },
+        { week: 4, state: 'PENDING' as const, description: customW4 },
+        { week: formula?.outcome_timeline_weeks || 8, state: 'PENDING' as const, description: customW8 }
+    ]
 
     // Determine the photo URL (supbabase storage URL vs raw)
     let photoUrl = assessment.intake_photo_url
     if (photoUrl && !photoUrl.startsWith('http')) {
-        const { data: publicUrlData } = adminClient.storage.from('checkin-photos').getPublicUrl(photoUrl)
-        photoUrl = publicUrlData?.publicUrl || null
+        const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+        const cleanPath = photoUrl.replace(/^checkin-photos\//, '').replace(/^\//, '')
+        photoUrl = `${baseUrl}/storage/v1/object/public/checkin-photos/${cleanPath}`
     }
 
     return (
