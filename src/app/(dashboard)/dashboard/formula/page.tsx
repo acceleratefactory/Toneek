@@ -194,22 +194,22 @@ export default async function FormulaPage() {
         <div className="flex flex-col font-sans mb-12">
             
             {/* ── Top Header Banner (Zoho Style) ── */}
-            <div className="bg-[#FAF8F5] dark:bg-[#261B18] pt-6 px-10 rounded-b-xl shadow-[0_2px_10px_rgba(42,15,6,0.04)] border-b border-[#E8E0DA] dark:border-[#3A2820] -mt-4 sm:-mt-8 mx-[-1rem] sm:mx-[-2rem] mb-8 relative pb-6">
-                <div className="flex justify-between items-start">
+            <div className="bg-[#FAF8F5] dark:bg-[#261B18] pt-6 sm:pt-8 px-6 sm:px-10 rounded-b-xl shadow-[0_2px_10px_rgba(42,15,6,0.04)] border-b border-[#E8E0DA] dark:border-[#3A2820] -mt-4 sm:-mt-8 mx-[-1rem] sm:mx-[-2rem] mb-8 relative pb-6 sm:pb-8">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-[#2A0F06] font-sans flex items-center gap-3">
+                        <h1 className="text-2xl sm:text-3xl font-bold text-[#2A0F06] font-sans flex items-center gap-3">
                             My Formula
-                            <span className="bg-[#2A0F06] text-white font-mono text-[13px] px-2.5 py-1.5 rounded-md tracking-tight">
+                            <span className="bg-[#2A0F06] text-white font-mono text-[13px] sm:text-[14px] px-2.5 py-1.5 rounded-md tracking-tight">
                                 {latest.formula_code}
                             </span>
                         </h1>
-                        <p className="text-[#8C7B72] dark:text-gray-400 text-[13px] mt-1.5 font-medium tracking-wide">
+                        <p className="text-[#8C7B72] dark:text-gray-400 text-[13px] mt-2 font-medium tracking-wide">
                             Last updated: {new Date(latest.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
                         </p>
                     </div>
                     {photoUrl && (
-                        <div className="hidden sm:block">
-                            <img src={photoUrl} alt="Profile" className="w-14 h-14 rounded-full border-4 border-white shadow-sm object-cover" />
+                        <div className="flex-shrink-0 self-start sm:self-auto w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 mb-2 sm:mb-0">
+                            <img src={photoUrl} alt="Assessment Profile" className="w-full h-full rounded-full border-[5px] border-white dark:border-[#302420] shadow-[0_4px_15px_rgba(42,15,6,0.06)] object-cover bg-[#E8E0DA]" />
                         </div>
                     )}
                 </div>
