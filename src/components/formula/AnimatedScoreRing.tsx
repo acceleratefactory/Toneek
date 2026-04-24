@@ -21,7 +21,7 @@ export default function AnimatedScoreRing({
 }: AnimatedScoreRingProps) {
   const [displayScore, setDisplayScore] = useState(0)
   const [animationStarted, setAnimationStarted] = useState(false)
-  const animRef = useRef<number>()
+  const animRef = useRef<number | null>(null)
 
   const radius = (size - strokeWidth) / 2
   const circumference = radius * 2 * Math.PI
