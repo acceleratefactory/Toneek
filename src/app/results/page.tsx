@@ -4,6 +4,11 @@
 
 import { adminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
+import AnimatedScoreRing from '@/components/formula/AnimatedScoreRing'
+import MetricGrid from '@/components/formula/MetricGrid'
+import FormulaCard from '@/components/formula/FormulaCard'
+import IngredientCard from '@/components/formula/IngredientCard'
+import CheckinTimeline from '@/components/formula/CheckinTimeline'
 
 const CLIMATE_LABELS: Record<string, string> = {
     humid_tropical: 'Hot and humid climate (tropical)',
@@ -54,116 +59,140 @@ export default async function ResultsPage({
     const routineMessage = ROUTINE_MESSAGES[assessment.routine_expectation] ??
         ROUTINE_MESSAGES.two_to_three
 
+    const pathPills = [
+        assessment.city || 'Location',
+        assessment.skin_type || 'Variable',
+        assessment.primary_concern?.replace(/_/g, ' ') || 'Skin health'
+    ]
+
+    // Construct static timeline nodes for preview
+    const timelineNodes = []
+    if (formula?.week_2_expectation) timelineNodes.push({ week: 2, state: 'PENDING' as const, dateText: formula.week_2_expectation })
+    if (formula?.week_4_expectation) timelineNodes.push({ week: 4, state: 'PENDING' as const, dateText: formula.week_4_expectation })
+    if (formula?.week_8_expectation) timelineNodes.push({ week: formula.outcome_timeline_weeks || 8, state: 'PENDING' as const, dateText: formula.week_8_expectation })
+
+    // Determine the photo URL (supbabase storage URL vs raw)
+    let photoUrl = assessment.intake_photo_url
+    if (photoUrl && !photoUrl.startsWith('http')) {
+        photoUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://x.supabase.co'}/storage/v1/object/public/checkin-photos/${photoUrl}`
+    }
+
     return (
-        <main className="min-h-screen bg-[#FCFAF8] dark:bg-[#1A1210] py-12 px-4 sm:px-6 font-sans">
+        <main className="min-h-screen bg-[#FCFAF8] dark:bg-[#1A1210] py-12 px-4 sm:px-6 font-sans overflow-x-hidden">
             <div className="max-w-3xl mx-auto space-y-6">
-                {/* Header */}
-                <div className="flex flex-col items-center text-center mb-10">
-                    <img src="/logo.svg" alt="Toneek" className="h-12 w-auto mb-4 dark:hidden" />
-                    <img src="/logo-dark.svg" alt="Toneek" className="h-12 w-auto mb-4 hidden dark:block" />
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Your personalised formula is ready</h1>
+                
+                {/* 1. Header (0ms) */}
+                <div className="flex flex-col items-center text-center mb-10 animate-slide-up opacity-0" style={{ animationDelay: '0ms', animationFillMode: 'forwards' }}>
+                    <img src="/logo.svg" alt="Toneek" className="h-10 w-auto mb-6 dark:hidden" />
+                    <img src="/logo-dark.svg" alt="Toneek" className="h-10 w-auto mb-6 hidden dark:block" />
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Your Skin OS Framework</h1>
+                    <p className="text-gray-500 dark:text-[#A3938C] text-sm">Real-time clinical intelligence mapping</p>
                 </div>
 
-                {/* Skin OS Score */}
-                <section className="bg-white dark:bg-[#222] border border-gray-200 dark:border-[#333] rounded-2xl p-10 text-center shadow-sm">
-                    <p className="text-gray-500 dark:text-gray-400 text-[10px] font-bold uppercase tracking-[0.15em] mb-3">Your Skin OS Score</p>
-                    <p className="text-7xl font-black tracking-tighter text-toneek-amber">{assessment.skin_os_score ?? '—'}</p>
-                    <p className="text-gray-400 text-[10px] uppercase font-bold tracking-[0.1em] mt-2">out of 100</p>
-                </section>
-
-                {/* Formula */}
-                <section className="bg-white dark:bg-[#222] border border-gray-200 dark:border-[#333] rounded-2xl p-8 shadow-sm">
-                    <p className="text-gray-500 dark:text-gray-400 text-[10px] font-bold uppercase tracking-[0.15em] mb-2">Formula</p>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 font-mono tracking-tight">{assessment.formula_code}</p>
-                    {formula?.profile_description && (
-                        <p className="text-gray-600 dark:text-gray-400 text-sm mt-3 leading-relaxed">{formula.profile_description}</p>
+                {/* 2. Main Score Ring (200ms) alongside Assessment Photo */}
+                <section className="bg-white dark:bg-[#261B18] border border-gray-100 dark:border-[#3A2820] rounded-2xl p-8 sm:p-12 text-center shadow-sm relative animate-slide-up opacity-0 flex flex-col md:flex-row items-center justify-center gap-12" style={{ animationDelay: '200ms', animationFillMode: 'forwards' }}>
+                    
+                    {photoUrl && (
+                        <div className="flex flex-col items-center w-32 md:w-40 flex-shrink-0">
+                           <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-[#F7F1EB] dark:border-[#302420] shadow-inner mb-3">
+                               <img src={photoUrl} alt="Assessment Intake" className="w-full h-full object-cover" />
+                           </div>
+                           <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold font-sans">Baseline Photo</p>
+                        </div>
                     )}
+                    
+                    <div className="flex flex-col items-center">
+                        <p className="text-gray-500 dark:text-[#A3938C] text-[11px] font-bold uppercase tracking-[0.15em] mb-4 font-sans">
+                            Skin OS Score
+                        </p>
+                        <AnimatedScoreRing 
+                            score={assessment.skin_os_score ?? 50} 
+                            size={200}
+                            label="Initial Assessment" 
+                            delay={200}
+                        />
+                    </div>
                 </section>
 
-                {/* Climate note */}
-                {assessment.climate_zone && (
-                    <section className="bg-white dark:bg-[#222] border border-gray-200 dark:border-[#333] rounded-2xl p-8 shadow-sm">
-                        <p className="text-gray-500 dark:text-gray-400 text-[10px] font-bold uppercase tracking-[0.15em] mb-2">Formulated for</p>
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                            {CLIMATE_LABELS[assessment.climate_zone] ?? assessment.climate_zone}
-                        </p>
-                    </section>
-                )}
+                {/* 3. Metric Grid (400ms) */}
+                <MetricGrid assessment={assessment} delayMs={400} />
 
-                {/* Active ingredients */}
+                {/* 4. Formula Card (800ms) */}
+                <FormulaCard 
+                    formulaCode={assessment.formula_code || 'TNK-0X'}
+                    formulaName={formula?.profile_description || 'Custom Clinical Formulation'}
+                    climateZone={CLIMATE_LABELS[assessment.climate_zone] ?? assessment.climate_zone ?? 'Your Climate'}
+                    pathPills={pathPills}
+                    delayMs={800}
+                />
+
+                {/* 5. Active Ingredients (1000ms staggered) */}
                 {actives.length > 0 && (
-                    <section className="bg-white dark:bg-[#222] border border-gray-200 dark:border-[#333] rounded-2xl p-8 shadow-sm">
-                        <p className="text-gray-500 dark:text-gray-400 text-[10px] font-bold uppercase tracking-[0.15em] mb-6">Why this formula for you</p>
-                        <div className="flex flex-col gap-3">
-                            {actives.map((active: any, i: number) => (
-                                <div key={i} className="bg-toneek-amber/10 dark:bg-toneek-amber/5 border-l-4 border-toneek-amber p-4 rounded-r-lg">
-                                    <div className="flex justify-between items-center mb-1">
-                                        <span className="font-bold text-gray-900 dark:text-gray-100 text-sm">{active.name}</span>
-                                        <span className="text-xs font-bold text-toneek-brown dark:text-toneek-amber">{active.concentration}{active.unit}</span>
-                                    </div>
-                                    <p className="text-xs text-gray-600 dark:text-gray-400">{active.rationale}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-                )}
-
-                {/* Timeline */}
-                {formula?.outcome_timeline_weeks && (
-                    <section className="bg-white dark:bg-[#222] border border-gray-200 dark:border-[#333] rounded-2xl p-8 shadow-sm">
-                        <p className="text-gray-500 dark:text-gray-400 text-[10px] font-bold uppercase tracking-[0.15em] mb-6">What to expect</p>
-                        <div className="flex flex-col gap-4 relative before:content-[''] before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-px before:bg-gray-200 dark:before:bg-[#333]">
-                            {formula.week_2_expectation && (
-                                <div className="relative pl-8">
-                                    <div className="absolute left-[5px] top-1.5 w-2 h-2 rounded-full bg-toneek-amber"></div>
-                                    <span className="block text-xs font-bold text-gray-900 dark:text-gray-100 mb-1">Week 2</span>
-                                    <span className="block text-sm text-gray-600 dark:text-gray-400">{formula.week_2_expectation}</span>
-                                </div>
-                            )}
-                            {formula.week_4_expectation && (
-                                <div className="relative pl-8">
-                                    <div className="absolute left-[5px] top-1.5 w-2 h-2 rounded-full bg-toneek-amber"></div>
-                                    <span className="block text-xs font-bold text-gray-900 dark:text-gray-100 mb-1">Week 4</span>
-                                    <span className="block text-sm text-gray-600 dark:text-gray-400">{formula.week_4_expectation}</span>
-                                </div>
-                            )}
-                            {formula.week_8_expectation && (
-                                <div className="relative pl-8">
-                                    <div className="absolute left-[5px] top-1.5 w-2 h-2 rounded-full bg-toneek-amber"></div>
-                                    <span className="block text-xs font-bold text-gray-900 dark:text-gray-100 mb-1">Week {formula.outcome_timeline_weeks}</span>
-                                    <span className="block text-sm text-gray-600 dark:text-gray-400">{formula.week_8_expectation}</span>
-                                </div>
-                            )}
-                        </div>
-                    </section>
-                )}
-
-                {/* Routine instruction */}
-                <section className="bg-white dark:bg-[#222] border border-gray-200 dark:border-[#333] rounded-2xl p-8 shadow-sm">
-                    <p className="text-gray-500 dark:text-gray-400 text-[10px] font-bold uppercase tracking-[0.15em] mb-2">How to use your formula</p>
-                    <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed font-medium">{routineMessage}</p>
-                </section>
-
-                {/* Isotretinoin warning */}
-                {assessment.isotretinoin_flag && (
-                    <section className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/20 rounded-2xl p-6 shadow-sm">
-                        <p className="text-red-700 dark:text-red-400 font-bold text-sm mb-2">⚠ Isotretinoin note</p>
-                        <p className="text-red-600 dark:text-red-300 text-xs leading-relaxed">
-                            Because you are on isotretinoin, your formula has been adjusted to exclude any exfoliating acids.
-                            Your formula is safe to use alongside your prescription.
-                            Always confirm with your prescribing doctor.
+                    <section className="mt-8 animate-slide-up opacity-0" style={{ animationDelay: '1000ms', animationFillMode: 'forwards' }}>
+                        <p className="text-gray-500 dark:text-[#A3938C] text-[11px] font-bold uppercase tracking-[0.15em] mb-4 font-sans">
+                            Bio-active Modules
                         </p>
+                        <div className="grid sm:grid-cols-2 gap-4">
+                            {actives.map((active: any, i: number) => {
+                                // Provide fallback max limits for calculating bar width
+                                const maxLimits: Record<string, number> = {
+                                    'Niacinamide': 10, 'Azelaic Acid': 15, 'Salicylic Acid': 2,
+                                    'Tranexamic Acid': 5, 'Bakuchiol': 2, 'Kojic Acid': 2,
+                                    'Centella Asiatica': 5, 'Peptide Blend': 5
+                                }
+                                const maxSafe = maxLimits[active.name] || 10
+                                
+                                return (
+                                    <IngredientCard 
+                                        key={i}
+                                        name={active.name}
+                                        role={active.role || 'TARGETED ACTIVE'}
+                                        concentration={parseFloat(active.concentration) || 0}
+                                        maxSafeLimit={maxSafe}
+                                        rationale={active.rationale}
+                                        delayMs={1000 + (Math.floor(i) * 120)}
+                                    />
+                                )
+                            })}
+                        </div>
                     </section>
                 )}
 
-                {/* CTA */}
-                <section className="bg-white dark:bg-[#222] border border-gray-200 dark:border-[#333] rounded-2xl p-10 text-center shadow-sm">
-                    <p className="text-gray-900 dark:text-gray-100 font-bold text-lg mb-6">Ready to get your formula made?</p>
-                    <a id="subscribe-cta" href={`/subscribe?assessment_id=${assessment.id}`} className="inline-block bg-[#3A2820] hover:bg-[#2A1D17] text-white font-bold py-3.5 mx-auto px-8 w-full sm:w-auto rounded-lg transition-colors">
+                {/* 6. Expected Timeline (1400ms) */}
+                {timelineNodes.length > 0 && (
+                    <section className="bg-white dark:bg-[#1A1210] border border-gray-100 dark:border-[#3A2820] rounded-2xl p-6 sm:p-8 mt-6 animate-slide-up opacity-0 shadow-sm" style={{ animationDelay: '1400ms', animationFillMode: 'forwards' }}>
+                        <p className="text-gray-500 dark:text-[#A3938C] text-[11px] font-bold uppercase tracking-[0.15em] mb-4 font-sans">
+                            Clinical Trajectory
+                        </p>
+                        <CheckinTimeline nodes={timelineNodes} delayMs={1400} />
+                    </section>
+                )}
+
+                {/* Routine & Warnings */}
+                <div className="grid sm:grid-cols-2 gap-4 animate-slide-up opacity-0" style={{ animationDelay: '1600ms', animationFillMode: 'forwards' }}>
+                    <section className="bg-white dark:bg-[#261B18] border border-gray-100 dark:border-[#3A2820] rounded-xl p-6 shadow-sm">
+                        <p className="text-gray-500 dark:text-[#A3938C] text-[10px] font-bold uppercase tracking-[0.15em] mb-3">Protocol</p>
+                        <p className="text-[14px] text-gray-800 dark:text-gray-200 leading-relaxed font-medium font-sans">{routineMessage}</p>
+                    </section>
+                    
+                    {assessment.isotretinoin_flag && (
+                        <section className="bg-red-50 dark:bg-[#321B19] border border-red-100 dark:border-[#4B221E] rounded-xl p-6 shadow-sm">
+                            <p className="text-red-700 dark:text-[#D05C51] font-bold text-xs uppercase tracking-wider mb-2">⚠ Isotretinoin Safety</p>
+                            <p className="text-red-600 dark:text-[#E0A29C] text-xs leading-relaxed font-sans">
+                                Because you are on isotretinoin, your formula has been adjusted to strictly exclude all exfoliating acids. Safe for use alongside prescription.
+                            </p>
+                        </section>
+                    )}
+                </div>
+
+                {/* 7. CTA (1800ms) */}
+                <section className="pt-8 text-center animate-slide-up opacity-0" style={{ animationDelay: '1800ms', animationFillMode: 'forwards' }}>
+                    <p className="text-gray-900 dark:text-[#F0E6DF] font-bold text-[22px] mb-6 font-sans tracking-tight">Ready to initiate your sequence?</p>
+                    <a href={`/subscribe?assessment_id=${assessment.id}`} className="inline-block bg-[#2A0F06] hover:bg-[#3D1A0E] text-white font-medium py-3.5 mx-auto px-10 rounded-lg shadow-xl shadow-toneek-brown/20 transition-all font-sans text-lg w-full sm:w-auto">
                         Subscribe and get your formula
                     </a>
-                    <p className="text-gray-400 text-[11px] mt-4 max-w-sm mx-auto">
-                        Payment by bank transfer only. Your formula is made to order once payment is confirmed.
+                    <p className="text-gray-400 dark:text-[#A3938C] text-xs mt-5 max-w-sm mx-auto font-sans">
+                        Requires bank transfer completion. Custom compounds are synthesized immediately upon verification.
                     </p>
                 </section>
             </div>

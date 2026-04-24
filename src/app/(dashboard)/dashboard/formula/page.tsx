@@ -5,8 +5,16 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import ScoreSparkline from '@/components/dashboard/ScoreSparkline'
 import { adminClient } from '@/lib/supabase/admin'
+
+import AnimatedScoreRing from '@/components/formula/AnimatedScoreRing'
+import MetricGrid from '@/components/formula/MetricGrid'
+import FormulaCard from '@/components/formula/FormulaCard'
+import IngredientCard from '@/components/formula/IngredientCard'
+import ProgressChart from '@/components/formula/ProgressChart'
+import CheckinTimeline, { TimelineNode, CheckinState } from '@/components/formula/CheckinTimeline'
+import HeldOrderBanner from '@/components/formula/HeldOrderBanner'
+
 
 export const metadata = {
     title: 'My Formula — Toneek',
@@ -98,252 +106,213 @@ export default async function FormulaPage() {
         )
     }
 
-    const latest     = assessments[0]
-    const formula    = (latest as any).formula_codes
-    const actives: any[] = latest.active_modules ?? formula?.active_modules ?? []
-    const previous   = assessments.slice(1)
-
-    // Fetch skin outcomes for sparkline
-    const { data: outcomes } = await adminClient
-        .from('skin_outcomes')
-        .select('check_in_week, improvement_score, recorded_at, new_skin_os_score')
-        .eq('user_id', session.user.id)
-        .order('recorded_at', { ascending: true })
-
-    // Reformulation eligibility — 6 weeks from assessment created_at
-    const assessedAt       = new Date(latest.created_at)
-    const eligibleAt       = new Date(assessedAt.getTime() + 42 * 24 * 60 * 60 * 1000)
-    const isEligible       = new Date() >= eligibleAt
-    const eligibleDateStr  = eligibleAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
-
-    // Sparkline data — baseline score + check-in scores
-    const sparklinePoints = [
-        { label: 'Start', score: latest.skin_os_score ?? 50 },
-        ...(outcomes ?? []).map(o => ({
-            label: `Wk ${o.check_in_week}`,
-            score: o.new_skin_os_score ?? (o.improvement_score ? Math.min(100, (latest.skin_os_score ?? 50) + o.improvement_score) : null),
-        })).filter(p => p.score !== null),
-    ]
+    const latest     = assessments[0]    // Reformulation eligibility
+    const assessedAt = new Date(latest.created_at)
+    const eligibleAt = new Date(assessedAt.getTime() + 42 * 24 * 60 * 60 * 1000)
+    const isEligible = new Date() >= eligibleAt
+    const eligibleDateStr = eligibleAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 
     const currentScore = latest.skin_os_score ?? 50
+    const scoreDiff = (outcomes && outcomes.length > 0) ? currentScore - 50 : 0 // Simplified trend logic
+
+    const pathPills = [
+        latest.city || 'Location',
+        latest.skin_type || 'Variable',
+        latest.primary_concern?.replace(/_/g, ' ') || 'Skin health'
+    ]
+
+    // Construct ProgressChart Data
+    const chartData = (outcomes || []).map(o => ({
+        week: o.check_in_week,
+        score: o.improvement_score || 5
+    }))
+
+    // Construct CheckinTimeline nodes securely based on elapsed time from assessment
+    const now = new Date()
+    let hasDueCheckin = false
+    let dueCheckinWeek = 0
+
+    const timelineNodes: TimelineNode[] = TIMELINE.map((item, index) => {
+        const expectedDate = new Date(assessedAt.getTime() + item.week * 7 * 24 * 60 * 60 * 1000)
+        const outcome = outcomes?.find(o => o.check_in_week === item.week)
+        
+        if (outcome) {
+            return { week: item.week, state: 'COMPLETED', score: outcome.improvement_score }
+        }
+        
+        // Ensure strictly sequential completion
+        const previousWeek = index > 0 ? TIMELINE[index - 1].week : null
+        const previousOutcome = previousWeek ? outcomes?.find(o => o.check_in_week === previousWeek) : null
+        
+        if (now >= expectedDate) {
+             if (index === 0 || previousOutcome) {
+                 hasDueCheckin = true
+                 if (dueCheckinWeek === 0) dueCheckinWeek = item.week
+                 return { week: item.week, state: 'DUE_NOW', dateText: 'Due now' }
+             }
+        }
+        
+        const isLocked = index > 0 && !previousOutcome
+        return { 
+            week: item.week, 
+            state: isLocked ? 'LOCKED' : 'PENDING', 
+            dateText: `Available ${expectedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` 
+        }
+    })
+
+    // Grab assessment profile photo if stored
+    let photoUrl = latest.intake_photo_url
+    if (photoUrl && !photoUrl.startsWith('http')) {
+        photoUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://x.supabase.co'}/storage/v1/object/public/checkin-photos/${photoUrl}`
+    }
 
     return (
-        <div className="flex flex-col gap-6 font-sans">
-            {/* ── Top Header Banner (Zoho Style) ── */}
-            <div className="bg-white dark:bg-[#261B18] pt-6 px-10 rounded-b-xl shadow-sm border-b border-gray-200 dark:border-[#3A2820] -mt-8 sm:-mt-8 mx-[-1rem] sm:mx-[-2rem] mb-2 relative pb-6">
-                <div className="flex justify-between items-start">
+        <div className="flex flex-col font-sans mb-12">
+            
+            {/* Header Row */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+                <div className="flex items-center gap-4">
+                    {photoUrl && (
+                        <img src={photoUrl} alt="Profile" className="w-12 h-12 rounded-full border-2 border-[#E8E0DA] object-cover" />
+                    )}
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Formula</h1>
-                        {previous.length > 0 && (
-                            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-                                Updated {new Date(latest.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        <h1 className="text-[24px] font-semibold text-[#2A0F06] font-sans flex items-center gap-3">
+                            My Formula
+                            <span className="bg-[#2A0F06] text-white font-mono text-[13px] px-2.5 py-1 rounded-md tracking-tight">
+                                {latest.formula_code}
+                            </span>
+                        </h1>
+                    </div>
+                </div>
+                <div className="text-[12px] text-[#8C7B72]">
+                    Last updated: {new Date(latest.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </div>
+            </div>
+
+            {hasDueCheckin && (
+                <HeldOrderBanner checkinWeekRequired={dueCheckinWeek} />
+            )}
+
+            {/* Desktop 40/60 Split Container */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-y-12 md:gap-x-10 items-start">
+                
+                {/* ── LEFT COLUMN (approx 40%) ── */}
+                <div className="md:col-span-5 flex flex-col gap-8">
+                    
+                    {/* Main Score Ring Profile */}
+                    <div className="flex flex-col items-center">
+                        <AnimatedScoreRing score={currentScore} size={180} showLabel={false} delay={100} />
+                        
+                        <div className="mt-4 flex flex-col items-center gap-2">
+                           {scoreDiff > 0 ? (
+                                <p className="text-toneek-forest font-semibold text-sm">↑ Skin health improving</p>
+                           ) : scoreDiff < 0 ? (
+                                <p className="text-[#C13B2E] font-semibold text-sm">↓ Consistency required</p>
+                           ) : (
+                                <p className="text-[#8C7B72] font-semibold text-sm">→ Assessing baseline</p>
+                           )}
+                        </div>
+                    </div>
+
+                    {/* Formula Card */}
+                    <FormulaCard 
+                        formulaCode={latest.formula_code}
+                        formulaName={formula?.profile_description || 'Active Protocol'}
+                        climateZone={CLIMATE_DESCRIPTIONS[latest.climate_zone] || latest.climate_zone || 'Your Location'}
+                        pathPills={pathPills}
+                        delayMs={300}
+                    />
+
+                    {/* Metric Grid (4 small rings) */}
+                    <MetricGrid assessment={latest} delayMs={500} />
+                    
+                    {/* Reformulation / Formula Review Panel */}
+                    <div className={`mt-2 rounded-xl p-5 border ${isEligible ? 'bg-toneek-amber/10 border-toneek-amber/30' : 'bg-white dark:bg-[#1A1210] border-gray-100 dark:border-[#3A2820]'}`}>
+                        <div className="flex justify-between items-center mb-2">
+                            <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Formula Review Date</h5>
+                        </div>
+                        {isEligible ? (
+                            <div>
+                                <p className="text-toneek-forest font-bold text-[13px] mb-3">Formula review available now ✓</p>
+                                <a href="/assessment" className="inline-block border border-[#2A0F06] text-[#2A0F06] hover:bg-[#2A0F06] hover:text-white px-4 py-1.5 rounded-md text-[13px] font-bold transition-colors">
+                                    Request review
+                                </a>
+                            </div>
+                        ) : (
+                            <p className="text-gray-400 text-[13px]">
+                                Formula can be reviewed from {eligibleDateStr}
                             </p>
                         )}
                     </div>
                 </div>
-            </div>
 
-            {/* ── Skin OS Score ── */}
-            <section
-                aria-label="Skin OS Score"
-                className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#222] rounded-xl p-6 shadow-sm"
-            >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                        <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider mb-2 font-bold">
-                            Skin OS Score
-                        </p>
-                        <p id="skin-os-score" style={{ color: scoreColour(currentScore) }} className="text-5xl font-black mb-1">
-                            {currentScore}
-                        </p>
-                        <p style={{ color: scoreColour(currentScore) }} className="text-sm font-bold">
-                            {scoreLabel(currentScore)}
-                        </p>
-                        <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">out of 100</p>
+
+                {/* ── RIGHT COLUMN (approx 60%) ── */}
+                <div className="md:col-span-7 flex flex-col gap-10">
+                    
+                    {/* Progress Chart */}
+                    <div className="animate-slide-up opacity-0" style={{ animationDelay: '400ms', animationFillMode: 'forwards' }}>
+                        <div className="flex justify-between items-center mb-4">
+                           <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Progress Over Time</h5>
+                        </div>
+                        <ProgressChart data={chartData} currentScore={currentScore} />
+                        {outcomes && outcomes.length > 1 && (
+                            <p className="text-toneek-forest text-[13px] font-semibold mt-3 flex items-center gap-1">
+                                ↑ Your skin is responding well
+                            </p>
+                        )}
                     </div>
 
-                    {/* Sparkline if multiple data points */}
-                    {sparklinePoints.length > 1 && (
-                        <ScoreSparkline points={sparklinePoints} colour={scoreColour(currentScore)} />
+                    {/* Active Ingredients Visual Panel */}
+                    {actives.length > 0 && (
+                        <div className="animate-slide-up opacity-0" style={{ animationDelay: '600ms', animationFillMode: 'forwards' }}>
+                            <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-4">Active System Constituents</h5>
+                            <div className="flex flex-col gap-3">
+                                {actives.map((active: any, i: number) => {
+                                    const maxLimits: Record<string, number> = {
+                                        'Niacinamide': 10, 'Azelaic Acid': 15, 'Salicylic Acid': 2,
+                                        'Tranexamic Acid': 5, 'Bakuchiol': 2, 'Kojic Acid': 2,
+                                        'Centella Asiatica': 5, 'Peptide Blend': 5
+                                    }
+                                    return (
+                                        <IngredientCard 
+                                            key={i}
+                                            name={active.name}
+                                            role={active.role || 'TARGETED ACTIVE'}
+                                            concentration={parseFloat(active.concentration) || 0}
+                                            maxSafeLimit={maxLimits[active.name] || 10}
+                                            rationale={active.rationale}
+                                            delayMs={600 + (Math.floor(i) * 100)}
+                                        />
+                                    )
+                                })}
+                            </div>
+                        </div>
                     )}
-                </div>
-            </section>
 
-            {/* ── Formula identity ── */}
-            <section
-                aria-label="Formula details"
-                className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#222] rounded-xl p-6 shadow-sm"
-            >
-                <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider mb-2 font-bold">
-                    Your formula
-                </p>
-                <p id="formula-code" className="font-mono font-bold text-2xl text-toneek-brown dark:text-gray-100 mb-2">
-                    {latest.formula_code}
-                </p>
-                {formula?.profile_description && (
-                    <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-                        {formula.profile_description}
-                    </p>
-                )}
-                {latest.climate_zone && (
-                    <p className="text-gray-500 dark:text-gray-400 text-xs mt-3">
-                        <span>Formulated for </span>
-                        {CLIMATE_DESCRIPTIONS[latest.climate_zone] ?? latest.climate_zone}
-                    </p>
-                )}
-            </section>
-
-            {/* ── Why this formula ── */}
-            {latest.formula_rationale && (
-                <section className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#222] rounded-xl p-6 shadow-sm">
-                    <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider mb-2 font-bold">
-                        Why this formula for you
-                    </p>
-                    <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
-                        {latest.formula_rationale}
-                    </p>
-                </section>
-            )}
-
-            {/* ── Active ingredients ── */}
-            {actives.length > 0 && (
-                <section aria-label="Active ingredients" className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#222] rounded-xl p-6 shadow-sm">
-                    <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider mb-4 font-bold">
-                        Active ingredients
-                    </p>
-                    <div className="flex flex-col gap-3">
-                        {actives.map((active: any, i: number) => (
-                            <div key={i} className="bg-gray-50 dark:bg-[#222] rounded-lg p-4 flex justify-between items-start gap-4">
-                                <div className="flex-1">
-                                    <p className="font-bold text-gray-900 dark:text-gray-100 text-sm mb-1">
-                                        {active.name}
-                                    </p>
-                                    {active.rationale && (
-                                        <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed">
-                                            {active.rationale}
-                                        </p>
-                                    )}
-                                </div>
-                                <span className="text-toneek-amber font-mono font-bold text-sm flex-shrink-0">
-                                    {active.concentration}{active.unit}
-                                </span>
-                            </div>
-                        ))}
+                    {/* Checkin Status Timeline */}
+                    <div className="animate-slide-up opacity-0 mt-4" style={{ animationDelay: '800ms', animationFillMode: 'forwards' }}>
+                        <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-4">Clinical Check-in Schedule</h5>
+                        <CheckinTimeline nodes={timelineNodes} delayMs={800} />
                     </div>
-                </section>
-            )}
 
-            {/* ── Expected timeline ── */}
-            <section aria-label="Expected timeline" className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#222] rounded-xl p-6 shadow-sm">
-                <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider mb-4 font-bold">
-                    What to expect
-                </p>
-                <div className="flex flex-col gap-0">
-                    {TIMELINE.map((item, i) => {
-                        const outcome = outcomes?.find(o => o.check_in_week === item.week)
-                        const done = !!outcome
-                        return (
-                            <div key={item.week} style={{
-                                display: 'flex',
-                                gap: '1rem',
-                                paddingBottom: i < TIMELINE.length - 1 ? '1rem' : 0,
-                            }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                    <div style={{
-                                        width: '28px', height: '28px',
-                                        borderRadius: '50%',
-                                        background: done ? '#4caf82' : '#222',
-                                        border: `2px solid ${done ? '#4caf82' : '#333'}`,
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        fontSize: '0.75rem', color: done ? '#fff' : '#555',
-                                        flexShrink: 0,
-                                    }}>
-                                        {done ? '✓' : item.week}
-                                    </div>
-                                    {i < TIMELINE.length - 1 && (
-                                        <div style={{ width: '1px', flex: 1, background: '#2a2a2a', minHeight: '24px' }} />
-                                    )}
-                                </div>
-                                <div className="pt-1 flex-1">
-                                    <p className={`font-bold text-sm mb-1 ${done ? 'text-toneek-forest' : 'text-gray-500 dark:text-gray-400'}`}>
-                                        Week {item.week}
-                                        {done && outcome?.improvement_score && (
-                                            <span className="font-normal text-toneek-forest ml-2">
-                                                — score {outcome.improvement_score}/10
-                                            </span>
-                                        )}
-                                    </p>
-                                    <p className="text-gray-600 dark:text-gray-400 text-xs leading-relaxed">
-                                        {item.description}
-                                    </p>
-                                </div>
-                            </div>
-                        )
-                    })}
+                    {/* Needs Subscription Banner */}
+                    {needsSubscription && (
+                        <div className="bg-[#FEF3E2] border border-[#D4700A] p-6 rounded-xl mt-4 text-center">
+                            <p className="font-bold text-[#2A0F06] text-lg mb-3">Formula synthesized. Proceed to checkout.</p>
+                            <a href={`/subscribe?assessment_id=${latest.id}`} className="inline-block px-8 py-3 bg-[#382218] hover:bg-[#2A0F06] text-white rounded-lg font-bold transition-all shadow-md">
+                                Subscribe to commence protocol
+                            </a>
+                            <p className="text-[#8C7B72] text-[11px] mt-3 uppercase tracking-wider">
+                                Secure direct fulfillment · Premium formulation
+                            </p>
+                        </div>
+                    )}
+
                 </div>
-            </section>
-
-            {/* ── Reformulation eligibility ── */}
-            <section className={`border rounded-xl p-6 shadow-sm ${isEligible ? 'bg-toneek-amber/10 border-toneek-amber/30' : 'bg-white dark:bg-[#1a1a1a] border-gray-200 dark:border-[#222]'}`}>
-                <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider mb-2 font-bold">
-                    Formula review
-                </p>
-                {isEligible ? (
-                    <>
-                        <p className="text-toneek-amber font-bold text-sm mb-2">
-                            Your formula is eligible for review
-                        </p>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed mb-4">
-                            Six weeks of data allows us to refine your formula based on your skin's response.
-                        </p>
-                        <a
-                            href="/assessment"
-                            id="start-reassessment"
-                            className="inline-block px-5 py-2.5 bg-toneek-amber text-[#000000] rounded-lg font-bold text-sm hover:opacity-90 transition-opacity"
-                        >
-                            Update my skin assessment →
-                        </a>
-                    </>
-                ) : (
-                    <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-                        Your formula can be reviewed and updated from <strong className="text-gray-800 dark:text-gray-300">{eligibleDateStr}</strong> — after 6 weeks of use.
-                    </p>
-                )}
-            </section>
-
-            {/* ── Previous formulas (collapsible) ── */}
-            {previous.length > 0 && (
-                <section className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#222] rounded-xl p-6 shadow-sm">
-                    <p className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider mb-4 font-bold">
-                        Formula history
-                    </p>
-                    <div className="flex flex-col gap-2">
-                        {previous.map((prev, i) => (
-                            <div key={prev.id} className="bg-gray-50 dark:bg-[#222] rounded-lg p-3 flex justify-between items-center px-4">
-                                <div>
-                                    <p className="text-gray-700 dark:text-gray-300 font-bold text-sm">{prev.formula_code}</p>
-                                    <p className="text-gray-500 dark:text-gray-500 text-xs mt-0.5">
-                                        {new Date(prev.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
-                                    </p>
-                                </div>
-                                <span className="text-gray-500 dark:text-gray-400 text-sm font-medium">
-                                    Score: {prev.skin_os_score ?? '—'}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                </section>
-            )}
-
-            {/* ── Subscribe Call to Action ── */}
-            {needsSubscription && (
-                <section className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#222] rounded-xl p-8 shadow-sm text-center">
-                    <p className="font-bold text-gray-900 dark:text-gray-100 text-lg mb-6">
-                        Ready to get your formula made?
-                    </p>
-                    <a
-                        href={`/subscribe?assessment_id=${latest.id}`}
-                        className="inline-block px-8 py-3 bg-[#382218] hover:bg-[#2A1911] text-white rounded-lg font-bold transition-opacity shadow-sm"
+            </div>
+        </div>
+    )                      className="inline-block px-8 py-3 bg-[#382218] hover:bg-[#2A1911] text-white rounded-lg font-bold transition-opacity shadow-sm"
                     >
                         Subscribe and get your formula
                     </a>
