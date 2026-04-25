@@ -6,6 +6,7 @@ import { createServerClient } from '@supabase/ssr'
 import { adminClient } from '@/lib/supabase/admin'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { calculateSkinScores } from '@/lib/analysis/calculateSkinScores'
 
 export async function POST(request: NextRequest) {
     try {
@@ -104,6 +105,28 @@ export async function POST(request: NextRequest) {
                     .eq('user_id', session.user.id)
                     .eq('check_in_week', 8)
             }
+        }
+
+        // Recalculate the 8 analysis scores and update on the assessment record
+        try {
+            const { data: assessmentRow } = await adminClient
+                .from('skin_assessments')
+                .select('*')
+                .eq('user_id', session.user.id)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle()
+
+            if (assessmentRow) {
+                const updatedScores = calculateSkinScores(assessmentRow)
+                await adminClient
+                    .from('skin_assessments')
+                    .update({ analysis_scores: updatedScores })
+                    .eq('id', assessmentRow.id)
+            }
+        } catch (scoreErr) {
+            // Non-fatal — scores will update on the next check-in if this fails
+            console.error('Analysis score recalculation failed (non-fatal):', scoreErr)
         }
 
         return NextResponse.json({

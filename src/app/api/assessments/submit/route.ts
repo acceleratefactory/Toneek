@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { applyTriggerModifiers } from '@/lib/formula/triggerModifiers'
 import { resolveCurrency } from '@/lib/currency'
 import { sendFormulaEmail } from '@/lib/email/sendFormulaEmail'
+import { calculateSkinScores } from '@/lib/analysis/calculateSkinScores'
 
 export async function POST(request: NextRequest) {
     const assessment = await request.json()
@@ -118,6 +119,9 @@ export async function POST(request: NextRequest) {
             // Photo
             intake_photo_url: finalPhotoUrl || null,
             photo_consent: assessment.photo_consent ?? false,
+
+            // Analysis scores — 8 clinical scores derived from assessment data
+            analysis_scores: calculateSkinScores(assessment),
 
             // Acquisition
             how_did_you_hear: assessment.how_did_you_hear,
