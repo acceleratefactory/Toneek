@@ -41,22 +41,45 @@ export default function DecisionConfidence({
   if (isColdStart) {
     return (
       <div
-        className="animate-slide-up opacity-0 bg-[#FAF8F5] dark:bg-[#1E1410] border border-[#E8E0DA] dark:border-[#3A2820] rounded-xl px-5 py-4 flex items-start gap-3"
+        className="animate-slide-up opacity-0 bg-white dark:bg-[#1A1210] border border-[#E8E0DA] dark:border-[#3A2820] rounded-xl px-6 py-5 shadow-sm"
         style={{ animationDelay: `${delayMs}ms`, animationFillMode: 'forwards' }}
       >
-        {/* Pulsing indicator dot */}
-        <span className="mt-0.5 flex-shrink-0 w-2 h-2 rounded-full bg-toneek-amber animate-pulse" />
-        <div>
-          <p className="text-[11px] font-bold text-gray-400 dark:text-[#A3938C] uppercase tracking-widest mb-0.5 font-sans">
-            {variant === 'dashboard' ? 'System Confidence' : 'Formula Confidence'}
+        {/* Title row */}
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-[11px] font-bold text-gray-400 dark:text-[#A3938C] uppercase tracking-widest font-sans">
+            Formula Confidence
           </p>
-          <p className="text-[13px] text-[#8C7B72] dark:text-[#A3938C] font-sans leading-snug">
-            Building — formula assigned from clinical rules. Confidence improves as outcome data is collected.
-          </p>
+          {/* Pulsing amber dot */}
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-toneek-amber opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-toneek-amber" />
+          </span>
         </div>
+
+        {/* Status label */}
+        <p className="text-[13px] font-semibold text-toneek-brown dark:text-[#F0E6DF] font-sans mb-2">
+          Cold Start — Clinical Rules Mode
+        </p>
+
+        {/* Explanation — two sentences from the document */}
+        <p className="text-[12px] text-[#8C7B72] dark:text-[#A3938C] font-sans leading-relaxed mb-4">
+          Your formula was assigned using validated clinical decision rules, not predictive modelling.
+          As outcome data accumulates from the Toneek system, your confidence score will be calculated from real-world results.
+        </p>
+
+        {/* Thin progress bar — 0% filled */}
+        <div className="w-full h-1 bg-[#E8E0DA] dark:bg-[#3A2820] rounded-full overflow-hidden mb-2">
+          <div className="h-full w-0 bg-toneek-amber rounded-full" />
+        </div>
+
+        {/* Profile count label */}
+        <p className="text-[10px] text-[#8C7B72] dark:text-[#7A6A62] font-sans italic">
+          0 profiles — building toward 200 required for predictive mode
+        </p>
       </div>
     )
   }
+
 
   return (
     <div

@@ -301,28 +301,10 @@ export default async function ResultsPage({
                         <CheckinTimeline
                             nodes={timelineNodes}
                             delayMs={1400}
-                            showEscalation={true}
                             coldStartNote={coldStartNote}
                         />
                     </section>
                 )}
-
-                {/* Routine & Warnings */}
-                <div className="grid sm:grid-cols-2 gap-4 animate-slide-up opacity-0" style={{ animationDelay: '1600ms', animationFillMode: 'forwards' }}>
-                    <section className="bg-white dark:bg-[#261B18] border border-gray-100 dark:border-[#3A2820] rounded-xl p-6 shadow-sm">
-                        <p className="text-gray-500 dark:text-[#A3938C] text-[10px] font-bold uppercase tracking-[0.15em] mb-3">Protocol</p>
-                        <p className="text-[14px] text-gray-800 dark:text-gray-200 leading-relaxed font-medium font-sans">{routineMessage}</p>
-                    </section>
-                    
-                    {assessment.isotretinoin_flag && (
-                        <section className="bg-red-50 dark:bg-[#321B19] border border-red-100 dark:border-[#4B221E] rounded-xl p-6 shadow-sm">
-                            <p className="text-red-700 dark:text-[#D05C51] font-bold text-xs uppercase tracking-wider mb-2">⚠ Isotretinoin Safety</p>
-                            <p className="text-red-600 dark:text-[#E0A29C] text-xs leading-relaxed font-sans">
-                                Because you are on isotretinoin, your formula has been adjusted to strictly exclude all exfoliating acids. Safe for use alongside prescription.
-                            </p>
-                        </section>
-                    )}
-                </div>
 
                 {/* 8. System Learning Disclosure (1750ms) */}
                 <SystemLearningDisclosure delayMs={1750} />
@@ -331,10 +313,10 @@ export default async function ResultsPage({
                 <section className="pt-8 text-center animate-slide-up opacity-0" style={{ animationDelay: '1800ms', animationFillMode: 'forwards' }}>
                     <p className="text-gray-900 dark:text-[#F0E6DF] font-bold text-[22px] mb-6 font-sans tracking-tight">Ready to initiate your sequence?</p>
                     <a href={`/subscribe?assessment_id=${assessment.id}`} className="inline-block bg-[#2A0F06] hover:bg-[#3D1A0E] text-white font-medium py-3.5 mx-auto px-10 rounded-lg shadow-xl shadow-toneek-brown/20 transition-all font-sans text-lg w-full sm:w-auto">
-                        Subscribe and get your formula
+                        Start your treatment protocol
                     </a>
                     <p className="text-gray-400 dark:text-[#A3938C] text-xs mt-5 max-w-sm mx-auto font-sans">
-                        Requires bank transfer completion. Custom compounds are synthesized immediately upon verification.
+                        Custom compounded on payment confirmation. Bank transfer only.
                     </p>
                 </section>
             </div>

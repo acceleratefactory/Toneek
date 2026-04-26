@@ -18,6 +18,8 @@ import DecisionConfidence from '@/components/formula/DecisionConfidence'
 import BehaviouralProtocol from '@/components/formula/BehaviouralProtocol'
 import RiskFlags from '@/components/formula/RiskFlags'
 import SystemLearningDisclosure from '@/components/formula/SystemLearningDisclosure'
+import SystemStatusBar from '@/components/formula/SystemStatusBar'
+import EscalationPath from '@/components/formula/EscalationPath'
 import { generateProtocol } from '@/lib/protocol/generateProtocol'
 import { generateFormulaLogic } from '@/lib/formula/generateFormulaLogic'
 
@@ -309,6 +311,15 @@ export default async function FormulaPage() {
                 </div>
             </div>
 
+            {/* ── SYSTEM STATUS BAR ── */}
+            <SystemStatusBar
+                assessedAt={latest.created_at}
+                formulaCode={latest.formula_code}
+                hasDueCheckin={hasDueCheckin}
+                dueCheckinWeek={dueCheckinWeek}
+                isColdStart={isColdStart}
+            />
+
             {hasDueCheckin && (
                 <HeldOrderBanner checkinWeekRequired={dueCheckinWeek} />
             )}
@@ -417,11 +428,13 @@ export default async function FormulaPage() {
                         <CheckinTimeline
                             nodes={timelineNodes}
                             delayMs={800}
-                            showEscalation={true}
                             coldStartNote={coldStartNote}
                         />
                     </div>
                 </div>
+
+                {/* ── ESCALATION PATH ── */}
+                <EscalationPath delayMs={850} />
 
                 {/* ── ACTIVE CONSTITUENTS BLOCK ── */}
                 {actives.length > 0 && (
