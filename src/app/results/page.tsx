@@ -127,10 +127,26 @@ export default async function ResultsPage({
         ? 'Based on clinical evidence for your active ingredients. Probability data updates as outcomes are collected.'
         : undefined
 
+    // Clinical evidence notes per week (from toneek_final_five_upgrades.md)
+    const w2EvidenceNote = 'Clinical evidence: most FST IV–VI patients on this active combination report reduced tightness and mild warmth subsiding by Day 10.'
+
+    let w4EvidenceNote: string
+    if (concern === 'PIH' || concern === 'tone') {
+        w4EvidenceNote = 'Clinical evidence: 65–72% of patients using targeted brightening actives see measurable tone improvement at Week 4 in FST IV–VI skin studies.'
+    } else if (concern === 'acne') {
+        w4EvidenceNote = 'Clinical evidence: targeted anti-acne combinations show 60–75% reduction in active lesions by Week 4 in melanin-rich skin studies.'
+    } else if (concern === 'dryness' || concern === 'sensitivity') {
+        w4EvidenceNote = 'Clinical evidence: Centella Asiatica at 5% shows barrier repair confirmation at 4 weeks in compromised skin trials.'
+    } else {
+        w4EvidenceNote = 'Clinical evidence: targeted active combinations for your concern show measurable improvement in 60–70% of patients at Week 4.'
+    }
+
+    const w8EvidenceNote = 'Clinical evidence: 70–78% of FST IV–VI patients using targeted active combinations at clinical concentrations achieve measurable improvement by Week 8.'
+
     const timelineNodes = [
-        { week: 2, state: 'PENDING' as const, description: customW2 },
-        { week: 4, state: 'PENDING' as const, description: customW4 },
-        { week: formula?.outcome_timeline_weeks || 8, state: 'PENDING' as const, description: customW8 }
+        { week: 2, state: 'PENDING' as const, description: customW2, evidenceNote: w2EvidenceNote },
+        { week: 4, state: 'PENDING' as const, description: customW4, evidenceNote: w4EvidenceNote },
+        { week: formula?.outcome_timeline_weeks || 8, state: 'PENDING' as const, description: customW8, evidenceNote: w8EvidenceNote }
     ]
 
     // Determine the photo URL (supbabase storage URL vs raw)
@@ -238,10 +254,10 @@ export default async function ResultsPage({
                     delayMs={800}
                 />
 
-                {/* 4b. Decision Confidence (900ms) */}
                 <DecisionConfidence
                     confidenceScore={assessment.confidence_score ?? 0.6}
                     profileCount={profileCount ?? 0}
+                    outcomeCount={profileCount ?? 0}
                     variant="results"
                     delayMs={900}
                 />
@@ -302,6 +318,7 @@ export default async function ResultsPage({
                             nodes={timelineNodes}
                             delayMs={1400}
                             coldStartNote={coldStartNote}
+                            probabilityFooter="Probability data updates as Toneek outcomes are collected."
                         />
                     </section>
                 )}

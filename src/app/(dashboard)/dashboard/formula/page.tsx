@@ -20,6 +20,8 @@ import RiskFlags from '@/components/formula/RiskFlags'
 import SystemLearningDisclosure from '@/components/formula/SystemLearningDisclosure'
 import SystemStatusBar from '@/components/formula/SystemStatusBar'
 import EscalationPath from '@/components/formula/EscalationPath'
+import AdherencePlaceholder from '@/components/formula/AdherencePlaceholder'
+import IntelligenceMilestones from '@/components/formula/IntelligenceMilestones'
 import { generateProtocol } from '@/lib/protocol/generateProtocol'
 import { generateFormulaLogic } from '@/lib/formula/generateFormulaLogic'
 
@@ -146,6 +148,17 @@ export default async function FormulaPage() {
         .eq('user_id', session.user.id)
         .order('recorded_at', { ascending: true })
 
+    // Fetch latest adherence record for AdherencePlaceholder
+    const { data: latestOutcome } = await adminClient
+        .from('skin_outcomes')
+        .select('adherence_score, check_in_week')
+        .eq('user_id', session.user.id)
+        .order('recorded_at', { ascending: false })
+        .limit(1)
+        .single()
+    const adherenceScore  = latestOutcome?.adherence_score ?? undefined
+    const adherenceWeek   = latestOutcome?.check_in_week ?? undefined
+
     // Reformulation eligibility
     const assessedAt = new Date(latest.created_at)
     const eligibleAt = new Date(assessedAt.getTime() + 42 * 24 * 60 * 60 * 1000)
@@ -204,13 +217,35 @@ export default async function FormulaPage() {
         ? 'Based on clinical evidence for your active ingredients. Probability data updates as outcomes are collected.'
         : undefined
 
+    // Clinical evidence notes per week (from toneek_final_five_upgrades.md)
+    const w2EvidenceNote = 'Clinical evidence: most FST IV–VI patients on this active combination report reduced tightness and mild warmth subsiding by Day 10.'
+    const c = latest.primary_concern || ''
+    let w4EvidenceNote: string
+    if (c === 'PIH' || c === 'tone') {
+        w4EvidenceNote = 'Clinical evidence: 65–72% of patients using targeted brightening actives see measurable tone improvement at Week 4 in FST IV–VI skin studies.'
+    } else if (c === 'acne') {
+        w4EvidenceNote = 'Clinical evidence: targeted anti-acne combinations show 60–75% reduction in active lesions by Week 4 in melanin-rich skin studies.'
+    } else if (c === 'dryness' || c === 'sensitivity') {
+        w4EvidenceNote = 'Clinical evidence: Centella Asiatica at 5% shows barrier repair confirmation at 4 weeks in compromised skin trials.'
+    } else {
+        w4EvidenceNote = 'Clinical evidence: targeted active combinations for your concern show measurable improvement in 60–70% of patients at Week 4.'
+    }
+    const w8EvidenceNote = 'Clinical evidence: 70–78% of FST IV–VI patients using targeted active combinations at clinical concentrations achieve measurable improvement by Week 8.'
+
+    const EVIDENCE_NOTES: Record<number, string> = {
+        2: w2EvidenceNote,
+        4: w4EvidenceNote,
+        8: w8EvidenceNote,
+    }
+
     const timelineNodes: TimelineNode[] = TIMELINE.map((item, index) => {
         const expectedDate = new Date(assessedAt.getTime() + item.week * 7 * 24 * 60 * 60 * 1000)
         const outcome = outcomes?.find(o => o.check_in_week === item.week)
         const desc = getExpectation(item.week)
+        const evidenceNote = EVIDENCE_NOTES[item.week]
         
         if (outcome) {
-            return { week: item.week, state: 'COMPLETED', score: outcome.improvement_score, description: desc }
+            return { week: item.week, state: 'COMPLETED', score: outcome.improvement_score, description: desc, evidenceNote }
         }
         
         // Ensure strictly sequential completion
@@ -221,7 +256,7 @@ export default async function FormulaPage() {
              if (index === 0 || previousOutcome) {
                  hasDueCheckin = true
                  if (dueCheckinWeek === 0) dueCheckinWeek = item.week
-                 return { week: item.week, state: 'DUE_NOW', dateText: 'Due now', description: desc }
+                 return { week: item.week, state: 'DUE_NOW', dateText: 'Due now', description: desc, evidenceNote }
              }
         }
         
@@ -230,7 +265,8 @@ export default async function FormulaPage() {
             week: item.week, 
             state: isLocked ? 'LOCKED' : 'PENDING', 
             dateText: `Available ${expectedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`,
-            description: desc 
+            description: desc,
+            evidenceNote,
         }
     })
 
@@ -348,8 +384,15 @@ export default async function FormulaPage() {
                                <DecisionConfidence
                                    confidenceScore={latest.confidence_score ?? 0.6}
                                    profileCount={profileCount ?? 0}
+                                   outcomeCount={profileCount ?? 0}
                                    variant="dashboard"
                                    delayMs={300}
+                               />
+
+                               {/* Intelligence Milestones — below confidence */}
+                               <IntelligenceMilestones
+                                   outcomeCount={profileCount ?? 0}
+                                   delayMs={350}
                                />
                            </div>
                         </div>
@@ -429,9 +472,18 @@ export default async function FormulaPage() {
                             nodes={timelineNodes}
                             delayMs={800}
                             coldStartNote={coldStartNote}
+                            probabilityFooter="Probability data updates as Toneek outcomes are collected."
                         />
                     </div>
                 </div>
+
+                {/* ── ADHERENCE TRACKING ── */}
+                <AdherencePlaceholder
+                    assessedAt={latest.created_at}
+                    adherenceScore={adherenceScore}
+                    checkinWeek={adherenceWeek}
+                    delayMs={850}
+                />
 
                 {/* ── ESCALATION PATH ── */}
                 <EscalationPath delayMs={850} />

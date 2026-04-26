@@ -1,115 +1,110 @@
-'use client'
-
 // src/components/formula/DecisionConfidence.tsx
-// Displays formula assignment confidence below the formula card.
-// Two variants:
-//   - Results page: "FORMULA CONFIDENCE: 74%" + progress bar + "Based on N similar profiles"
-//   - Dashboard page: "SYSTEM CONFIDENCE: 74%" + improvement note
-// Cold start (profileCount < 50): shows building message only — no percentage.
-
-import { useEffect, useRef, useState } from 'react'
+// Displays formula confidence as a tiered label with a 3-segment bar.
+// Replaces the flat "Cold Start — Clinical Rules Mode" and percentage bar.
+// Tier is derived from confidence_score stored in skin_assessments.
+// No percentage shown — honest qualitative assessment only.
+// Pure display component — no animation state needed.
 
 interface DecisionConfidenceProps {
   confidenceScore: number   // 0.0 – 1.0 from skin_assessments.confidence_score
-  profileCount: number      // count of prediction_log records for this profile_segment
+  profileCount: number      // count of prediction_log records (passed from page)
+  outcomeCount?: number     // count WHERE actual_week8_score IS NOT NULL
   variant?: 'results' | 'dashboard'
   delayMs?: number
 }
 
+// ─── Tier derivation ─────────────────────────────────────────────────────────
+
+type ConfidenceTier = 'High' | 'Moderate' | 'Building'
+
+function getTier(score: number): ConfidenceTier {
+  if (score >= 0.75) return 'High'
+  if (score >= 0.55) return 'Moderate'
+  return 'Building'
+}
+
+const TIER_TEXT: Record<ConfidenceTier, string> = {
+  High:     'Your profile maps clearly to this formula assignment. Clinical rules for your presentation are well-established.',
+  Moderate: 'Your profile has some complexity. This formula follows validated clinical rules with standard confidence.',
+  Building: 'Your profile has unusual characteristics. Conservative clinical rules applied. Confidence updates after Week 2 check-in.',
+}
+
+const TIER_SEGMENTS: Record<ConfidenceTier, number> = {
+  High:     3,
+  Moderate: 2,
+  Building: 1,
+}
+
+// ─── Three-segment bar ───────────────────────────────────────────────────────
+
+function SegmentBar({ filled }: { filled: number }) {
+  return (
+    <div className="flex gap-1.5">
+      {[0, 1, 2].map(i => (
+        <div
+          key={i}
+          className={`h-1.5 flex-1 rounded-full ${
+            i < filled
+              ? 'bg-toneek-amber'
+              : 'bg-[#E8E0DA] dark:bg-[#3A2820]'
+          }`}
+        />
+      ))}
+    </div>
+  )
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
 export default function DecisionConfidence({
   confidenceScore,
   profileCount,
+  outcomeCount,
   variant = 'results',
   delayMs = 0,
 }: DecisionConfidenceProps) {
-  const pct = Math.round(confidenceScore * 100)
-  const isColdStart = profileCount < 50
-
-  // Animate the progress bar width from 0 to actual percentage
-  const [barWidth, setBarWidth] = useState(0)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useEffect(() => {
-    if (isColdStart) return
-    timerRef.current = setTimeout(() => {
-      // Small rAF delay so the CSS transition fires after mount
-      requestAnimationFrame(() => setBarWidth(pct))
-    }, delayMs + 200)
-    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
-  }, [pct, delayMs, isColdStart])
-
-  if (isColdStart) {
-    return (
-      <div
-        className="animate-slide-up opacity-0 bg-white dark:bg-[#1A1210] border border-[#E8E0DA] dark:border-[#3A2820] rounded-xl px-6 py-5 shadow-sm"
-        style={{ animationDelay: `${delayMs}ms`, animationFillMode: 'forwards' }}
-      >
-        {/* Title row */}
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-[11px] font-bold text-gray-400 dark:text-[#A3938C] uppercase tracking-widest font-sans">
-            Formula Confidence
-          </p>
-          {/* Pulsing amber dot */}
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-toneek-amber opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-toneek-amber" />
-          </span>
-        </div>
-
-        {/* Status label */}
-        <p className="text-[13px] font-semibold text-toneek-brown dark:text-[#F0E6DF] font-sans mb-2">
-          Cold Start — Clinical Rules Mode
-        </p>
-
-        {/* Explanation — two sentences from the document */}
-        <p className="text-[12px] text-[#8C7B72] dark:text-[#A3938C] font-sans leading-relaxed mb-4">
-          Your formula was assigned using validated clinical decision rules, not predictive modelling.
-          As outcome data accumulates from the Toneek system, your confidence score will be calculated from real-world results.
-        </p>
-
-        {/* Thin progress bar — 0% filled */}
-        <div className="w-full h-1 bg-[#E8E0DA] dark:bg-[#3A2820] rounded-full overflow-hidden mb-2">
-          <div className="h-full w-0 bg-toneek-amber rounded-full" />
-        </div>
-
-        {/* Profile count label */}
-        <p className="text-[10px] text-[#8C7B72] dark:text-[#7A6A62] font-sans italic">
-          0 profiles — building toward 200 required for predictive mode
-        </p>
-      </div>
-    )
-  }
-
+  const tier     = getTier(confidenceScore)
+  const segments = TIER_SEGMENTS[tier]
+  const text     = TIER_TEXT[tier]
+  // Use outcomeCount if provided (actual_week8_score IS NOT NULL),
+  // otherwise fall back to profileCount as a proxy.
+  const displayCount = outcomeCount ?? profileCount
 
   return (
     <div
-      className="animate-slide-up opacity-0 bg-[#FAF8F5] dark:bg-[#1E1410] border border-[#E8E0DA] dark:border-[#3A2820] rounded-xl px-5 py-4"
+      className="animate-slide-up opacity-0 bg-white dark:bg-[#1A1210] border border-[#E8E0DA] dark:border-[#3A2820] rounded-xl px-6 py-5 shadow-sm"
       style={{ animationDelay: `${delayMs}ms`, animationFillMode: 'forwards' }}
     >
-      <div className="flex items-center justify-between mb-2">
+      {/* Title row */}
+      <div className="flex items-center justify-between mb-3">
         <p className="text-[11px] font-bold text-gray-400 dark:text-[#A3938C] uppercase tracking-widest font-sans">
-          {variant === 'dashboard' ? 'System Confidence' : 'Formula Confidence'}
+          Formula Confidence
         </p>
-        <span className="text-[15px] font-bold text-toneek-brown dark:text-[#F0E6DF] font-sans">
-          {pct}%
+        {/* Tier badge */}
+        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full font-sans ${
+          tier === 'High'
+            ? 'bg-toneek-forest/10 text-toneek-forest'
+            : tier === 'Moderate'
+            ? 'bg-toneek-amber/10 text-toneek-amber'
+            : 'bg-[#E8E0DA] dark:bg-[#3A2820] text-[#8C7B72] dark:text-[#A3938C]'
+        }`}>
+          {tier}
         </span>
       </div>
 
-      {/* Animated progress bar */}
-      <div className="w-full h-1.5 bg-[#E8E0DA] dark:bg-[#3A2820] rounded-full overflow-hidden mb-2">
-        <div
-          className="h-full bg-toneek-amber rounded-full"
-          style={{
-            width: `${barWidth}%`,
-            transition: 'width 1.2s cubic-bezier(0.4, 0, 0.2, 1)',
-          }}
-        />
+      {/* Tier-specific explanation */}
+      <p className="text-[12px] text-[#8C7B72] dark:text-[#A3938C] font-sans leading-relaxed mb-4">
+        {text}
+      </p>
+
+      {/* 3-segment bar */}
+      <div className="mb-3">
+        <SegmentBar filled={segments} />
       </div>
 
-      <p className="text-[12px] text-[#8C7B72] dark:text-[#7A6A62] font-sans">
-        {variant === 'dashboard'
-          ? '↑ Will improve as more outcome data is collected'
-          : `Based on ${profileCount} similar profiles in the Toneek system`}
+      {/* Profile count label */}
+      <p className="text-[10px] text-[#8C7B72] dark:text-[#7A6A62] font-sans italic">
+        Predictive mode unlocks at 200 outcome profiles. Currently: {displayCount} profile{displayCount === 1 ? '' : 's'} collected.
       </p>
     </div>
   )

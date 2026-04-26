@@ -9,21 +9,23 @@ export type CheckinState = 'COMPLETED' | 'DUE_NOW' | 'PENDING' | 'LOCKED'
 export interface TimelineNode {
   week: number
   state: CheckinState
-  score?: number // e.g. 8 (out of 10) if completed
-  dateText?: string // "Available 24 April"
+  score?: number        // e.g. 8 (out of 10) if completed
+  dateText?: string     // "Available 24 April"
   description?: string
+  evidenceNote?: string // clinical evidence statement added at page level
 }
 
 interface CheckinTimelineProps {
   nodes: TimelineNode[]
   delayMs?: number
   coldStartNote?: string     // optional footnote below the whole timeline
+  probabilityFooter?: string // 11px warm grey italic — below all nodes
 }
 
 // ─────────────────────────────────────────────────────────────
 // COMPONENT
 // ─────────────────────────────────────────────────────────────
-export default function CheckinTimeline({ nodes, delayMs = 0, coldStartNote }: CheckinTimelineProps) {
+export default function CheckinTimeline({ nodes, delayMs = 0, coldStartNote, probabilityFooter }: CheckinTimelineProps) {
   // Use state to trigger the line draw specifically on mount
   const [mounted, setMounted] = useState(false)
   
@@ -103,6 +105,13 @@ export default function CheckinTimeline({ nodes, delayMs = 0, coldStartNote }: C
                   </p>
                 )}
 
+                {/* Clinical evidence note — added at page level per concern */}
+                {node.evidenceNote && (
+                  <p className="text-[11px] italic text-[#8C7B72] dark:text-[#6A5A52] font-sans mt-2 leading-snug">
+                    {node.evidenceNote}
+                  </p>
+                )}
+
                 {/* State based rendering */}
                 {isCompleted && node.score !== undefined && (
                   <p className="text-toneek-forest dark:text-[#2E7A52] font-medium text-[13px] mt-0.5">
@@ -139,6 +148,13 @@ export default function CheckinTimeline({ nodes, delayMs = 0, coldStartNote }: C
       {coldStartNote && (
         <p className="mt-4 text-[11px] text-gray-400 dark:text-[#7A6A62] font-sans italic pl-4">
           {coldStartNote}
+        </p>
+      )}
+
+      {/* Probability footer — literature-backed note, always shown */}
+      {probabilityFooter && (
+        <p className="mt-2 text-[11px] text-[#8C7B72] dark:text-[#6A5A52] font-sans italic pl-4">
+          {probabilityFooter}
         </p>
       )}
     </div>

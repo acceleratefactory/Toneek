@@ -12,6 +12,7 @@ import {
   getTreatmentToleranceLabel,
   getClimateStressLabel,
 } from '@/lib/analysis/calculateSkinScores'
+import { getMetricContext } from '@/lib/analysis/metricContext'
 
 interface MetricGridProps {
   assessment: any // Pass the raw skin_assessments row
@@ -274,6 +275,13 @@ export default function MetricGrid({ assessment, delayMs = 0, comparativeData }:
                   ? `${comparativeData[metric.title] >= 50 ? 'Better' : 'Lower'} than ${comparativeData[metric.title]}% of similar profiles`
                   : 'Benchmark updating — check back after your Week 2 check-in'}
             </p>
+
+            {/* Clinical Context Statement — static, always shown */}
+            {getMetricContext(metric.title, metric.score) && (
+              <p className="text-[11px] italic text-[#8C7B72] dark:text-[#6A5A52] font-sans mt-1 leading-snug">
+                {getMetricContext(metric.title, metric.score)}
+              </p>
+            )}
           </div>
         </div>
       ))}
