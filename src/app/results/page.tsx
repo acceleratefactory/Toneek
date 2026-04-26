@@ -54,7 +54,11 @@ export default async function ResultsPage({
 
     const assessment = data
     const formula = (data as any).formula_codes
-    const actives: any[] = formula?.active_modules ?? []
+
+    // active_modules may be stored as a nested array e.g. [[a, b, c]] — flatten to guarantee a flat list
+    const rawActives = formula?.active_modules ?? []
+    const actives: any[] = Array.isArray(rawActives[0]) ? rawActives.flat() : rawActives
+
 
     const routineMessage = ROUTINE_MESSAGES[assessment.routine_expectation] ??
         ROUTINE_MESSAGES.two_to_three

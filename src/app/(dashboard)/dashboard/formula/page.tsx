@@ -87,7 +87,7 @@ export default async function FormulaPage() {
     // Fetch all assessments for this user, newest first
     const { data: assessments, error: fetchError } = await adminClient
         .from('skin_assessments')
-        .select('*')
+        .select('*, formula_codes!formula_code(*)')
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false })
 
@@ -107,7 +107,11 @@ export default async function FormulaPage() {
     }
     const latest = assessments[0]
     const formula = (latest as any).formula_codes
-    const actives: any[] = latest.active_modules ?? formula?.active_modules ?? []
+
+    // active_modules may be stored as a nested array e.g. [[a, b, c]] — flatten to guarantee a flat list
+    const rawActives = latest.active_modules ?? formula?.active_modules ?? []
+    const actives: any[] = Array.isArray(rawActives[0]) ? rawActives.flat() : rawActives
+
     const previous = assessments.slice(1)
 
     // Fetch skin outcomes for chart and timeline
