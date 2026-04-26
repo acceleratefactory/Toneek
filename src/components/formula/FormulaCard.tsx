@@ -1,13 +1,15 @@
 import React from 'react'
 import { MapPin, Droplets, Sun, Wind, ThermometerSun } from 'lucide-react'
+import type { FormulaLogicParagraph } from '@/lib/formula/generateFormulaLogic'
 
 interface FormulaCardProps {
   formulaCode: string
   formulaName: string
   climateZone: string
-  pathPills: string[] // e.g. ["Lagos", "Dry", "Dryness"]
+  pathPills: string[]          // e.g. ["Lagos", "Dry", "Dryness"] — kept as mobile summary
   formulaRationale?: string
   delayMs?: number
+  logicParagraphs?: FormulaLogicParagraph[]  // replaces pills when provided
 }
 
 export default function FormulaCard({
@@ -16,7 +18,8 @@ export default function FormulaCard({
   climateZone,
   pathPills,
   formulaRationale,
-  delayMs = 0
+  delayMs = 0,
+  logicParagraphs,
 }: FormulaCardProps) {
   
   // Choose an icon based on climate zone keywords
@@ -25,52 +28,90 @@ export default function FormulaCard({
   if (climateZone.toLowerCase().includes('dry') || climateZone.toLowerCase().includes('arid')) ClimateIcon = Sun
   if (climateZone.toLowerCase().includes('cold')) ClimateIcon = Wind
 
+  const hasLogic = logicParagraphs && logicParagraphs.length > 0
+
   return (
     <div 
-      className="bg-white dark:bg-[#1A1210] border border-gray-100 dark:border-[#3A2820] shadow-sm rounded-xl p-5 sm:p-7 flex flex-col md:flex-row md:items-center justify-between gap-6 animate-slide-up opacity-0"
+      className="bg-white dark:bg-[#1A1210] border border-gray-100 dark:border-[#3A2820] shadow-sm rounded-xl p-5 sm:p-7 flex flex-col gap-6 animate-slide-up opacity-0"
       style={{ animationDelay: `${delayMs}ms`, animationFillMode: 'forwards' }}
     >
-      <div className="flex-1">
-        <h5 className="text-[11px] font-bold text-gray-400 dark:text-[#A3938C] uppercase tracking-widest mb-2 font-sans">
-          Your Formula
-        </h5>
-        <div className="text-3xl sm:text-4xl font-bold font-mono text-toneek-brown dark:text-[#F0E6DF] tracking-tight mb-1">
-          {formulaCode}
-        </div>
-        <p className="text-lg font-medium text-gray-800 dark:text-gray-200 font-sans mb-4">
-          {formulaName}
-        </p>
-        
-        <div className="flex flex-col gap-3">
+      {/* Top row: formula identity + climate badge */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div className="flex-1">
+          <h5 className="text-[11px] font-bold text-gray-400 dark:text-[#A3938C] uppercase tracking-widest mb-2 font-sans">
+            Your Formula
+          </h5>
+          <div className="text-3xl sm:text-4xl font-bold font-mono text-toneek-brown dark:text-[#F0E6DF] tracking-tight mb-1">
+            {formulaCode}
+          </div>
+          <p className="text-lg font-medium text-gray-800 dark:text-gray-200 font-sans mb-3">
+            {formulaName}
+          </p>
+          
+          <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-[#A3938C] bg-gray-50 dark:bg-[#261B18] px-3 py-2 rounded-lg inline-flex w-fit">
               <ClimateIcon size={16} className="text-toneek-amber" />
               <span>Formulated for {climateZone}</span>
             </div>
             {formulaRationale && (
-                <p className="text-[13px] text-gray-500 dark:text-[#A3938C] leading-snug max-w-sm mt-1">
-                   {formulaRationale}
-                </p>
+              <p className="text-[13px] text-gray-500 dark:text-[#A3938C] leading-snug max-w-sm mt-1">
+                {formulaRationale}
+              </p>
             )}
+          </div>
         </div>
-      </div>
 
-      <div className="md:border-l md:border-gray-100 dark:md:border-[#3A2820] md:pl-8 flex flex-col">
-        <h5 className="text-[11px] font-bold text-gray-400 dark:text-[#A3938C] uppercase tracking-widest mb-3 font-sans">
-          Why this formula
-        </h5>
-        
-        <div className="flex flex-row items-center flex-wrap">
+        {/* Pills — always visible as compact summary (mobile + desktop) */}
+        <div className="flex flex-row items-center flex-wrap gap-1 sm:justify-end sm:max-w-[200px]">
           {pathPills.map((pill, index) => (
             <React.Fragment key={pill}>
-              <div className="bg-toneek-amber text-white text-[13px] font-semibold px-3 py-1.5 rounded-full whitespace-nowrap shadow-sm">
+              <div className="bg-toneek-amber/10 dark:bg-toneek-amber/20 text-toneek-amber text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap border border-toneek-amber/20">
                 {pill}
               </div>
-              {index < pathPills.length - 1 && (
-                <div className="w-4 sm:w-6 h-[2px] bg-toneek-amber/30 shrink-0"></div>
-              )}
             </React.Fragment>
           ))}
         </div>
+      </div>
+
+      {/* Formula Logic paragraphs — replaces old "Why this formula" pill section */}
+      <div className="border-t border-gray-100 dark:border-[#3A2820] pt-5">
+        <h5 className="text-[11px] font-bold text-gray-400 dark:text-[#A3938C] uppercase tracking-widest mb-4 font-sans">
+          Formula Logic
+        </h5>
+
+        {hasLogic ? (
+          <div className="flex flex-col gap-4">
+            {logicParagraphs!.map((p, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <span className="flex-shrink-0 text-toneek-amber font-bold text-[14px] mt-0.5">→</span>
+                <div>
+                  <p className="text-[13px] font-semibold text-gray-800 dark:text-[#E8DDD8] font-sans leading-snug">
+                    {p.arrow}
+                  </p>
+                  {p.body && (
+                    <p className="text-[12px] text-gray-500 dark:text-[#A3938C] font-sans leading-snug mt-1">
+                      {p.body}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          /* Fallback: original pills layout if no logic paragraphs generated */
+          <div className="flex flex-row items-center flex-wrap">
+            {pathPills.map((pill, index) => (
+              <React.Fragment key={pill}>
+                <div className="bg-toneek-amber text-white text-[13px] font-semibold px-3 py-1.5 rounded-full whitespace-nowrap shadow-sm">
+                  {pill}
+                </div>
+                {index < pathPills.length - 1 && (
+                  <div className="w-4 sm:w-6 h-[2px] bg-toneek-amber/30 shrink-0"></div>
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

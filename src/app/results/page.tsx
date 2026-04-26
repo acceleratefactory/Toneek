@@ -7,8 +7,14 @@ import { redirect } from 'next/navigation'
 import AnimatedScoreRing from '@/components/formula/AnimatedScoreRing'
 import MetricGrid from '@/components/formula/MetricGrid'
 import FormulaCard from '@/components/formula/FormulaCard'
+import DecisionConfidence from '@/components/formula/DecisionConfidence'
+import BehaviouralProtocol from '@/components/formula/BehaviouralProtocol'
+import RiskFlags from '@/components/formula/RiskFlags'
 import IngredientCard from '@/components/formula/IngredientCard'
 import CheckinTimeline from '@/components/formula/CheckinTimeline'
+import SystemLearningDisclosure from '@/components/formula/SystemLearningDisclosure'
+import { generateProtocol } from '@/lib/protocol/generateProtocol'
+import { generateFormulaLogic } from '@/lib/formula/generateFormulaLogic'
 
 const CLIMATE_LABELS: Record<string, string> = {
     humid_tropical: 'Hot and humid climate (tropical)',
@@ -59,6 +65,23 @@ export default async function ResultsPage({
     const rawActives = formula?.active_modules ?? []
     const actives: any[] = Array.isArray(rawActives[0]) ? rawActives.flat() : rawActives
 
+    // Generate the behavioural protocol for this formula
+    const protocol = generateProtocol(
+        assessment.formula_code || '',
+        assessment.formula_tier,
+        actives,
+        assessment.pregnant_or_breastfeeding,
+    )
+
+    // Generate the formula logic explanation paragraphs
+    const logicParagraphs = generateFormulaLogic({
+        climate_zone:    assessment.climate_zone,
+        skin_type:       assessment.skin_type,
+        primary_concern: assessment.primary_concern,
+        formula_tier:    assessment.formula_tier,
+        city:            assessment.city,
+    })
+
 
     const routineMessage = ROUTINE_MESSAGES[assessment.routine_expectation] ??
         ROUTINE_MESSAGES.two_to_three
@@ -70,9 +93,39 @@ export default async function ResultsPage({
     ]
 
     // Construct static timeline nodes for preview
-    const customW2 = formula?.week_2_expectation || formula?.base_formula?.week_2_expectation || 'Skin inflammation calming, barrier beginning to stabilise.'
-    const customW4 = formula?.week_4_expectation || formula?.base_formula?.week_4_expectation || 'Visible improvement beginning — uneven tone starting to lift.'
-    const customW8 = formula?.week_8_expectation || formula?.base_formula?.week_8_expectation || 'Measurable change in primary concern. Skin OS Score recalculated.'
+    const customW2 = formula?.week_2_expectation || formula?.base_formula?.week_2_expectation || 'Skin inflammation calming, barrier beginning to stabilise. No visible pigment change at this stage — this is normal.'
+
+    // Personalise Week 4 by primary concern (per clinical OS upgrade spec)
+    const concern = assessment.primary_concern || ''
+    let customW4 = formula?.week_4_expectation || formula?.base_formula?.week_4_expectation
+    if (!customW4) {
+        if (concern === 'PIH' || concern === 'tone') {
+            customW4 = 'Tone beginning to even. First visible lightening of surface pigmentation.'
+        } else if (concern === 'acne') {
+            customW4 = 'Breakout frequency reducing. PIH marks static or beginning to fade.'
+        } else if (concern === 'dryness') {
+            customW4 = 'Barrier measurably more resilient. Tightness significantly reduced.'
+        } else if (concern === 'sensitivity') {
+            customW4 = 'Reactivity reducing. Barrier calming — skin becoming more tolerant of daily environmental exposure.'
+        } else if (concern === 'oiliness') {
+            customW4 = 'Sebum regulation beginning. Midday shine reducing — pore appearance improving.'
+        } else {
+            customW4 = 'Visible improvement beginning — primary concern starting to respond to treatment.'
+        }
+    }
+
+    const customW8 = formula?.week_8_expectation || formula?.base_formula?.week_8_expectation || 'Measurable change in primary concern. Skin OS Score recalculated from your Week 8 check-in.'
+
+    // Check formula_performance for learning mode (200+ outcome records = data-backed mode)
+    const { count: formulaOutcomeCount } = await adminClient
+        .from('skin_outcomes')
+        .select('id', { count: 'exact', head: true })
+        .eq('formula_code', assessment.formula_code)
+
+    const isColdStart = (formulaOutcomeCount ?? 0) < 200
+    const coldStartNote = isColdStart
+        ? 'Based on clinical evidence for your active ingredients. Probability data updates as outcomes are collected.'
+        : undefined
 
     const timelineNodes = [
         { week: 2, state: 'PENDING' as const, description: customW2 },
@@ -86,6 +139,52 @@ export default async function ResultsPage({
         const cleanPath = photoUrl.replace(/^checkin-photos\//, '').replace(/^\//, '')
         const { data } = adminClient.storage.from('checkin-photos').getPublicUrl(cleanPath)
         photoUrl = data?.publicUrl || photoUrl // fallback to raw string if generation completely fails
+    }
+
+    // Query prediction_log count for this profile_segment (used by DecisionConfidence)
+    const profileSegment = assessment.profile_segment || ''
+    const { count: profileCount } = await adminClient
+        .from('prediction_log')
+        .select('id', { count: 'exact', head: true })
+        .eq('profile_segment', profileSegment)
+
+    // Compute comparative percentiles from prediction_log for this profile_segment
+    // Only attempt when enough records exist (reuse profileCount from above)
+    let comparativeData: Record<string, number> | null = null
+    if ((profileCount ?? 0) >= 50) {
+        const { data: peerScores } = await adminClient
+            .from('prediction_log')
+            .select('analysis_scores')
+            .eq('profile_segment', profileSegment)
+            .not('analysis_scores', 'is', null)
+            .limit(500)
+
+        if (peerScores && peerScores.length >= 50) {
+            const myScores = assessment.analysis_scores as Record<string, number> | null
+            if (myScores) {
+                const METRIC_KEYS: [string, string][] = [
+                    ['BARRIER INTEGRITY',    'barrier_integrity'],
+                    ['TREATMENT TOLERANCE',  'treatment_tolerance'],
+                    ['CLIMATE STRESS',       'climate_stress'],
+                    ['MELANIN SENSITIVITY',  'melanin_sensitivity'],
+                    ['PIGMENTATION LOAD',    'pigmentation_load'],
+                    ['OIL BALANCE',          'oil_balance'],
+                    ['INFLAMMATION LEVEL',   'inflammation_level'],
+                    ['HYDRATION STATUS',     'hydration_status'],
+                ]
+                comparativeData = {}
+                for (const [cardTitle, scoreKey] of METRIC_KEYS) {
+                    const myVal = myScores[scoreKey]
+                    if (myVal === undefined) continue
+                    const peers = peerScores
+                        .map((r: any) => r.analysis_scores?.[scoreKey])
+                        .filter((v: any): v is number => typeof v === 'number')
+                    if (peers.length < 10) continue
+                    const below = peers.filter(v => v < myVal).length
+                    comparativeData[cardTitle] = Math.round((below / peers.length) * 100)
+                }
+            }
+        }
     }
 
     return (
@@ -126,7 +225,7 @@ export default async function ResultsPage({
                 </section>
 
                 {/* 3. Metric Grid (400ms) */}
-                <MetricGrid assessment={assessment} delayMs={400} />
+                <MetricGrid assessment={assessment} delayMs={400} comparativeData={comparativeData} />
 
                 {/* 4. Formula Card (800ms) */}
                 <FormulaCard 
@@ -135,7 +234,30 @@ export default async function ResultsPage({
                     formulaRationale={assessment.formula_rationale}
                     climateZone={CLIMATE_LABELS[assessment.climate_zone] ?? assessment.climate_zone ?? 'Your Climate'}
                     pathPills={pathPills}
+                    logicParagraphs={logicParagraphs}
                     delayMs={800}
+                />
+
+                {/* 4b. Decision Confidence (900ms) */}
+                <DecisionConfidence
+                    confidenceScore={assessment.confidence_score ?? 0.6}
+                    profileCount={profileCount ?? 0}
+                    variant="results"
+                    delayMs={900}
+                />
+
+                {/* 4c. Behavioural Protocol (1000ms) */}
+                <BehaviouralProtocol
+                    protocol={protocol}
+                    delayMs={1000}
+                />
+
+                {/* 4d. Risk Flags (1100ms) — conditional, only shown if flags apply */}
+                <RiskFlags
+                    analysisScores={assessment.analysis_scores}
+                    isotretinoinFlag={assessment.isotretinoin_flag ?? false}
+                    riskScore={assessment.risk_score ?? 0}
+                    delayMs={1100}
                 />
 
                 {/* 5. Active Ingredients (1000ms staggered) */}
@@ -176,7 +298,12 @@ export default async function ResultsPage({
                         <p className="text-gray-500 dark:text-[#A3938C] text-[11px] font-bold uppercase tracking-[0.15em] mb-4 font-sans">
                             Clinical Trajectory
                         </p>
-                        <CheckinTimeline nodes={timelineNodes} delayMs={1400} />
+                        <CheckinTimeline
+                            nodes={timelineNodes}
+                            delayMs={1400}
+                            showEscalation={true}
+                            coldStartNote={coldStartNote}
+                        />
                     </section>
                 )}
 
@@ -196,6 +323,9 @@ export default async function ResultsPage({
                         </section>
                     )}
                 </div>
+
+                {/* 8. System Learning Disclosure (1750ms) */}
+                <SystemLearningDisclosure delayMs={1750} />
 
                 {/* 7. CTA (1800ms) */}
                 <section className="pt-8 text-center animate-slide-up opacity-0" style={{ animationDelay: '1800ms', animationFillMode: 'forwards' }}>

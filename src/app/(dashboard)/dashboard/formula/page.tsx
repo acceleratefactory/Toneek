@@ -14,6 +14,12 @@ import IngredientCard from '@/components/formula/IngredientCard'
 import ProgressChart from '@/components/formula/ProgressChart'
 import CheckinTimeline, { TimelineNode, CheckinState } from '@/components/formula/CheckinTimeline'
 import HeldOrderBanner from '@/components/formula/HeldOrderBanner'
+import DecisionConfidence from '@/components/formula/DecisionConfidence'
+import BehaviouralProtocol from '@/components/formula/BehaviouralProtocol'
+import RiskFlags from '@/components/formula/RiskFlags'
+import SystemLearningDisclosure from '@/components/formula/SystemLearningDisclosure'
+import { generateProtocol } from '@/lib/protocol/generateProtocol'
+import { generateFormulaLogic } from '@/lib/formula/generateFormulaLogic'
 
 
 export const metadata = {
@@ -112,6 +118,23 @@ export default async function FormulaPage() {
     const rawActives = latest.active_modules ?? formula?.active_modules ?? []
     const actives: any[] = Array.isArray(rawActives[0]) ? rawActives.flat() : rawActives
 
+    // Generate the behavioural protocol for this formula
+    const protocol = generateProtocol(
+        latest.formula_code || '',
+        latest.formula_tier,
+        actives,
+        latest.pregnant_or_breastfeeding,
+    )
+
+    // Generate the formula logic explanation paragraphs
+    const logicParagraphs = generateFormulaLogic({
+        climate_zone:    latest.climate_zone,
+        skin_type:       latest.skin_type,
+        primary_concern: latest.primary_concern,
+        formula_tier:    latest.formula_tier,
+        city:            latest.city,
+    })
+
     const previous = assessments.slice(1)
 
     // Fetch skin outcomes for chart and timeline
@@ -149,13 +172,35 @@ export default async function FormulaPage() {
 
     const getExpectation = (week: number) => {
         const customW2 = formula?.week_2_expectation || formula?.base_formula?.week_2_expectation
-        const customW4 = formula?.week_4_expectation || formula?.base_formula?.week_4_expectation
         const customW8 = formula?.week_8_expectation || formula?.base_formula?.week_8_expectation
 
-        if (week === 2) return customW2 || 'Skin inflammation calming, barrier beginning to stabilise.'
-        if (week === 4) return customW4 || 'Visible improvement beginning — uneven tone starting to lift.'
-        return customW8 || 'Measurable change in primary concern. Skin OS Score recalculated.'
+        if (week === 2) return customW2 || 'Skin inflammation calming, barrier beginning to stabilise. No visible pigment change at this stage — this is normal.'
+
+        if (week === 4) {
+            const explicit = formula?.week_4_expectation || formula?.base_formula?.week_4_expectation
+            if (explicit) return explicit
+            const c = latest.primary_concern || ''
+            if (c === 'PIH' || c === 'tone')  return 'Tone beginning to even. First visible lightening of surface pigmentation.'
+            if (c === 'acne')                 return 'Breakout frequency reducing. PIH marks static or beginning to fade.'
+            if (c === 'dryness')              return 'Barrier measurably more resilient. Tightness significantly reduced.'
+            if (c === 'sensitivity')          return 'Reactivity reducing. Barrier calming — skin becoming more tolerant of daily environmental exposure.'
+            if (c === 'oiliness')             return 'Sebum regulation beginning. Midday shine reducing — pore appearance improving.'
+            return 'Visible improvement beginning — primary concern starting to respond to treatment.'
+        }
+
+        return customW8 || 'Measurable change in primary concern. Skin OS Score recalculated from your Week 8 check-in.'
     }
+
+    // Cold start detection (200+ outcome records for this formula = learning mode)
+    const { count: formulaOutcomeCount } = await adminClient
+        .from('skin_outcomes')
+        .select('id', { count: 'exact', head: true })
+        .eq('formula_code', latest.formula_code)
+
+    const isColdStart = (formulaOutcomeCount ?? 0) < 200
+    const coldStartNote = isColdStart
+        ? 'Based on clinical evidence for your active ingredients. Probability data updates as outcomes are collected.'
+        : undefined
 
     const timelineNodes: TimelineNode[] = TIMELINE.map((item, index) => {
         const expectedDate = new Date(assessedAt.getTime() + item.week * 7 * 24 * 60 * 60 * 1000)
@@ -192,6 +237,51 @@ export default async function FormulaPage() {
         const cleanPath = photoUrl.replace(/^checkin-photos\//, '').replace(/^\//, '')
         const { data } = adminClient.storage.from('checkin-photos').getPublicUrl(cleanPath)
         photoUrl = data?.publicUrl || photoUrl // fallback to raw string if generation completely fails
+    }
+
+    // Query prediction_log count for this profile_segment (used by DecisionConfidence)
+    const profileSegment = latest.profile_segment || ''
+    const { count: profileCount } = await adminClient
+        .from('prediction_log')
+        .select('id', { count: 'exact', head: true })
+        .eq('profile_segment', profileSegment)
+
+    // Compute comparative percentiles from prediction_log for this profile_segment
+    let comparativeData: Record<string, number> | null = null
+    if ((profileCount ?? 0) >= 50) {
+        const { data: peerScores } = await adminClient
+            .from('prediction_log')
+            .select('analysis_scores')
+            .eq('profile_segment', profileSegment)
+            .not('analysis_scores', 'is', null)
+            .limit(500)
+
+        if (peerScores && peerScores.length >= 50) {
+            const myScores = latest.analysis_scores as Record<string, number> | null
+            if (myScores) {
+                const METRIC_KEYS: [string, string][] = [
+                    ['BARRIER INTEGRITY',    'barrier_integrity'],
+                    ['TREATMENT TOLERANCE',  'treatment_tolerance'],
+                    ['CLIMATE STRESS',       'climate_stress'],
+                    ['MELANIN SENSITIVITY',  'melanin_sensitivity'],
+                    ['PIGMENTATION LOAD',    'pigmentation_load'],
+                    ['OIL BALANCE',          'oil_balance'],
+                    ['INFLAMMATION LEVEL',   'inflammation_level'],
+                    ['HYDRATION STATUS',     'hydration_status'],
+                ]
+                comparativeData = {}
+                for (const [cardTitle, scoreKey] of METRIC_KEYS) {
+                    const myVal = myScores[scoreKey]
+                    if (myVal === undefined) continue
+                    const peers = peerScores
+                        .map((r: any) => r.analysis_scores?.[scoreKey])
+                        .filter((v: any): v is number => typeof v === 'number')
+                    if (peers.length < 10) continue
+                    const below = peers.filter(v => v < myVal).length
+                    comparativeData[cardTitle] = Math.round((below / peers.length) * 100)
+                }
+            }
+        }
     }
 
     return (
@@ -233,7 +323,7 @@ export default async function FormulaPage() {
                         <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest self-start w-full text-left mb-6">Aggregate Skin OS</h5>
                         <AnimatedScoreRing score={currentScore} size={180} showLabel={false} delay={100} />
                         
-                        <div className="mt-8 flex flex-col items-center gap-2">
+                        <div className="mt-8 flex flex-col items-center gap-2 w-full">
                            {scoreDiff > 0 ? (
                                 <p className="text-toneek-forest font-semibold text-[15px]">↑ Skin health improving</p>
                            ) : scoreDiff < 0 ? (
@@ -241,6 +331,16 @@ export default async function FormulaPage() {
                            ) : (
                                 <p className="text-[#8C7B72] font-semibold text-[15px]">→ Assessing baseline</p>
                            )}
+
+                           {/* Decision Confidence below score trend */}
+                           <div className="w-full mt-4">
+                               <DecisionConfidence
+                                   confidenceScore={latest.confidence_score ?? 0.6}
+                                   profileCount={profileCount ?? 0}
+                                   variant="dashboard"
+                                   delayMs={300}
+                               />
+                           </div>
                         </div>
                     </div>
 
@@ -252,6 +352,7 @@ export default async function FormulaPage() {
                             formulaRationale={latest.formula_rationale}
                             climateZone={CLIMATE_DESCRIPTIONS[latest.climate_zone] || latest.climate_zone || 'Your Location'}
                             pathPills={pathPills}
+                            logicParagraphs={logicParagraphs}
                             delayMs={300}
                         />
 
@@ -278,8 +379,19 @@ export default async function FormulaPage() {
 
                 {/* ── METRIC GRID ROW ── */}
                 <div className="w-full">
-                    <MetricGrid assessment={latest} delayMs={500} />
+                    <MetricGrid assessment={latest} delayMs={500} comparativeData={comparativeData} />
                 </div>
+
+                {/* ── BEHAVIOURAL PROTOCOL ── */}
+                <BehaviouralProtocol protocol={protocol} delayMs={600} />
+
+                {/* ── RISK FLAGS ── conditional, only shown if flags apply */}
+                <RiskFlags
+                    analysisScores={latest.analysis_scores}
+                    isotretinoinFlag={latest.isotretinoin_flag ?? false}
+                    riskScore={latest.risk_score ?? 0}
+                    delayMs={700}
+                />
                 
                 {/* ── PROGRESS & TIMELINE ROW ── */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -302,7 +414,12 @@ export default async function FormulaPage() {
                     {/* Timeline Card */}
                     <div className="bg-white dark:bg-[#1A1210] rounded-xl shadow-[0_2px_10px_rgba(42,15,6,0.04)] border border-[#E8E0DA] dark:border-[#3A2820] p-8 animate-slide-up opacity-0" style={{ animationDelay: '800ms', animationFillMode: 'forwards' }}>
                         <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-6">Clinical Check-in Schedule</h5>
-                        <CheckinTimeline nodes={timelineNodes} delayMs={800} />
+                        <CheckinTimeline
+                            nodes={timelineNodes}
+                            delayMs={800}
+                            showEscalation={true}
+                            coldStartNote={coldStartNote}
+                        />
                     </div>
                 </div>
 
@@ -332,6 +449,9 @@ export default async function FormulaPage() {
                         </div>
                     </div>
                 )}
+
+                {/* ── SYSTEM LEARNING DISCLOSURE ── */}
+                <SystemLearningDisclosure delayMs={900} />
 
                 {/* ── SUBSCRIPTION BANNER ── */}
                 {needsSubscription && (

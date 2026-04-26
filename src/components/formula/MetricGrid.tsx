@@ -16,9 +16,11 @@ import {
 interface MetricGridProps {
   assessment: any // Pass the raw skin_assessments row
   delayMs?: number
+  // Percentile comparisons per metric key (0–100). null = cold start.
+  comparativeData?: Record<string, number> | null
 }
 
-export default function MetricGrid({ assessment, delayMs = 0 }: MetricGridProps) {
+export default function MetricGrid({ assessment, delayMs = 0, comparativeData }: MetricGridProps) {
   const stored = assessment?.analysis_scores
 
   // ─── Read from stored analysis_scores if available (set after Phase 3 was live) ───
@@ -262,6 +264,15 @@ export default function MetricGrid({ assessment, delayMs = 0 }: MetricGridProps)
             </p>
             <p className="text-[11px] text-gray-400 dark:text-[#7A6A62] font-sans leading-snug mt-0.5">
               {metric.description}
+            </p>
+
+            {/* Comparative Insight — 10px italic warm grey per spec */}
+            <p className="text-[10px] italic text-[#8C7B72] dark:text-[#6A5A52] font-sans mt-1">
+              {comparativeData === null || comparativeData === undefined
+                ? 'Benchmark updating — check back after your Week 2 check-in'
+                : comparativeData[metric.title] !== undefined
+                  ? `${comparativeData[metric.title] >= 50 ? 'Better' : 'Lower'} than ${comparativeData[metric.title]}% of similar profiles`
+                  : 'Benchmark updating — check back after your Week 2 check-in'}
             </p>
           </div>
         </div>

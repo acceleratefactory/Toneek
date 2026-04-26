@@ -17,12 +17,14 @@ export interface TimelineNode {
 interface CheckinTimelineProps {
   nodes: TimelineNode[]
   delayMs?: number
+  showEscalation?: boolean   // show the Week 8 escalation path block
+  coldStartNote?: string     // optional footnote below the whole timeline
 }
 
 // ─────────────────────────────────────────────────────────────
 // COMPONENT
 // ─────────────────────────────────────────────────────────────
-export default function CheckinTimeline({ nodes, delayMs = 0 }: CheckinTimelineProps) {
+export default function CheckinTimeline({ nodes, delayMs = 0, showEscalation = false, coldStartNote }: CheckinTimelineProps) {
   // Use state to trigger the line draw specifically on mount
   const [mounted, setMounted] = useState(false)
   
@@ -101,6 +103,24 @@ export default function CheckinTimeline({ nodes, delayMs = 0 }: CheckinTimelineP
                     {node.description}
                   </p>
                 )}
+
+                {/* Escalation path — shown only on Week 8 node when showEscalation=true */}
+                {showEscalation && node.week === 8 && (
+                  <div className="mt-3 border-l-2 border-toneek-amber/40 pl-3 flex flex-col gap-1.5">
+                    <p className="text-[11px] font-bold text-gray-400 dark:text-[#A3938C] uppercase tracking-widest font-sans">What Happens Next</p>
+                    <p className="text-[12px] text-gray-500 dark:text-[#A3938C] font-sans leading-snug">
+                      <span className="font-semibold text-toneek-forest dark:text-[#4caf82]">If significant improvement:</span>{' '}
+                      Formula continues into the next 8-week cycle. Active concentrations may be adjusted upward.
+                    </p>
+                    <p className="text-[12px] text-gray-500 dark:text-[#A3938C] font-sans leading-snug">
+                      <span className="font-semibold text-toneek-amber">If limited improvement:</span>{' '}
+                      Formula reviewed and upgraded. Possible switch to two-step protocol. Dermatology referral recommended if score &lt; 4.
+                    </p>
+                    <p className="text-[12px] text-gray-500 dark:text-[#A3938C] font-sans leading-snug italic">
+                      The system does not end at Week 8. It evolves.
+                    </p>
+                  </div>
+                )}
                 
                 {/* State based rendering */}
                 {isCompleted && node.score !== undefined && (
@@ -133,6 +153,13 @@ export default function CheckinTimeline({ nodes, delayMs = 0 }: CheckinTimelineP
           )
         })}
       </div>
+
+      {/* Cold-start footnote — shown when formula_performance data is thin */}
+      {coldStartNote && (
+        <p className="mt-4 text-[11px] text-gray-400 dark:text-[#7A6A62] font-sans italic pl-4">
+          {coldStartNote}
+        </p>
+      )}
     </div>
   )
 }
