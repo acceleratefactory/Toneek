@@ -24,6 +24,7 @@ import AdherencePlaceholder from '@/components/formula/AdherencePlaceholder'
 import IntelligenceMilestones from '@/components/formula/IntelligenceMilestones'
 import SystemUpdatedBanner from '@/components/formula/SystemUpdatedBanner'
 import ClinicalCommitment from '@/components/formula/ClinicalCommitment'
+import TodaysBrief from '@/components/dashboard/TodaysBrief'
 import { generateProtocol } from '@/lib/protocol/generateProtocol'
 import { generateFormulaLogic } from '@/lib/formula/generateFormulaLogic'
 import { getDashboardIdentityLine } from '@/lib/formula/identityLine'
@@ -106,6 +107,17 @@ export default async function FormulaPage() {
         .limit(1)
         .single()
     const subscriptionStartedAt = subscription?.started_at ?? null
+
+    // Fetch latest order status for TodaysBrief
+    const { data: latestOrder } = await adminClient
+        .from('orders')
+        .select('status, dispatch_held_reason')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+    const orderStatus         = latestOrder?.status ?? null
+    const dispatchHeldReason  = latestOrder?.dispatch_held_reason ?? null
 
     // Fetch all assessments for this user, newest first
     const { data: assessments, error: fetchError } = await adminClient
@@ -399,6 +411,18 @@ export default async function FormulaPage() {
                 <HeldOrderBanner checkinWeekRequired={dueCheckinWeek} />
             )}
 
+            {/* ── TODAY’S BRIEF ── first content block after status bar */}
+            <TodaysBrief
+                subscriptionStartedAt={subscriptionStartedAt}
+                assessedAt={latest.created_at}
+                primaryConcern={latest.primary_concern || ''}
+                formulaTier={latest.formula_tier ?? null}
+                orderStatus={orderStatus}
+                dispatchHeldReason={dispatchHeldReason}
+                hasDueCheckin={hasDueCheckin}
+                dueCheckinWeek={dueCheckinWeek}
+            />
+
             {/* ── Admin-Style Block Layout ── */}
             <div className="flex flex-col gap-8">
                 
@@ -417,6 +441,17 @@ export default async function FormulaPage() {
                            ) : (
                                 <p className="text-[#8C7B72] font-semibold text-[15px]">→ Assessing baseline</p>
                            )}
+
+                           {/* Score tier subtitle — 12px italic warm grey per toneek_dashboard_reorganisation.md */}
+                           <p className="text-[12px] italic text-[#8C7B72] font-sans text-center mt-1">
+                               {currentScore >= 80
+                                   ? 'Strong baseline. Excellent improvement potential.'
+                                   : currentScore >= 60
+                                   ? 'Good progress baseline. Clear improvement path.'
+                                   : currentScore >= 40
+                                   ? 'Recoverable baseline. Formula targets key concerns.'
+                                   : 'Complex baseline. Restoration protocol approach.'}
+                           </p>
 
                            {/* Decision Confidence below score trend */}
                            <div className="w-full mt-4">
