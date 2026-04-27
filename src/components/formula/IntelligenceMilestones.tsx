@@ -5,7 +5,8 @@
 // Per toneek_final_five_upgrades.md — GAP 5.
 
 interface IntelligenceMilestonesProps {
-  outcomeCount: number   // from prediction_log WHERE actual_week8_score IS NOT NULL
+  outcomeCount: number            // from prediction_log WHERE actual_week8_score IS NOT NULL
+  newlyUnlockedMilestone?: number // if set, animate that milestone's circle once
   delayMs?: number
 }
 
@@ -18,6 +19,7 @@ const MILESTONES = [
 
 export default function IntelligenceMilestones({
   outcomeCount,
+  newlyUnlockedMilestone,
   delayMs = 0,
 }: IntelligenceMilestonesProps) {
   // Find the index of the first milestone not yet passed
@@ -46,7 +48,12 @@ export default function IntelligenceMilestones({
               <div className="flex-shrink-0 relative">
                 {isPassed ? (
                   // Filled amber = milestone passed
-                  <div className="w-5 h-5 rounded-full bg-toneek-amber flex items-center justify-center">
+                  // Apply unlock animation if this is the newly unlocked milestone
+                  <div
+                    className={`w-5 h-5 rounded-full bg-toneek-amber flex items-center justify-center${
+                      newlyUnlockedMilestone === milestone.count ? ' milestone-unlock' : ''
+                    }`}
+                  >
                     <span className="text-white text-[9px] font-bold">✓</span>
                   </div>
                 ) : isNext ? (

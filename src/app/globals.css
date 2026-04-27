@@ -531,3 +531,15 @@ html, body {
 .animate-due-pulse {
   animation: duePulse 1.5s ease-out infinite;
 }
+
+/* ─── Milestone unlock — fires once per milestone per user ─────────────── */
+
+@keyframes milestoneUnlock {
+  0%   { transform: scale(1);   box-shadow: 0 0 0 0px  rgba(200, 125, 62, 0.6); }
+  50%  { transform: scale(1.2); box-shadow: 0 0 0 12px rgba(200, 125, 62, 0); }
+  100% { transform: scale(1);   box-shadow: none; }
+}
+
+.milestone-unlock {
+  animation: milestoneUnlock 0.8s ease-out forwards;
+}

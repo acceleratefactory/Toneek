@@ -22,8 +22,11 @@ import SystemStatusBar from '@/components/formula/SystemStatusBar'
 import EscalationPath from '@/components/formula/EscalationPath'
 import AdherencePlaceholder from '@/components/formula/AdherencePlaceholder'
 import IntelligenceMilestones from '@/components/formula/IntelligenceMilestones'
+import SystemUpdatedBanner from '@/components/formula/SystemUpdatedBanner'
+import ClinicalCommitment from '@/components/formula/ClinicalCommitment'
 import { generateProtocol } from '@/lib/protocol/generateProtocol'
 import { generateFormulaLogic } from '@/lib/formula/generateFormulaLogic'
+import { getDashboardIdentityLine } from '@/lib/formula/identityLine'
 
 
 export const metadata = {
@@ -84,15 +87,25 @@ export default async function FormulaPage() {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) redirect('/assessment')
 
-    // Fetch user profile to check subscription status
+    // Fetch user profile to check subscription status + last_milestone_shown
     const { data: profile } = await adminClient
         .from('profiles')
-        .select('subscription_status')
+        .select('subscription_status, last_milestone_shown')
         .eq('id', session.user.id)
         .single()
     
     // Show the subscribe block only if they haven't subscribed or if they cancelled
     const needsSubscription = !profile?.subscription_status || profile.subscription_status === 'never' || profile.subscription_status === 'cancelled'
+
+    // Fetch subscription start date for ClinicalCommitment tracker
+    const { data: subscription } = await adminClient
+        .from('subscriptions')
+        .select('started_at')
+        .eq('user_id', session.user.id)
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .single()
+    const subscriptionStartedAt = subscription?.started_at ?? null
 
     // Fetch all assessments for this user, newest first
     const { data: assessments, error: fetchError } = await adminClient
@@ -284,6 +297,26 @@ export default async function FormulaPage() {
         .select('id', { count: 'exact', head: true })
         .eq('profile_segment', profileSegment)
 
+    // ─── Milestone unlock logic ─────────────────────────────────────────────
+    const count = profileCount ?? 0
+    const currentMilestone =
+        count >= 5000 ? 5000 :
+        count >= 1000 ? 1000 :
+        count >= 200  ? 200  :
+        count >= 50   ? 50   : 0
+
+    const lastMilestoneShown = profile?.last_milestone_shown ?? 0
+    let newlyUnlockedMilestone: number | undefined
+
+    if (currentMilestone > lastMilestoneShown) {
+        newlyUnlockedMilestone = currentMilestone
+        // Update server-side — fires once per milestone per user
+        await adminClient
+            .from('profiles')
+            .update({ last_milestone_shown: currentMilestone })
+            .eq('id', session.user.id)
+    }
+
     // Compute comparative percentiles from prediction_log for this profile_segment
     let comparativeData: Record<string, number> | null = null
     if ((profileCount ?? 0) >= 50) {
@@ -338,6 +371,9 @@ export default async function FormulaPage() {
                         <p className="text-[#8C7B72] dark:text-gray-400 text-[13px] mt-2 font-medium tracking-wide">
                             Last updated: {new Date(latest.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
                         </p>
+                        <p className="text-[12px] text-[#8C7B72] dark:text-[#7A6A62] font-normal mt-1" style={{ fontFamily: 'Jost, sans-serif' }}>
+                            {getDashboardIdentityLine(latest.climate_zone, latest.skin_type)}
+                        </p>
                     </div>
                     {photoUrl && (
                         <div className="flex-shrink-0 self-start sm:self-auto w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 mb-2 sm:mb-0">
@@ -355,6 +391,9 @@ export default async function FormulaPage() {
                 dueCheckinWeek={dueCheckinWeek}
                 isColdStart={isColdStart}
             />
+
+            {/* ── SYSTEM UPDATED BANNER (client-side, sessionStorage) ── */}
+            <SystemUpdatedBanner />
 
             {hasDueCheckin && (
                 <HeldOrderBanner checkinWeekRequired={dueCheckinWeek} />
@@ -392,6 +431,7 @@ export default async function FormulaPage() {
                                {/* Intelligence Milestones — below confidence */}
                                <IntelligenceMilestones
                                    outcomeCount={profileCount ?? 0}
+                                   newlyUnlockedMilestone={newlyUnlockedMilestone}
                                    delayMs={350}
                                />
                            </div>
@@ -476,6 +516,14 @@ export default async function FormulaPage() {
                         />
                     </div>
                 </div>
+
+                {/* ── CLINICAL COMMITMENT ── */}
+                <ClinicalCommitment
+                    assessedAt={latest.created_at}
+                    outcomes={outcomes}
+                    subscriptionStartedAt={subscriptionStartedAt}
+                    delayMs={840}
+                />
 
                 {/* ── ADHERENCE TRACKING ── */}
                 <AdherencePlaceholder

@@ -13,8 +13,10 @@ import RiskFlags from '@/components/formula/RiskFlags'
 import IngredientCard from '@/components/formula/IngredientCard'
 import CheckinTimeline from '@/components/formula/CheckinTimeline'
 import SystemLearningDisclosure from '@/components/formula/SystemLearningDisclosure'
+import RealOutcomes from '@/components/formula/RealOutcomes'
 import { generateProtocol } from '@/lib/protocol/generateProtocol'
 import { generateFormulaLogic } from '@/lib/formula/generateFormulaLogic'
+import { getIdentityLine } from '@/lib/formula/identityLine'
 
 const CLIMATE_LABELS: Record<string, string> = {
     humid_tropical: 'Hot and humid climate (tropical)',
@@ -164,6 +166,14 @@ export default async function ResultsPage({
         .select('id', { count: 'exact', head: true })
         .eq('profile_segment', profileSegment)
 
+    // Query formula_performance for this formula_code (used by RealOutcomes)
+    const { data: formulaPerformance } = await adminClient
+        .from('formula_performance')
+        .select('success_rate, avg_improvement_score, total_customers')
+        .eq('formula_code', assessment.formula_code || '')
+        .limit(1)
+        .single()
+
     // Compute comparative percentiles from prediction_log for this profile_segment
     // Only attempt when enough records exist (reuse profileCount from above)
     let comparativeData: Record<string, number> | null = null
@@ -212,7 +222,9 @@ export default async function ResultsPage({
                     <img src="/logo.svg" alt="Toneek" className="h-10 w-auto mb-6 dark:hidden" />
                     <img src="/logo-dark.svg" alt="Toneek" className="h-10 w-auto mb-6 hidden dark:block" />
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Your Skin OS Framework</h1>
-                    <p className="text-gray-500 dark:text-[#A3938C] text-sm">Real-time clinical intelligence mapping</p>
+                    <p className="text-[14px] font-normal text-[#8C7B72] dark:text-[#A3938C]" style={{ fontFamily: 'Jost, sans-serif' }}>
+                        {getIdentityLine(assessment.climate_zone, assessment.skin_type)}
+                    </p>
                 </div>
 
                 {/* 2. Main Score Ring (200ms) alongside Assessment Photo */}
@@ -325,6 +337,12 @@ export default async function ResultsPage({
 
                 {/* 8. System Learning Disclosure (1750ms) */}
                 <SystemLearningDisclosure delayMs={1750} />
+
+                {/* Real Outcomes — awaiting beta data or live stats */}
+                <RealOutcomes
+                    performanceData={formulaPerformance ?? null}
+                    delayMs={1780}
+                />
 
                 {/* 7. CTA (1800ms) */}
                 <section className="pt-8 text-center animate-slide-up opacity-0" style={{ animationDelay: '1800ms', animationFillMode: 'forwards' }}>

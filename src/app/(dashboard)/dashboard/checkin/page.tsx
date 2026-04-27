@@ -113,6 +113,9 @@ function CheckinContent() {
             const data = await res.json()
             if (!res.ok) throw new Error(data.error ?? 'Check-in failed')
 
+            // Signal to dashboard that a check-in was just completed
+            sessionStorage.setItem('toneek_checkin_complete', String(week))
+
             setResult({
                 score: score * 2,
                 orderReleased: data.order_released ?? false,
