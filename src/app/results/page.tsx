@@ -238,6 +238,15 @@ export default async function ResultsPage({
                     <p className="text-[14px] font-normal text-[#8C7B72] dark:text-[#A3938C]" style={{ fontFamily: 'Jost, sans-serif' }}>
                         {getIdentityLine(assessment.climate_zone, assessment.skin_type)}
                     </p>
+                    {/* Dashboard navigation — every customer has access, this prevents bounce */}
+                    <a
+                        href="/dashboard/formula"
+                        className="inline-flex items-center gap-1.5 mt-4 px-4 py-2 rounded-full text-[13px] font-medium font-sans transition-all hover:opacity-80"
+                        style={{ backgroundColor: 'rgba(42,15,6,0.07)', color: '#2A0F06' }}
+                    >
+                        View your dashboard
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                    </a>
                 </div>
 
                 {/* 2. Main Score Ring (200ms) alongside Assessment Photo */}

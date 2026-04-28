@@ -25,6 +25,7 @@ import IntelligenceMilestones from '@/components/formula/IntelligenceMilestones'
 import SystemUpdatedBanner from '@/components/formula/SystemUpdatedBanner'
 import ClinicalCommitment from '@/components/formula/ClinicalCommitment'
 import TodaysBrief from '@/components/dashboard/TodaysBrief'
+import AssessmentHistory from '@/components/dashboard/AssessmentHistory'
 import StickyCTA from '@/components/formula/StickyCTA'
 import { generateProtocol } from '@/lib/protocol/generateProtocol'
 import { generateFormulaLogic } from '@/lib/formula/generateFormulaLogic'
@@ -611,6 +612,16 @@ export default async function FormulaPage() {
 
                 {/* ── SYSTEM LEARNING DISCLOSURE ── */}
                 <SystemLearningDisclosure delayMs={900} />
+
+                {/* ── ASSESSMENT HISTORY ── */}
+                <AssessmentHistory
+                    assessments={assessments.map(a => ({
+                        id: a.id,
+                        created_at: a.created_at,
+                        formula_code: a.formula_code ?? null,
+                        skin_os_score: a.skin_os_score ?? null,
+                    }))}
+                />
 
                 {/* ── SUBSCRIPTION BANNER ── */}
                 {needsSubscription && (
