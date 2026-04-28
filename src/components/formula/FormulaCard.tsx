@@ -63,7 +63,7 @@ export default function FormulaCard({
               <span>Formulated for {climateZone}</span>
             </div>
             {formulaRationale && (
-              <p className="text-[13px] text-gray-500 dark:text-[#A3938C] leading-snug max-w-sm mt-1">
+              <p className="text-[13px] text-gray-500 dark:text-[#A3938C] leading-snug mt-1">
                 {formulaRationale}
               </p>
             )}
@@ -71,7 +71,7 @@ export default function FormulaCard({
         </div>
 
         {/* Pills — always visible as compact summary (mobile + desktop) */}
-        <div className="flex flex-row items-center flex-wrap gap-1 sm:justify-end sm:max-w-[200px]">
+        <div className="flex flex-row items-center flex-wrap gap-1 sm:justify-end">
           {pathPills.map((pill, index) => (
             <React.Fragment key={pill}>
               <div className="bg-toneek-amber/10 dark:bg-toneek-amber/20 text-toneek-amber text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap border border-toneek-amber/20">

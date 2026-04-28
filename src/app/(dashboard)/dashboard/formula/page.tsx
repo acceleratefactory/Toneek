@@ -434,7 +434,7 @@ export default async function FormulaPage() {
             <div className="flex flex-col gap-8">
                 
                 {/* ── TOP METRICS ROW ── */}
-                <div className="grid grid-cols-1 md:grid-cols-[360px_1fr] gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Main Score Ring Profile Card */}
                     <div className="bg-white dark:bg-[#1A1210] rounded-xl shadow-[0_2px_10px_rgba(42,15,6,0.04)] border border-[#E8E0DA] dark:border-[#3A2820] p-8 flex flex-col justify-between items-center text-center">
                         <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest self-start w-full text-left mb-6">Aggregate Skin OS</h5>
