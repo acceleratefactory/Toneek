@@ -13,6 +13,7 @@ interface TodaysBriefProps {
   dispatchHeldReason?: string | null    // latest order.dispatch_held_reason
   hasDueCheckin: boolean
   dueCheckinWeek: number
+  barrierIntegrity?: number             // from analysis_scores.barrier_integrity
 }
 
 // ─── Date helpers ──────────────────────────────────────────────────────────────
@@ -173,6 +174,41 @@ function getExpectedThisWeek(
   return 'Protocol initiated. First measurable changes visible at Week 2 check-in.'
 }
 
+// ─── Emotional Forecast ───────────────────────────────────────────────────────
+// Per toneek_dashboard_final_polish.md — Phase 3.
+
+function getEmotionalForecast(
+  daysActive: number,
+  primaryConcern: string,
+  barrierIntegrity: number,
+): { text: string; colour: string } {
+  const colour = barrierIntegrity >= 70 ? '#1C5C3A' : '#C87D3E'
+
+  if (daysActive <= 14) {
+    if (barrierIntegrity >= 80) {
+      const concern = primaryConcern || 'Your primary concern'
+      return {
+        text: `${concern} is the formula's primary target — your barrier is already working well for you.`,
+        colour,
+      }
+    }
+    return {
+      text: 'Your formula stabilises the barrier first. This is the foundation for lasting improvement.',
+      colour,
+    }
+  }
+  if (daysActive <= 28) {
+    return {
+      text: 'You are in the active treatment phase. First visible changes are beginning.',
+      colour,
+    }
+  }
+  return {
+    text: 'Approaching your primary milestone. Week 8 recalculates your Skin OS Score.',
+    colour,
+  }
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function TodaysBrief({
@@ -184,6 +220,7 @@ export default function TodaysBrief({
   dispatchHeldReason,
   hasDueCheckin,
   dueCheckinWeek,
+  barrierIntegrity = 60,
 }: TodaysBriefProps) {
   const startIso   = subscriptionStartedAt || assessedAt
   const daysActive = getDaysActive(startIso)
@@ -193,6 +230,7 @@ export default function TodaysBrief({
   const status       = getStatus(orderStatus, dispatchHeldReason, hasDueCheckin)
   const checkpoint   = getNextCheckpoint(startIso, daysActive, hasDueCheckin, dueCheckinWeek)
   const expectedText = getExpectedThisWeek(daysActive, primaryConcern, startIso)
+  const emotional    = getEmotionalForecast(daysActive, primaryConcern, barrierIntegrity)
 
   // Status indicator config
   const statusConfig = {
@@ -291,6 +329,10 @@ export default function TodaysBrief({
 
           <p className="text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: '#C87D3E' }}>
             Expected This Week
+          </p>
+          {/* Emotional forecast line — Forest Green or Amber based on barrier_integrity */}
+          <p className="text-[13px] font-semibold leading-snug mb-2" style={{ color: emotional.colour }}>
+            {emotional.text}
           </p>
           <p className="text-[13px] leading-relaxed" style={{ color: '#D4C5BE' }}>
             {expectedText}

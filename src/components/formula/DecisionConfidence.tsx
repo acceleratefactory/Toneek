@@ -24,7 +24,7 @@ function getTier(score: number): ConfidenceTier {
 }
 
 const TIER_TEXT: Record<ConfidenceTier, string> = {
-  High:     'Your profile maps clearly to this formula assignment. Clinical rules for your presentation are well-established.',
+  High:     'This formula matches your profile clearly. The clinical rules for your skin type and climate are well-established.',
   Moderate: 'Your profile has some complexity. This formula follows validated clinical rules with standard confidence.',
   Building: 'Your profile has unusual characteristics. Conservative clinical rules applied. Confidence updates after Week 2 check-in.',
 }

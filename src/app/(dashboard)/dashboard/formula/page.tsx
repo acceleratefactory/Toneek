@@ -25,9 +25,10 @@ import IntelligenceMilestones from '@/components/formula/IntelligenceMilestones'
 import SystemUpdatedBanner from '@/components/formula/SystemUpdatedBanner'
 import ClinicalCommitment from '@/components/formula/ClinicalCommitment'
 import TodaysBrief from '@/components/dashboard/TodaysBrief'
+import StickyCTA from '@/components/formula/StickyCTA'
 import { generateProtocol } from '@/lib/protocol/generateProtocol'
 import { generateFormulaLogic } from '@/lib/formula/generateFormulaLogic'
-import { getDashboardIdentityLine } from '@/lib/formula/identityLine'
+import { getDashboardIdentityLine, getFormulaSummaryLine } from '@/lib/formula/identityLine'
 
 
 export const metadata = {
@@ -243,19 +244,19 @@ export default async function FormulaPage() {
         : undefined
 
     // Clinical evidence notes per week (from toneek_final_five_upgrades.md)
-    const w2EvidenceNote = 'Clinical evidence: most FST IV–VI patients on this active combination report reduced tightness and mild warmth subsiding by Day 10.'
+    const w2EvidenceNote = 'Most users on this formula feel noticeably calmer skin by Day 10. This timeline is consistent with clinical evidence for FST IV–VI skin.'
     const c = latest.primary_concern || ''
     let w4EvidenceNote: string
     if (c === 'PIH' || c === 'tone') {
-        w4EvidenceNote = 'Clinical evidence: 65–72% of patients using targeted brightening actives see measurable tone improvement at Week 4 in FST IV–VI skin studies.'
+        w4EvidenceNote = 'Visible tone improvement begins here for most users — 65–72% of FST IV–VI patients on targeted brightening actives see measurable change at Week 4.'
     } else if (c === 'acne') {
         w4EvidenceNote = 'Clinical evidence: targeted anti-acne combinations show 60–75% reduction in active lesions by Week 4 in melanin-rich skin studies.'
     } else if (c === 'dryness' || c === 'sensitivity') {
-        w4EvidenceNote = 'Clinical evidence: Centella Asiatica at 5% shows barrier repair confirmation at 4 weeks in compromised skin trials.'
+        w4EvidenceNote = 'Barrier repair measurable at 4 weeks for most users on this protocol. Clinical confirmation for Centella at 5% in compromised FST IV–VI skin.'
     } else {
         w4EvidenceNote = 'Clinical evidence: targeted active combinations for your concern show measurable improvement in 60–70% of patients at Week 4.'
     }
-    const w8EvidenceNote = 'Clinical evidence: 70–78% of FST IV–VI patients using targeted active combinations at clinical concentrations achieve measurable improvement by Week 8.'
+    const w8EvidenceNote = 'Your primary clinical milestone. 70–78% of FST IV–VI patients on targeted active combinations achieve measurable improvement by Week 8.'
 
     const EVIDENCE_NOTES: Record<number, string> = {
         2: w2EvidenceNote,
@@ -421,6 +422,7 @@ export default async function FormulaPage() {
                 dispatchHeldReason={dispatchHeldReason}
                 hasDueCheckin={hasDueCheckin}
                 dueCheckinWeek={dueCheckinWeek}
+                barrierIntegrity={latest.analysis_scores?.barrier_integrity ?? 60}
             />
 
             {/* ── Admin-Style Block Layout ── */}
@@ -442,15 +444,19 @@ export default async function FormulaPage() {
                                 <p className="text-[#8C7B72] font-semibold text-[15px]">→ Assessing baseline</p>
                            )}
 
-                           {/* Score tier subtitle — 12px italic warm grey per toneek_dashboard_reorganisation.md */}
+                           {/* Score tier subtitle — 6-tier map per toneek_dashboard_final_polish.md */}
                            <p className="text-[12px] italic text-[#8C7B72] font-sans text-center mt-1">
                                {currentScore >= 80
-                                   ? 'Strong baseline. Excellent improvement potential.'
+                                   ? 'Excellent — Strong skin foundation.'
+                                   : currentScore >= 70
+                                   ? 'Strong — Clear improvement trajectory.'
                                    : currentScore >= 60
-                                   ? 'Good progress baseline. Clear improvement path.'
+                                   ? 'Good — Formula actively targeting concerns.'
+                                   : currentScore >= 50
+                                   ? 'Recovering — Measurable gains expected by Week 8.'
                                    : currentScore >= 40
-                                   ? 'Recoverable baseline. Formula targets key concerns.'
-                                   : 'Complex baseline. Restoration protocol approach.'}
+                                   ? 'Active treatment needed — Complex presentation.'
+                                   : 'Intensive protocol — Restoration phase initiated.'}
                            </p>
 
                            {/* Decision Confidence below score trend */}
@@ -482,6 +488,7 @@ export default async function FormulaPage() {
                             climateZone={CLIMATE_DESCRIPTIONS[latest.climate_zone] || latest.climate_zone || 'Your Location'}
                             pathPills={pathPills}
                             logicParagraphs={logicParagraphs}
+                            summaryLine={getFormulaSummaryLine(latest.formula_tier, latest.climate_zone, latest.primary_concern)}
                             delayMs={300}
                         />
 
@@ -616,5 +623,11 @@ export default async function FormulaPage() {
 
             </div>
         </div>
+
+        {/* Sticky CTA — visible to non-subscribers browsing the formula page */}
+        <StickyCTA
+            formulaCode={latest.formula_code || ''}
+            subscribeHref={`/subscribe?assessment_id=${latest.id}`}
+        />
     )
 }

@@ -14,9 +14,10 @@ import IngredientCard from '@/components/formula/IngredientCard'
 import CheckinTimeline from '@/components/formula/CheckinTimeline'
 import SystemLearningDisclosure from '@/components/formula/SystemLearningDisclosure'
 import RealOutcomes from '@/components/formula/RealOutcomes'
+import StickyCTA from '@/components/formula/StickyCTA'
 import { generateProtocol } from '@/lib/protocol/generateProtocol'
 import { generateFormulaLogic } from '@/lib/formula/generateFormulaLogic'
-import { getIdentityLine } from '@/lib/formula/identityLine'
+import { getIdentityLine, getFormulaSummaryLine } from '@/lib/formula/identityLine'
 
 const CLIMATE_LABELS: Record<string, string> = {
     humid_tropical: 'Hot and humid climate (tropical)',
@@ -130,20 +131,20 @@ export default async function ResultsPage({
         : undefined
 
     // Clinical evidence notes per week (from toneek_final_five_upgrades.md)
-    const w2EvidenceNote = 'Clinical evidence: most FST IV–VI patients on this active combination report reduced tightness and mild warmth subsiding by Day 10.'
+    const w2EvidenceNote = 'Most users on this formula feel noticeably calmer skin by Day 10. This timeline is consistent with clinical evidence for FST IV–VI skin.'
 
     let w4EvidenceNote: string
     if (concern === 'PIH' || concern === 'tone') {
-        w4EvidenceNote = 'Clinical evidence: 65–72% of patients using targeted brightening actives see measurable tone improvement at Week 4 in FST IV–VI skin studies.'
+        w4EvidenceNote = 'Visible tone improvement begins here for most users — 65–72% of FST IV–VI patients on targeted brightening actives see measurable change at Week 4.'
     } else if (concern === 'acne') {
         w4EvidenceNote = 'Clinical evidence: targeted anti-acne combinations show 60–75% reduction in active lesions by Week 4 in melanin-rich skin studies.'
     } else if (concern === 'dryness' || concern === 'sensitivity') {
-        w4EvidenceNote = 'Clinical evidence: Centella Asiatica at 5% shows barrier repair confirmation at 4 weeks in compromised skin trials.'
+        w4EvidenceNote = 'Barrier repair measurable at 4 weeks for most users on this protocol. Clinical confirmation for Centella at 5% in compromised FST IV–VI skin.'
     } else {
         w4EvidenceNote = 'Clinical evidence: targeted active combinations for your concern show measurable improvement in 60–70% of patients at Week 4.'
     }
 
-    const w8EvidenceNote = 'Clinical evidence: 70–78% of FST IV–VI patients using targeted active combinations at clinical concentrations achieve measurable improvement by Week 8.'
+    const w8EvidenceNote = 'Your primary clinical milestone. 70–78% of FST IV–VI patients on targeted active combinations achieve measurable improvement by Week 8.'
 
     const timelineNodes = [
         { week: 2, state: 'PENDING' as const, description: customW2, evidenceNote: w2EvidenceNote },
@@ -213,6 +214,17 @@ export default async function ResultsPage({
         }
     }
 
+    // Emotional forecast — for results page Clinical Trajectory section
+    const barrierIntegrity: number = (assessment.analysis_scores as any)?.barrier_integrity ?? 60
+    const resultsBarrierColour = barrierIntegrity >= 70 ? '#1C5C3A' : '#C87D3E'
+    let resultsEmotionalText: string
+    if (barrierIntegrity >= 80) {
+        const concern = assessment.primary_concern || 'Your primary concern'
+        resultsEmotionalText = `${concern} is the formula's primary target — your barrier is already working well for you.`
+    } else {
+        resultsEmotionalText = 'Your formula stabilises the barrier first. This is the foundation for lasting improvement.'
+    }
+
     return (
         <main className="min-h-screen bg-[#FCFAF8] dark:bg-[#1A1210] py-12 px-4 sm:px-6 font-sans overflow-x-hidden">
             <div className="max-w-3xl mx-auto space-y-6">
@@ -263,6 +275,7 @@ export default async function ResultsPage({
                     climateZone={CLIMATE_LABELS[assessment.climate_zone] ?? assessment.climate_zone ?? 'Your Climate'}
                     pathPills={pathPills}
                     logicParagraphs={logicParagraphs}
+                    summaryLine={getFormulaSummaryLine(assessment.formula_tier, assessment.climate_zone, assessment.primary_concern)}
                     delayMs={800}
                 />
 
@@ -323,8 +336,12 @@ export default async function ResultsPage({
                 {/* 6. Expected Timeline (1400ms) */}
                 {timelineNodes.length > 0 && (
                     <section className="bg-white dark:bg-[#1A1210] border border-gray-100 dark:border-[#3A2820] rounded-2xl p-6 sm:p-8 mt-6 animate-slide-up opacity-0 shadow-sm" style={{ animationDelay: '1400ms', animationFillMode: 'forwards' }}>
-                        <p className="text-gray-500 dark:text-[#A3938C] text-[11px] font-bold uppercase tracking-[0.15em] mb-4 font-sans">
+                        <p className="text-gray-500 dark:text-[#A3938C] text-[11px] font-bold uppercase tracking-[0.15em] mb-2 font-sans">
                             Clinical Trajectory
+                        </p>
+                        {/* Emotional forecast line — above CheckinTimeline */}
+                        <p className="text-[13px] font-semibold mb-4" style={{ color: resultsBarrierColour }}>
+                            {resultsEmotionalText}
                         </p>
                         <CheckinTimeline
                             nodes={timelineNodes}
@@ -345,7 +362,7 @@ export default async function ResultsPage({
                 />
 
                 {/* 7. CTA (1800ms) */}
-                <section className="pt-8 text-center animate-slide-up opacity-0" style={{ animationDelay: '1800ms', animationFillMode: 'forwards' }}>
+                <section id="results-bottom-cta" className="pt-8 text-center animate-slide-up opacity-0" style={{ animationDelay: '1800ms', animationFillMode: 'forwards' }}>
                     <p className="text-gray-900 dark:text-[#F0E6DF] font-bold text-[22px] mb-6 font-sans tracking-tight">Ready to initiate your sequence?</p>
                     <a href={`/subscribe?assessment_id=${assessment.id}`} className="inline-block bg-[#2A0F06] hover:bg-[#3D1A0E] text-white font-medium py-3.5 mx-auto px-10 rounded-lg shadow-xl shadow-toneek-brown/20 transition-all font-sans text-lg w-full sm:w-auto">
                         Start your treatment protocol
@@ -356,5 +373,12 @@ export default async function ResultsPage({
                 </section>
             </div>
         </main>
+
+        {/* Sticky CTA — appears after 400px scroll, hides near bottom CTA */}
+        <StickyCTA
+            formulaCode={assessment.formula_code || ''}
+            subscribeHref={`/subscribe?assessment_id=${assessment.id}`}
+            bottomCtaId="results-bottom-cta"
+        />
     )
 }
