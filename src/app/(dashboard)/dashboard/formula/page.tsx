@@ -369,6 +369,7 @@ export default async function FormulaPage() {
     }
 
     return (
+        <>
         <div className="flex flex-col font-sans mb-12">
             
             {/* ── Top Header Banner (Zoho Style) ── */}
@@ -629,5 +630,6 @@ export default async function FormulaPage() {
             formulaCode={latest.formula_code || ''}
             subscribeHref={`/subscribe?assessment_id=${latest.id}`}
         />
+        </>
     )
 }

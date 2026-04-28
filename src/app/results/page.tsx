@@ -226,6 +226,7 @@ export default async function ResultsPage({
     }
 
     return (
+        <>
         <main className="min-h-screen bg-[#FCFAF8] dark:bg-[#1A1210] py-12 px-4 sm:px-6 font-sans overflow-x-hidden">
             <div className="max-w-3xl mx-auto space-y-6">
                 
@@ -380,5 +381,6 @@ export default async function ResultsPage({
             subscribeHref={`/subscribe?assessment_id=${assessment.id}`}
             bottomCtaId="results-bottom-cta"
         />
+        </>
     )
 }
