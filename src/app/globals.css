@@ -3,19 +3,19 @@
 :root {
   /* LIGHT MODE (Official Brand Foundation) */
   --bg-primary: #F7F1EB;
-  --text-primary: #3D1A0E;
-  --brand-accent: #C47B3C;
+  --text-primary: #2A0F06;
+  --brand-accent: #C87D3E;
   --brand-success: #1C5C3A;
   --border-subtle: #E8E0DA;
   
   /* Legacy mapping for backward compatibility */
   --background: #F7F1EB;
-  --foreground: #3D1A0E;
+  --foreground: #2A0F06;
   --surface: #FFFFFF;
   --surface-2: #FEF3E2;
   --border: #E8E0DA;
-  --accent: #C47B3C;
-  --accent-dark: #3D1A0E;
+  --accent: #C87D3E;
+  --accent-dark: #2A0F06;
   --muted: #8C7B72;
   --error: #C13B2E;
   --success: #1C5C3A;
@@ -24,20 +24,20 @@
 @media (prefers-color-scheme: dark) {
   :root {
     /* DARK MODE (Official Toneek Dark Theme) */
-    --bg-primary: #1A1210;
+    --bg-primary: #1A0A04;
     --text-primary: #F0E6DF;
     --brand-accent: #D4895A;
     --brand-success: #2E7A52;
     --border-subtle: #3A2820;
 
     /* Legacy mapping for backward compatibility */
-    --background: #1A1210;
+    --background: #1A0A04;
     --foreground: #F0E6DF;
-    --surface: #261B18;
+    --surface: #2A0F06;
     --surface-2: #302420;
     --border: #3A2820;
     --accent: #D4895A;
-    --accent-dark: #C47B3C;
+    --accent-dark: #C87D3E;
     --muted: #A3938C;
     --error: #D05C51;
     --success: #2E7A52;
@@ -53,12 +53,13 @@
 
   /* Toneek Explicit Dictionary */
   --color-toneek-cream: #F7F1EB;
-  --color-toneek-brown: #3D1A0E;
-  --color-toneek-amber: #C47B3C;
+  --color-toneek-brown: #2A0F06;
+  --color-toneek-amber: #C87D3E;
   --color-toneek-forest: #1C5C3A;
   --color-toneek-gray: #8C7B72;
 
   --font-sans: var(--font-jost, sans-serif);
+  --font-serif: var(--font-fraunces, serif);
   --font-mono: var(--font-mono, monospace);
 
   --color-background: var(--background);

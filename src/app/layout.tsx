@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Jost, IBM_Plex_Mono } from "next/font/google";
+import { Fraunces, Jost, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import HashAuthHandler from "@/components/HashAuthHandler";
 
@@ -8,8 +8,14 @@ const jost = Jost({
   variable: "--font-jost",
 });
 
-const mono = IBM_Plex_Mono({
-  weight: ["400", "500", "600"],
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  axes: ["opsz"],
+});
+
+const mono = JetBrains_Mono({
+  weight: ["400"],
   subsets: ["latin"],
   variable: "--font-mono",
 });
@@ -31,7 +37,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${jost.variable} ${mono.variable}`}>
+    <html lang="en" className={`${jost.variable} ${fraunces.variable} ${mono.variable}`}>
       <body className="font-sans antialiased bg-stone-50 text-stone-900 m-0">
         {/* Handles magic links with access_token in URL hash — redirects to /dashboard */}
         <HashAuthHandler />
