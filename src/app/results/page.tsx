@@ -64,6 +64,20 @@ export default async function ResultsPage({
     const assessment = data
     const formula = (data as any).formula_codes
 
+    // Fetch subscription status to hide CTAs for already-subscribed customers
+    let needsSubscription = true
+    if (assessment.user_id) {
+        const { data: profile } = await adminClient
+            .from('profiles')
+            .select('subscription_status')
+            .eq('id', assessment.user_id)
+            .single()
+        
+        if (profile) {
+            needsSubscription = !profile.subscription_status || profile.subscription_status === 'never' || profile.subscription_status === 'cancelled'
+        }
+    }
+
     // active_modules may be stored as a nested array e.g. [[a, b, c]] — flatten to guarantee a flat list
     const rawActives = formula?.active_modules ?? []
     const actives: any[] = Array.isArray(rawActives[0]) ? rawActives.flat() : rawActives
@@ -372,24 +386,28 @@ export default async function ResultsPage({
                 />
 
                 {/* 7. CTA (1800ms) */}
-                <section id="results-bottom-cta" className="pt-8 text-center animate-slide-up opacity-0" style={{ animationDelay: '1800ms', animationFillMode: 'forwards' }}>
-                    <p className="text-gray-900 dark:text-[#F0E6DF] font-bold text-[22px] mb-6 font-sans tracking-tight">Ready to initiate your sequence?</p>
-                    <a href={`/subscribe?assessment_id=${assessment.id}`} className="inline-block bg-[#2A0F06] hover:bg-[#3D1A0E] text-white font-medium py-3.5 mx-auto px-10 rounded-lg shadow-xl shadow-toneek-brown/20 transition-all font-sans text-lg w-full sm:w-auto">
-                        Start your treatment protocol
-                    </a>
-                    <p className="text-gray-400 dark:text-[#A3938C] text-xs mt-5 max-w-sm mx-auto font-sans">
-                        Custom compounded on payment confirmation. Bank transfer only.
-                    </p>
-                </section>
+                {needsSubscription && (
+                    <section id="results-bottom-cta" className="pt-8 text-center animate-slide-up opacity-0" style={{ animationDelay: '1800ms', animationFillMode: 'forwards' }}>
+                        <p className="text-gray-900 dark:text-[#F0E6DF] font-bold text-[22px] mb-6 font-sans tracking-tight">Ready to initiate your sequence?</p>
+                        <a href={`/subscribe?assessment_id=${assessment.id}`} className="inline-block bg-[#2A0F06] hover:bg-[#3D1A0E] text-white font-medium py-3.5 mx-auto px-10 rounded-lg shadow-xl shadow-toneek-brown/20 transition-all font-sans text-lg w-full sm:w-auto">
+                            Start your treatment protocol
+                        </a>
+                        <p className="text-gray-400 dark:text-[#A3938C] text-xs mt-5 max-w-sm mx-auto font-sans">
+                            Custom compounded on payment confirmation. Bank transfer only.
+                        </p>
+                    </section>
+                )}
             </div>
         </main>
 
         {/* Sticky CTA — appears after 400px scroll, hides near bottom CTA */}
-        <StickyCTA
-            formulaCode={assessment.formula_code || ''}
-            subscribeHref={`/subscribe?assessment_id=${assessment.id}`}
-            bottomCtaId="results-bottom-cta"
-        />
+        {needsSubscription && (
+            <StickyCTA
+                formulaCode={assessment.formula_code || ''}
+                subscribeHref={`/subscribe?assessment_id=${assessment.id}`}
+                bottomCtaId="results-bottom-cta"
+            />
+        )}
         </>
     )
 }

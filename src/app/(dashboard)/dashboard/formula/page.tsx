@@ -640,10 +640,12 @@ export default async function FormulaPage() {
         </div>
 
         {/* Sticky CTA — visible to non-subscribers browsing the formula page */}
-        <StickyCTA
-            formulaCode={latest.formula_code || ''}
-            subscribeHref={`/subscribe?assessment_id=${latest.id}`}
-        />
+        {needsSubscription && (
+            <StickyCTA
+                formulaCode={latest.formula_code || ''}
+                subscribeHref={`/subscribe?assessment_id=${latest.id}`}
+            />
+        )}
         </>
     )
 }
