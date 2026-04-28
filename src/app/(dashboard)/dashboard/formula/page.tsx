@@ -426,6 +426,9 @@ export default async function FormulaPage() {
                 barrierIntegrity={latest.analysis_scores?.barrier_integrity ?? 60}
             />
 
+            {/* Sentinel — sticky CTA appears when this leaves the viewport */}
+            <div id="sticky-cta-trigger" aria-hidden="true" />
+
             {/* ── Admin-Style Block Layout ── */}
             <div className="flex flex-col gap-8">
                 

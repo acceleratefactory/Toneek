@@ -241,7 +241,7 @@ export default async function ResultsPage({
                 </div>
 
                 {/* 2. Main Score Ring (200ms) alongside Assessment Photo */}
-                <section className="bg-white dark:bg-[#261B18] border border-gray-100 dark:border-[#3A2820] rounded-2xl p-8 sm:p-12 text-center shadow-sm relative animate-slide-up opacity-0 flex flex-col md:flex-row items-center justify-center gap-12" style={{ animationDelay: '200ms', animationFillMode: 'forwards' }}>
+                <section id="sticky-cta-trigger" className="bg-white dark:bg-[#261B18] border border-gray-100 dark:border-[#3A2820] rounded-2xl p-8 sm:p-12 text-center shadow-sm relative animate-slide-up opacity-0 flex flex-col md:flex-row items-center justify-center gap-12" style={{ animationDelay: '200ms', animationFillMode: 'forwards' }}>
                     
                     {photoUrl && (
                         <div className="flex flex-col items-center w-32 md:w-40 flex-shrink-0">
