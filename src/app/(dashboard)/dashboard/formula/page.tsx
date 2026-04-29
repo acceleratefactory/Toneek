@@ -414,8 +414,8 @@ export default async function FormulaPage() {
                 <HeldOrderBanner checkinWeekRequired={dueCheckinWeek} />
             )}
 
-            {/* ── PHASE 2: HERO SECTION (3 CARDS) ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            {/* ── PHASE 2: HERO SECTION (2 CARDS 50/50) ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 
                 {/* 1. Left: Score Ring Profile Card */}
                 <div className="bg-white dark:bg-[#1A1210] rounded-xl shadow-[0_2px_10px_rgba(42,15,6,0.04)] border border-[#E8E0DA] dark:border-[#3A2820] p-6 lg:p-8 flex flex-col justify-between items-center text-center h-full">
@@ -447,8 +447,8 @@ export default async function FormulaPage() {
                     </div>
                 </div>
 
-                {/* 2. Middle: Protocol (Dark Box) */}
-                <div className="flex flex-col h-full relative">
+                {/* 2. Right: Protocol (Dark Box) + Milestones */}
+                <div className="flex flex-col gap-6 h-full relative">
                     <TodaysBrief
                         subscriptionStartedAt={subscriptionStartedAt}
                         assessedAt={latest.created_at}
@@ -460,18 +460,17 @@ export default async function FormulaPage() {
                         dueCheckinWeek={dueCheckinWeek}
                         barrierIntegrity={latest.analysis_scores?.barrier_integrity ?? 60}
                     />
+                    
+                    <div className="px-2 mt-2">
+                        <IntelligenceMilestones
+                            outcomeCount={profileCount ?? 0}
+                            newlyUnlockedMilestone={newlyUnlockedMilestone}
+                            delayMs={350}
+                        />
+                    </div>
+
                     {/* Sentinel — sticky CTA appears when this leaves the viewport */}
                     <div id="sticky-cta-trigger" className="absolute bottom-0 w-full" aria-hidden="true" />
-                </div>
-
-                {/* 3. Right: System Intelligence Milestones */}
-                <div className="bg-white dark:bg-[#1A1210] rounded-xl shadow-[0_2px_10px_rgba(42,15,6,0.04)] border border-[#E8E0DA] dark:border-[#3A2820] p-6 lg:p-8 flex flex-col h-full">
-                    <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest self-start w-full text-left mb-6">Intelligence Milestones</h5>
-                    <IntelligenceMilestones
-                        outcomeCount={profileCount ?? 0}
-                        newlyUnlockedMilestone={newlyUnlockedMilestone}
-                        delayMs={350}
-                    />
                 </div>
             </div>
 
