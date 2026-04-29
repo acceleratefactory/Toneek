@@ -414,107 +414,94 @@ export default async function FormulaPage() {
                 <HeldOrderBanner checkinWeekRequired={dueCheckinWeek} />
             )}
 
-            {/* ── TODAY’S BRIEF ── first content block after status bar */}
-            <TodaysBrief
-                subscriptionStartedAt={subscriptionStartedAt}
-                assessedAt={latest.created_at}
-                primaryConcern={latest.primary_concern || ''}
-                formulaTier={latest.formula_tier ?? null}
-                orderStatus={orderStatus}
-                dispatchHeldReason={dispatchHeldReason}
-                hasDueCheckin={hasDueCheckin}
-                dueCheckinWeek={dueCheckinWeek}
-                barrierIntegrity={latest.analysis_scores?.barrier_integrity ?? 60}
-            />
+            {/* ── PHASE 2: HERO SECTION (PROTOCOL & SCORE) ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6 mb-8">
+                {/* Left: Protocol */}
+                <div className="flex flex-col h-full relative">
+                    <TodaysBrief
+                        subscriptionStartedAt={subscriptionStartedAt}
+                        assessedAt={latest.created_at}
+                        primaryConcern={latest.primary_concern || ''}
+                        formulaTier={latest.formula_tier ?? null}
+                        orderStatus={orderStatus}
+                        dispatchHeldReason={dispatchHeldReason}
+                        hasDueCheckin={hasDueCheckin}
+                        dueCheckinWeek={dueCheckinWeek}
+                        barrierIntegrity={latest.analysis_scores?.barrier_integrity ?? 60}
+                    />
+                    {/* Sentinel — sticky CTA appears when this leaves the viewport */}
+                    <div id="sticky-cta-trigger" className="absolute bottom-0 w-full" aria-hidden="true" />
+                </div>
 
-            {/* Sentinel — sticky CTA appears when this leaves the viewport */}
-            <div id="sticky-cta-trigger" aria-hidden="true" />
+                {/* Right: Score Ring Profile Card */}
+                <div className="bg-white dark:bg-[#1A1210] rounded-xl shadow-[0_2px_10px_rgba(42,15,6,0.04)] border border-[#E8E0DA] dark:border-[#3A2820] p-6 lg:p-8 flex flex-col justify-between items-center text-center h-full">
+                    <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest self-start w-full text-left mb-6">Aggregate Skin OS</h5>
+                    <AnimatedScoreRing score={currentScore} size={180} showLabel={false} delay={100} />
+                    
+                    <div className="mt-8 flex flex-col items-center gap-2 w-full">
+                        {scoreDiff > 0 ? (
+                            <p className="text-toneek-forest font-semibold text-[15px]">↑ Skin health improving</p>
+                        ) : scoreDiff < 0 ? (
+                            <p className="text-[#C13B2E] font-semibold text-[15px]">↓ Consistency required</p>
+                        ) : (
+                            <p className="text-[#8C7B72] font-semibold text-[15px]">→ Assessing baseline</p>
+                        )}
+
+                        <p className="text-[12px] italic text-[#8C7B72] font-sans text-center mt-1">
+                            {currentScore >= 80 ? 'Excellent — Strong skin foundation.' : currentScore >= 70 ? 'Strong — Clear improvement trajectory.' : currentScore >= 60 ? 'Good — Formula actively targeting concerns.' : currentScore >= 50 ? 'Recovering — Measurable gains expected by Week 8.' : currentScore >= 40 ? 'Active treatment needed — Complex presentation.' : 'Intensive protocol — Restoration phase initiated.'}
+                        </p>
+
+                        <div className="w-full mt-4">
+                            <DecisionConfidence
+                                confidenceScore={latest.confidence_score ?? 0.6}
+                                profileCount={profileCount ?? 0}
+                                outcomeCount={profileCount ?? 0}
+                                variant="dashboard"
+                                delayMs={300}
+                            />
+                            <IntelligenceMilestones
+                                outcomeCount={profileCount ?? 0}
+                                newlyUnlockedMilestone={newlyUnlockedMilestone}
+                                delayMs={350}
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             {/* ── Admin-Style Block Layout ── */}
             <div className="flex flex-col gap-8">
                 
-                {/* ── TOP METRICS ROW ── */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Main Score Ring Profile Card */}
-                    <div className="bg-white dark:bg-[#1A1210] rounded-xl shadow-[0_2px_10px_rgba(42,15,6,0.04)] border border-[#E8E0DA] dark:border-[#3A2820] p-8 flex flex-col justify-between items-center text-center">
-                        <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest self-start w-full text-left mb-6">Aggregate Skin OS</h5>
-                        <AnimatedScoreRing score={currentScore} size={180} showLabel={false} delay={100} />
-                        
-                        <div className="mt-8 flex flex-col items-center gap-2 w-full">
-                           {scoreDiff > 0 ? (
-                                <p className="text-toneek-forest font-semibold text-[15px]">↑ Skin health improving</p>
-                           ) : scoreDiff < 0 ? (
-                                <p className="text-[#C13B2E] font-semibold text-[15px]">↓ Consistency required</p>
-                           ) : (
-                                <p className="text-[#8C7B72] font-semibold text-[15px]">→ Assessing baseline</p>
-                           )}
+                {/* Formula Architecture & Review Card */}
+                <div className="flex flex-col gap-6">
+                    <FormulaCard 
+                        formulaCode={latest.formula_code}
+                        formulaName={formula?.profile_description || 'Active Protocol'}
+                        formulaRationale={latest.formula_rationale}
+                        climateZone={CLIMATE_DESCRIPTIONS[latest.climate_zone] || latest.climate_zone || 'Your Location'}
+                        pathPills={pathPills}
+                        logicParagraphs={logicParagraphs}
+                        summaryLine={getFormulaSummaryLine(latest.formula_tier, latest.climate_zone, latest.primary_concern)}
+                        delayMs={300}
+                    />
 
-                           {/* Score tier subtitle — 6-tier map per toneek_dashboard_final_polish.md */}
-                           <p className="text-[12px] italic text-[#8C7B72] font-sans text-center mt-1">
-                               {currentScore >= 80
-                                   ? 'Excellent — Strong skin foundation.'
-                                   : currentScore >= 70
-                                   ? 'Strong — Clear improvement trajectory.'
-                                   : currentScore >= 60
-                                   ? 'Good — Formula actively targeting concerns.'
-                                   : currentScore >= 50
-                                   ? 'Recovering — Measurable gains expected by Week 8.'
-                                   : currentScore >= 40
-                                   ? 'Active treatment needed — Complex presentation.'
-                                   : 'Intensive protocol — Restoration phase initiated.'}
-                           </p>
-
-                           {/* Decision Confidence below score trend */}
-                           <div className="w-full mt-4">
-                               <DecisionConfidence
-                                   confidenceScore={latest.confidence_score ?? 0.6}
-                                   profileCount={profileCount ?? 0}
-                                   outcomeCount={profileCount ?? 0}
-                                   variant="dashboard"
-                                   delayMs={300}
-                               />
-
-                               {/* Intelligence Milestones — below confidence */}
-                               <IntelligenceMilestones
-                                   outcomeCount={profileCount ?? 0}
-                                   newlyUnlockedMilestone={newlyUnlockedMilestone}
-                                   delayMs={350}
-                               />
-                           </div>
+                    {/* Formula Review Sub-Card */}
+                    <div className={`rounded-xl p-6 border shadow-[0_2px_10px_rgba(42,15,6,0.04)] ${isEligible ? 'bg-[#FCF9F5] border-[#E8E0DA]' : 'bg-white dark:bg-[#1A1210] border-[#E8E0DA] dark:border-[#3A2820]'}`}>
+                        <div className="flex justify-between items-center mb-3">
+                            <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Formula Review Schedule</h5>
                         </div>
-                    </div>
-
-                    {/* Formula Architecture & Review Card */}
-                    <div className="flex flex-col gap-6">
-                        <FormulaCard 
-                            formulaCode={latest.formula_code}
-                            formulaName={formula?.profile_description || 'Active Protocol'}
-                            formulaRationale={latest.formula_rationale}
-                            climateZone={CLIMATE_DESCRIPTIONS[latest.climate_zone] || latest.climate_zone || 'Your Location'}
-                            pathPills={pathPills}
-                            logicParagraphs={logicParagraphs}
-                            summaryLine={getFormulaSummaryLine(latest.formula_tier, latest.climate_zone, latest.primary_concern)}
-                            delayMs={300}
-                        />
-
-                        {/* Formula Review Sub-Card */}
-                        <div className={`rounded-xl p-6 border shadow-[0_2px_10px_rgba(42,15,6,0.04)] ${isEligible ? 'bg-[#FCF9F5] border-[#E8E0DA]' : 'bg-white dark:bg-[#1A1210] border-[#E8E0DA] dark:border-[#3A2820]'}`}>
-                            <div className="flex justify-between items-center mb-3">
-                                <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Formula Review Schedule</h5>
+                        {isEligible ? (
+                            <div className="flex justify-between items-center bg-toneek-amber/10 p-3 rounded-md">
+                                <p className="text-toneek-forest font-bold text-[14px]">Formula review available now ✓</p>
+                                <a href="/assessment" className="inline-block bg-[#2A0F06] text-white px-5 py-2 rounded-md text-[13px] font-bold transition-colors">
+                                    Request review
+                                </a>
                             </div>
-                            {isEligible ? (
-                                <div className="flex justify-between items-center bg-toneek-amber/10 p-3 rounded-md">
-                                    <p className="text-toneek-forest font-bold text-[14px]">Formula review available now ✓</p>
-                                    <a href="/assessment" className="inline-block bg-[#2A0F06] text-white px-5 py-2 rounded-md text-[13px] font-bold transition-colors">
-                                        Request review
-                                    </a>
-                                </div>
-                            ) : (
-                                <p className="text-gray-500 text-[14px] font-medium mt-1">
-                                    Your formula can be reviewed and seamlessly updated from <span className="text-[#2A0F06] font-bold">{eligibleDateStr}</span> — after 6 weeks of active use.
-                                </p>
-                            )}
-                        </div>
+                        ) : (
+                            <p className="text-gray-500 text-[14px] font-medium mt-1">
+                                Your formula can be reviewed and seamlessly updated from <span className="text-[#2A0F06] font-bold">{eligibleDateStr}</span> — after 6 weeks of active use.
+                            </p>
+                        )}
                     </div>
                 </div>
 
@@ -522,6 +509,33 @@ export default async function FormulaPage() {
                 <div className="w-full">
                     <MetricGrid assessment={latest} delayMs={500} comparativeData={comparativeData} />
                 </div>
+
+                {/* ── ACTIVE CONSTITUENTS BLOCK (MOVED HERE) ── */}
+                {actives.length > 0 && (
+                    <div className="animate-slide-up opacity-0 mt-4 mb-4" style={{ animationDelay: '550ms', animationFillMode: 'forwards' }}>
+                        <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-4 pl-1">Active System Constituents</h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {actives.map((active: any, i: number) => {
+                                const maxLimits: Record<string, number> = {
+                                    'Niacinamide': 10, 'Azelaic Acid': 15, 'Salicylic Acid': 2,
+                                    'Tranexamic Acid': 5, 'Bakuchiol': 2, 'Kojic Acid': 2,
+                                    'Centella Asiatica': 5, 'Peptide Blend': 5
+                                }
+                                return (
+                                    <IngredientCard 
+                                        key={i}
+                                        name={active.name}
+                                        role={active.role || 'TARGETED ACTIVE'}
+                                        concentration={parseFloat(active.concentration) || 0}
+                                        maxSafeLimit={maxLimits[active.name] || 10}
+                                        rationale={active.rationale}
+                                        delayMs={550 + (Math.floor(i) * 100)}
+                                    />
+                                )
+                            })}
+                        </div>
+                    </div>
+                )}
 
                 {/* ── BEHAVIOURAL PROTOCOL ── */}
                 <BehaviouralProtocol protocol={protocol} delayMs={600} />
@@ -535,9 +549,9 @@ export default async function FormulaPage() {
                 />
                 
                 {/* ── PROGRESS & TIMELINE ROW ── */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                     {/* Progress Chart Card */}
-                    <div className="bg-white dark:bg-[#1A1210] rounded-xl shadow-[0_2px_10px_rgba(42,15,6,0.04)] border border-[#E8E0DA] dark:border-[#3A2820] p-8 animate-slide-up opacity-0" style={{ animationDelay: '400ms', animationFillMode: 'forwards' }}>
+                    <div className="bg-white dark:bg-[#1A1210] rounded-xl shadow-[0_2px_10px_rgba(42,15,6,0.04)] border border-[#E8E0DA] dark:border-[#3A2820] p-8 lg:p-10 animate-slide-up opacity-0" style={{ animationDelay: '400ms', animationFillMode: 'forwards' }}>
                         <div className="flex flex-col mb-6">
                            <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1">Progress Over Time</h5>
                            <p className="text-sm text-gray-400">Tracked via your clinical check-ins</p>
@@ -553,8 +567,8 @@ export default async function FormulaPage() {
                     </div>
 
                     {/* Timeline Card */}
-                    <div className="bg-white dark:bg-[#1A1210] rounded-xl shadow-[0_2px_10px_rgba(42,15,6,0.04)] border border-[#E8E0DA] dark:border-[#3A2820] p-8 animate-slide-up opacity-0" style={{ animationDelay: '800ms', animationFillMode: 'forwards' }}>
-                        <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-6">Clinical Check-in Schedule</h5>
+                    <div className="bg-white dark:bg-[#1A1210] rounded-xl shadow-[0_2px_10px_rgba(42,15,6,0.04)] border border-[#E8E0DA] dark:border-[#3A2820] p-8 lg:p-10 animate-slide-up opacity-0" style={{ animationDelay: '800ms', animationFillMode: 'forwards' }}>
+                        <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-8">Clinical Check-in Schedule</h5>
                         <CheckinTimeline
                             nodes={timelineNodes}
                             delayMs={800}
@@ -583,32 +597,7 @@ export default async function FormulaPage() {
                 {/* ── ESCALATION PATH ── */}
                 <EscalationPath delayMs={850} />
 
-                {/* ── ACTIVE CONSTITUENTS BLOCK ── */}
-                {actives.length > 0 && (
-                    <div className="animate-slide-up opacity-0 mt-2" style={{ animationDelay: '600ms', animationFillMode: 'forwards' }}>
-                        <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-4 pl-1">Active System Constituents</h5>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {actives.map((active: any, i: number) => {
-                                const maxLimits: Record<string, number> = {
-                                    'Niacinamide': 10, 'Azelaic Acid': 15, 'Salicylic Acid': 2,
-                                    'Tranexamic Acid': 5, 'Bakuchiol': 2, 'Kojic Acid': 2,
-                                    'Centella Asiatica': 5, 'Peptide Blend': 5
-                                }
-                                return (
-                                    <IngredientCard 
-                                        key={i}
-                                        name={active.name}
-                                        role={active.role || 'TARGETED ACTIVE'}
-                                        concentration={parseFloat(active.concentration) || 0}
-                                        maxSafeLimit={maxLimits[active.name] || 10}
-                                        rationale={active.rationale}
-                                        delayMs={600 + (Math.floor(i) * 100)}
-                                    />
-                                )
-                            })}
-                        </div>
-                    </div>
-                )}
+                {/* Active constituents were moved up */}
 
                 {/* ── SYSTEM LEARNING DISCLOSURE ── */}
                 <SystemLearningDisclosure delayMs={900} />

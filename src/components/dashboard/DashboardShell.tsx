@@ -210,8 +210,8 @@ export default function DashboardShell({ children, userProfile }: { children: Re
         </header>
 
         {/* Scrollable Content Canvas */}
-        <main className={`flex-1 overflow-auto p-4 sm:p-8 transition-colors ${isDarkMode ? 'bg-[#1A1210]' : 'bg-toneek-cream'}`}>
-          <div className="max-w-4xl mx-auto">
+        <main className={`flex-1 overflow-auto p-4 sm:p-8 lg:p-10 transition-colors ${isDarkMode ? 'bg-[#1A1210]' : 'bg-toneek-cream'}`}>
+          <div className="w-full">
              {children}
           </div>
         </main>
