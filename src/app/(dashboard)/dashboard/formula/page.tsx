@@ -414,26 +414,10 @@ export default async function FormulaPage() {
                 <HeldOrderBanner checkinWeekRequired={dueCheckinWeek} />
             )}
 
-            {/* ── PHASE 2: HERO SECTION (PROTOCOL & SCORE) ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6 mb-8">
-                {/* Left: Protocol */}
-                <div className="flex flex-col h-full relative">
-                    <TodaysBrief
-                        subscriptionStartedAt={subscriptionStartedAt}
-                        assessedAt={latest.created_at}
-                        primaryConcern={latest.primary_concern || ''}
-                        formulaTier={latest.formula_tier ?? null}
-                        orderStatus={orderStatus}
-                        dispatchHeldReason={dispatchHeldReason}
-                        hasDueCheckin={hasDueCheckin}
-                        dueCheckinWeek={dueCheckinWeek}
-                        barrierIntegrity={latest.analysis_scores?.barrier_integrity ?? 60}
-                    />
-                    {/* Sentinel — sticky CTA appears when this leaves the viewport */}
-                    <div id="sticky-cta-trigger" className="absolute bottom-0 w-full" aria-hidden="true" />
-                </div>
-
-                {/* Right: Score Ring Profile Card */}
+            {/* ── PHASE 2: HERO SECTION (3 CARDS) ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                
+                {/* 1. Left: Score Ring Profile Card */}
                 <div className="bg-white dark:bg-[#1A1210] rounded-xl shadow-[0_2px_10px_rgba(42,15,6,0.04)] border border-[#E8E0DA] dark:border-[#3A2820] p-6 lg:p-8 flex flex-col justify-between items-center text-center h-full">
                     <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest self-start w-full text-left mb-6">Aggregate Skin OS</h5>
                     <AnimatedScoreRing score={currentScore} size={180} showLabel={false} delay={100} />
@@ -459,21 +443,43 @@ export default async function FormulaPage() {
                                 variant="dashboard"
                                 delayMs={300}
                             />
-                            <IntelligenceMilestones
-                                outcomeCount={profileCount ?? 0}
-                                newlyUnlockedMilestone={newlyUnlockedMilestone}
-                                delayMs={350}
-                            />
                         </div>
                     </div>
+                </div>
+
+                {/* 2. Middle: Protocol (Dark Box) */}
+                <div className="flex flex-col h-full relative">
+                    <TodaysBrief
+                        subscriptionStartedAt={subscriptionStartedAt}
+                        assessedAt={latest.created_at}
+                        primaryConcern={latest.primary_concern || ''}
+                        formulaTier={latest.formula_tier ?? null}
+                        orderStatus={orderStatus}
+                        dispatchHeldReason={dispatchHeldReason}
+                        hasDueCheckin={hasDueCheckin}
+                        dueCheckinWeek={dueCheckinWeek}
+                        barrierIntegrity={latest.analysis_scores?.barrier_integrity ?? 60}
+                    />
+                    {/* Sentinel — sticky CTA appears when this leaves the viewport */}
+                    <div id="sticky-cta-trigger" className="absolute bottom-0 w-full" aria-hidden="true" />
+                </div>
+
+                {/* 3. Right: System Intelligence Milestones */}
+                <div className="bg-white dark:bg-[#1A1210] rounded-xl shadow-[0_2px_10px_rgba(42,15,6,0.04)] border border-[#E8E0DA] dark:border-[#3A2820] p-6 lg:p-8 flex flex-col h-full">
+                    <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest self-start w-full text-left mb-6">Intelligence Milestones</h5>
+                    <IntelligenceMilestones
+                        outcomeCount={profileCount ?? 0}
+                        newlyUnlockedMilestone={newlyUnlockedMilestone}
+                        delayMs={350}
+                    />
                 </div>
             </div>
 
             {/* ── Admin-Style Block Layout ── */}
             <div className="flex flex-col gap-8">
                 
-                {/* Formula Architecture & Review Card */}
-                <div className="flex flex-col gap-6">
+                {/* Formula Architecture & Review Card (50/50 Layout) */}
+                <div className="w-full">
                     <FormulaCard 
                         formulaCode={latest.formula_code}
                         formulaName={formula?.profile_description || 'Active Protocol'}
@@ -483,26 +489,24 @@ export default async function FormulaPage() {
                         logicParagraphs={logicParagraphs}
                         summaryLine={getFormulaSummaryLine(latest.formula_tier, latest.climate_zone, latest.primary_concern)}
                         delayMs={300}
-                    />
-
-                    {/* Formula Review Sub-Card */}
-                    <div className={`rounded-xl p-6 border shadow-[0_2px_10px_rgba(42,15,6,0.04)] ${isEligible ? 'bg-[#FCF9F5] border-[#E8E0DA]' : 'bg-white dark:bg-[#1A1210] border-[#E8E0DA] dark:border-[#3A2820]'}`}>
-                        <div className="flex justify-between items-center mb-3">
+                    >
+                        {/* Formula Review Section (rendered inside Card 2) */}
+                        <div className="flex justify-between items-center mb-4">
                             <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Formula Review Schedule</h5>
                         </div>
                         {isEligible ? (
-                            <div className="flex justify-between items-center bg-toneek-amber/10 p-3 rounded-md">
+                            <div className="flex justify-between items-center bg-toneek-amber/10 p-4 rounded-lg border border-toneek-amber/20">
                                 <p className="text-toneek-forest font-bold text-[14px]">Formula review available now ✓</p>
-                                <a href="/assessment" className="inline-block bg-[#2A0F06] text-white px-5 py-2 rounded-md text-[13px] font-bold transition-colors">
+                                <a href="/assessment" className="inline-block bg-[#2A0F06] text-white px-6 py-2.5 rounded-lg text-[13px] font-bold transition-colors shadow-sm">
                                     Request review
                                 </a>
                             </div>
                         ) : (
-                            <p className="text-gray-500 text-[14px] font-medium mt-1">
-                                Your formula can be reviewed and seamlessly updated from <span className="text-[#2A0F06] font-bold">{eligibleDateStr}</span> — after 6 weeks of active use.
+                            <p className="text-gray-500 dark:text-[#A3938C] text-[14px] font-medium leading-relaxed mt-1">
+                                Your formula can be reviewed and seamlessly updated from <span className="text-toneek-brown dark:text-[#F0E6DF] font-bold">{eligibleDateStr}</span> — after 6 weeks of active use.
                             </p>
                         )}
-                    </div>
+                    </FormulaCard>
                 </div>
 
                 {/* ── METRIC GRID ROW ── */}
@@ -514,7 +518,7 @@ export default async function FormulaPage() {
                 {actives.length > 0 && (
                     <div className="animate-slide-up opacity-0 mt-4 mb-4" style={{ animationDelay: '550ms', animationFillMode: 'forwards' }}>
                         <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-4 pl-1">Active System Constituents</h5>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {actives.map((active: any, i: number) => {
                                 const maxLimits: Record<string, number> = {
                                     'Niacinamide': 10, 'Azelaic Acid': 15, 'Salicylic Acid': 2,
@@ -578,21 +582,22 @@ export default async function FormulaPage() {
                     </div>
                 </div>
 
-                {/* ── CLINICAL COMMITMENT ── */}
-                <ClinicalCommitment
-                    assessedAt={latest.created_at}
-                    outcomes={outcomes}
-                    subscriptionStartedAt={subscriptionStartedAt}
-                    delayMs={840}
-                />
+                {/* ── CLINICAL COMMITMENT & ADHERENCE (50/50 LAYOUT) ── */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <ClinicalCommitment
+                        assessedAt={latest.created_at}
+                        outcomes={outcomes}
+                        subscriptionStartedAt={subscriptionStartedAt}
+                        delayMs={840}
+                    />
 
-                {/* ── ADHERENCE TRACKING ── */}
-                <AdherencePlaceholder
-                    assessedAt={latest.created_at}
-                    adherenceScore={adherenceScore}
-                    checkinWeek={adherenceWeek}
-                    delayMs={850}
-                />
+                    <AdherencePlaceholder
+                        assessedAt={latest.created_at}
+                        adherenceScore={adherenceScore}
+                        checkinWeek={adherenceWeek}
+                        delayMs={850}
+                    />
+                </div>
 
                 {/* ── ESCALATION PATH ── */}
                 <EscalationPath delayMs={850} />

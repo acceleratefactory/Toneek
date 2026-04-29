@@ -22,7 +22,8 @@ export default function FormulaCard({
   summaryLine,
   delayMs = 0,
   logicParagraphs,
-}: FormulaCardProps) {
+  children,
+}: FormulaCardProps & { children?: React.ReactNode }) {
   
   // Choose an icon based on climate zone keywords
   let ClimateIcon = ThermometerSun
@@ -33,63 +34,68 @@ export default function FormulaCard({
   const hasLogic = logicParagraphs && logicParagraphs.length > 0
 
   return (
-    <div 
-      className="bg-white dark:bg-[#1A1210] border border-gray-100 dark:border-[#3A2820] shadow-sm rounded-xl p-5 sm:p-7 flex flex-col gap-6 animate-slide-up opacity-0"
-      style={{ animationDelay: `${delayMs}ms`, animationFillMode: 'forwards' }}
-    >
-      {/* Top row: formula identity + climate badge */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div className="flex-1">
-          <h5 className="text-[11px] font-bold text-gray-400 dark:text-[#A3938C] uppercase tracking-widest mb-2 font-sans">
-            Your Formula
-          </h5>
-          <div className="text-3xl sm:text-4xl font-bold font-mono text-toneek-brown dark:text-[#F0E6DF] tracking-tight mb-1">
-            {formulaCode}
-          </div>
-          <p className="text-lg font-medium text-gray-800 dark:text-gray-200 font-sans mb-3">
-            {formulaName}
-          </p>
-
-          {/* Formula summary line — 14px italic warm grey, per toneek_dashboard_final_polish.md */}
-          {summaryLine && (
-            <p className="text-[14px] italic font-sans mb-3" style={{ color: '#8C7B72' }}>
-              {summaryLine}
-            </p>
-          )}
-
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-[#A3938C] bg-gray-50 dark:bg-[#261B18] px-3 py-2 rounded-lg inline-flex w-fit">
-              <ClimateIcon size={16} className="text-toneek-amber" />
-              <span>Formulated for {climateZone}</span>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
+      {/* Card 1: Your Formula */}
+      <div 
+        className="bg-white dark:bg-[#1A1210] border border-gray-100 dark:border-[#3A2820] shadow-[0_2px_10px_rgba(42,15,6,0.04)] rounded-xl p-6 lg:p-8 flex flex-col gap-6 animate-slide-up opacity-0 h-full"
+        style={{ animationDelay: `${delayMs}ms`, animationFillMode: 'forwards' }}
+      >
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="flex-1">
+            <h5 className="text-[11px] font-bold text-gray-400 dark:text-[#A3938C] uppercase tracking-widest mb-4 font-sans">
+              Your Formula
+            </h5>
+            <div className="text-3xl sm:text-4xl font-bold font-mono text-toneek-brown dark:text-[#F0E6DF] tracking-tight mb-2">
+              {formulaCode}
             </div>
-            {formulaRationale && (
-              <p className="text-[13px] text-gray-500 dark:text-[#A3938C] leading-snug mt-1">
-                {formulaRationale}
+            <p className="text-lg font-medium text-gray-800 dark:text-gray-200 font-sans mb-3">
+              {formulaName}
+            </p>
+
+            {/* Formula summary line — 14px italic warm grey, per toneek_dashboard_final_polish.md */}
+            {summaryLine && (
+              <p className="text-[14px] italic font-sans mb-4" style={{ color: '#8C7B72' }}>
+                {summaryLine}
               </p>
             )}
-          </div>
-        </div>
 
-        {/* Pills — always visible as compact summary (mobile + desktop) */}
-        <div className="flex flex-row items-center flex-wrap gap-1 sm:justify-end">
-          {pathPills.map((pill, index) => (
-            <React.Fragment key={pill}>
-              <div className="bg-toneek-amber/10 dark:bg-toneek-amber/20 text-toneek-amber text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap border border-toneek-amber/20">
-                {pill}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-[#A3938C] bg-[#FAF8F5] dark:bg-[#261B18] px-3 py-2.5 rounded-lg inline-flex w-fit border border-gray-100 dark:border-[#3A2820]">
+                <ClimateIcon size={16} className="text-toneek-amber" />
+                <span className="font-semibold">Formulated for {climateZone}</span>
               </div>
-            </React.Fragment>
-          ))}
+              {formulaRationale && (
+                <p className="text-[13px] text-gray-500 dark:text-[#A3938C] leading-relaxed mt-2">
+                  {formulaRationale}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Pills — always visible as compact summary (mobile + desktop) */}
+          <div className="flex flex-row items-center flex-wrap gap-2 sm:justify-end mt-2 sm:mt-0">
+            {pathPills.map((pill, index) => (
+              <React.Fragment key={pill}>
+                <div className="bg-[#FAF8F5] dark:bg-toneek-amber/10 text-toneek-amber text-[11px] font-bold px-3 py-1.5 rounded-full whitespace-nowrap border border-toneek-amber/20 tracking-wide uppercase">
+                  {pill}
+                </div>
+              </React.Fragment>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Formula Logic paragraphs — replaces old "Why this formula" pill section */}
-      <div className="border-t border-gray-100 dark:border-[#3A2820] pt-5">
-        <h5 className="text-[11px] font-bold text-gray-400 dark:text-[#A3938C] uppercase tracking-widest mb-4 font-sans">
+      {/* Card 2: Formula Logic & Review Schedule */}
+      <div 
+        className="bg-white dark:bg-[#1A1210] border border-gray-100 dark:border-[#3A2820] shadow-[0_2px_10px_rgba(42,15,6,0.04)] rounded-xl p-6 lg:p-8 flex flex-col animate-slide-up opacity-0 h-full"
+        style={{ animationDelay: `${delayMs + 100}ms`, animationFillMode: 'forwards' }}
+      >
+        <h5 className="text-[11px] font-bold text-gray-400 dark:text-[#A3938C] uppercase tracking-widest mb-6 font-sans">
           Formula Logic
         </h5>
 
         {hasLogic ? (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-5">
             {logicParagraphs!.map((p, i) => (
               <div key={i} className="flex items-start gap-3">
                 <span className="flex-shrink-0 text-toneek-amber font-bold text-[14px] mt-0.5">→</span>
@@ -98,7 +104,7 @@ export default function FormulaCard({
                     {p.arrow}
                   </p>
                   {p.body && (
-                    <p className="text-[12px] text-gray-500 dark:text-[#A3938C] font-sans leading-snug mt-1">
+                    <p className="text-[12px] text-gray-500 dark:text-[#A3938C] font-sans leading-relaxed mt-1.5">
                       {p.body}
                     </p>
                   )}
@@ -119,6 +125,13 @@ export default function FormulaCard({
                 )}
               </React.Fragment>
             ))}
+          </div>
+        )}
+
+        {/* Children (Formula Review Schedule) rendered cleanly underneath the logic */}
+        {children && (
+          <div className="mt-auto pt-8 border-t border-gray-100 dark:border-[#3A2820] mt-8">
+            {children}
           </div>
         )}
       </div>
