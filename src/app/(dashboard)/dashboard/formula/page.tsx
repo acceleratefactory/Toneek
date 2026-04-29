@@ -505,7 +505,7 @@ export default async function FormulaPage() {
                             ) : (
                                 <>
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                                        <div className="text-3xl sm:text-4xl font-bold font-serif text-toneek-brown dark:text-[#F0E6DF] whitespace-nowrap">
+                                        <div className="text-2xl sm:text-3xl font-bold text-toneek-brown dark:text-[#F0E6DF] whitespace-nowrap">
                                             {eligibleDateStr}
                                         </div>
                                         <p className="text-gray-600 dark:text-[#A3938C] text-[12px] font-medium leading-relaxed max-w-[280px] sm:text-right">

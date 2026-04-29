@@ -45,7 +45,7 @@ export default function FormulaCard({
             <h5 className="text-[11px] font-bold text-gray-400 dark:text-[#A3938C] uppercase tracking-widest mb-4 font-sans">
               Your Formula
             </h5>
-            <div className="text-3xl sm:text-5xl font-bold font-mono text-toneek-brown dark:text-[#F0E6DF] tracking-tight mb-2">
+            <div className="text-3xl sm:text-4xl font-bold font-mono text-toneek-brown dark:text-[#F0E6DF] tracking-tight mb-2">
               {formulaCode}
             </div>
             <p className="text-lg font-medium text-gray-800 dark:text-gray-200 font-sans mb-3">
