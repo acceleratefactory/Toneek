@@ -489,22 +489,68 @@ export default async function FormulaPage() {
                         summaryLine={getFormulaSummaryLine(latest.formula_tier, latest.climate_zone, latest.primary_concern)}
                         delayMs={300}
                     >
-                        {/* Formula Review Section (rendered inside Card 2) */}
-                        <div className="flex justify-between items-center mb-4">
-                            <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Formula Review Schedule</h5>
+                        {/* Formula Review Schedule Card (Matches right bottom card in screenshot) */}
+                        <div className={`bg-white dark:bg-[#1A1210] border shadow-[0_2px_10px_rgba(42,15,6,0.04)] rounded-xl p-6 lg:p-8 flex flex-col gap-6 w-full ${isEligible ? 'border-toneek-amber/20 bg-[#FCF9F5]' : 'border-gray-100 dark:border-[#3A2820]'}`}>
+                            <h5 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest font-sans">
+                                Formula Review Schedule
+                            </h5>
+                            
+                            {isEligible ? (
+                                <div className="flex justify-between items-center bg-toneek-amber/10 p-4 rounded-lg border border-toneek-amber/20">
+                                    <p className="text-toneek-forest font-bold text-[14px]">Formula review available now ✓</p>
+                                    <a href="/assessment" className="inline-block bg-[#2A0F06] text-white px-6 py-2.5 rounded-lg text-[13px] font-bold transition-colors shadow-sm">
+                                        Request review
+                                    </a>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                                        <div className="text-3xl sm:text-4xl font-bold font-serif text-toneek-brown dark:text-[#F0E6DF] whitespace-nowrap">
+                                            {eligibleDateStr}
+                                        </div>
+                                        <p className="text-gray-600 dark:text-[#A3938C] text-[12px] font-medium leading-relaxed max-w-[280px] sm:text-right">
+                                            Your formula can be reviewed and seamlessly updated from <span className="text-toneek-brown dark:text-[#F0E6DF] font-bold">{eligibleDateStr}</span> — after 6 weeks of active use.
+                                        </p>
+                                    </div>
+
+                                    {/* 6-Week Progress Bar */}
+                                    <div className="w-full mt-2">
+                                        <div className="flex gap-1 h-3 w-full">
+                                            {[1, 2, 3, 4, 5, 6].map((w) => {
+                                                // Calculate current week directly inline
+                                                const startIso = subscriptionStartedAt || latest.created_at;
+                                                const daysActive = Math.floor((new Date().getTime() - new Date(startIso).getTime()) / 86400000);
+                                                const currentWeek = Math.min(Math.floor(daysActive / 7) + 1, 6);
+                                                
+                                                return (
+                                                    <div 
+                                                        key={w} 
+                                                        className={`flex-1 rounded-sm relative ${w <= currentWeek ? 'bg-gradient-to-r from-[#D7A27D] to-[#C88A5E]' : 'bg-[#EFEAE4] dark:bg-[#3A2820]'}`}
+                                                    >
+                                                        {w === currentWeek && (
+                                                            <div className="absolute top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white border-4 border-[#C88A5E] rounded-full shadow-sm" />
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        <div className="flex gap-4 items-center mt-3">
+                                            {(() => {
+                                                const startIso = subscriptionStartedAt || latest.created_at;
+                                                const daysActive = Math.floor((new Date().getTime() - new Date(startIso).getTime()) / 86400000);
+                                                const currentWeek = Math.min(Math.floor(daysActive / 7) + 1, 6);
+                                                return (
+                                                    <p className="text-[11px] font-bold text-toneek-brown uppercase tracking-widest">
+                                                        Week {currentWeek}
+                                                    </p>
+                                                );
+                                            })()}
+                                            <p className="text-[12px] text-gray-500 font-medium">Active Use</p>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </div>
-                        {isEligible ? (
-                            <div className="flex justify-between items-center bg-toneek-amber/10 p-4 rounded-lg border border-toneek-amber/20">
-                                <p className="text-toneek-forest font-bold text-[14px]">Formula review available now ✓</p>
-                                <a href="/assessment" className="inline-block bg-[#2A0F06] text-white px-6 py-2.5 rounded-lg text-[13px] font-bold transition-colors shadow-sm">
-                                    Request review
-                                </a>
-                            </div>
-                        ) : (
-                            <p className="text-gray-500 dark:text-[#A3938C] text-[14px] font-medium leading-relaxed mt-1">
-                                Your formula can be reviewed and seamlessly updated from <span className="text-toneek-brown dark:text-[#F0E6DF] font-bold">{eligibleDateStr}</span> — after 6 weeks of active use.
-                            </p>
-                        )}
                     </FormulaCard>
                 </div>
 
