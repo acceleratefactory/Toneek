@@ -11,7 +11,7 @@ export default function Footer() {
           {/* Column 1 - Brand */}
           <div className="md:col-span-5 lg:col-span-4 flex flex-col items-start">
             <Link href="/" className="mb-6">
-              <img src="/logo-dark.svg" alt="Toneek" className="h-8 w-auto invert brightness-0" />
+              <img src="/logo-dark.svg" alt="Toneek" className="h-10 lg:h-12 w-auto invert brightness-0" />
             </Link>
             <p className="font-sans text-[13px] text-toneek-gray leading-relaxed max-w-[280px]">
               Skin intelligence for melanin-rich skin. Climate-adaptive formulas compounded specifically for FST IV–VI skin types.

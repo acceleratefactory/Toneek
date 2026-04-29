@@ -36,7 +36,7 @@ export default function Navbar() {
         <div className="h-[60px] lg:h-[72px] px-6 lg:px-12 flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex-shrink-0">
-            <img src="/logo-dark.svg" alt="Toneek" className="h-6 w-auto" />
+            <img src="/logo-dark.svg" alt="Toneek" className="h-8 lg:h-10 w-auto" />
           </Link>
 
           {/* Desktop Navigation */}
