@@ -461,7 +461,7 @@ export default async function FormulaPage() {
                         barrierIntegrity={latest.analysis_scores?.barrier_integrity ?? 60}
                     />
                     
-                    <div className="px-2 mt-2">
+                    <div className="mt-2">
                         <IntelligenceMilestones
                             outcomeCount={profileCount ?? 0}
                             newlyUnlockedMilestone={newlyUnlockedMilestone}

@@ -27,7 +27,7 @@ export default function IntelligenceMilestones({
 
   return (
     <div
-      className="animate-slide-up opacity-0"
+      className="bg-white dark:bg-[#1A1210] border border-[#E8E0DA] dark:border-[#3A2820] rounded-xl px-6 py-5 shadow-sm animate-slide-up opacity-0"
       style={{ animationDelay: `${delayMs}ms`, animationFillMode: 'forwards' }}
     >
       {/* Title */}
