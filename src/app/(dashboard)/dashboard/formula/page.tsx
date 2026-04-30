@@ -30,6 +30,8 @@ import StickyCTA from '@/components/formula/StickyCTA'
 import { generateProtocol } from '@/lib/protocol/generateProtocol'
 import { generateFormulaLogic } from '@/lib/formula/generateFormulaLogic'
 import { getDashboardIdentityLine, getFormulaSummaryLine } from '@/lib/formula/identityLine'
+import { calculateClinicalDates } from '@/lib/dates/clinicalDates'
+import { determineOrderState } from '@/lib/orders/orderState'
 
 
 export const metadata = {
@@ -110,16 +112,20 @@ export default async function FormulaPage() {
         .single()
     const subscriptionStartedAt = subscription?.started_at ?? null
 
-    // Fetch latest order status for TodaysBrief
+    // Fetch latest order status and received_at for core timeline calculations
     const { data: latestOrder } = await adminClient
         .from('orders')
-        .select('status, dispatch_held_reason')
+        .select('status, dispatch_held_reason, payment_status, courier, tracking_number, tracking_url, payment_reference, received_at')
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false })
         .limit(1)
         .single()
     const orderStatus         = latestOrder?.status ?? null
     const dispatchHeldReason  = latestOrder?.dispatch_held_reason ?? null
+
+    // STEP 5: Centralize all clinical dates and order state
+    const clinical_dates = calculateClinicalDates(latestOrder?.received_at ?? null)
+    const order_state = determineOrderState(latestOrder)
 
     // Fetch all assessments for this user, newest first
     const { data: assessments, error: fetchError } = await adminClient
@@ -186,11 +192,9 @@ export default async function FormulaPage() {
     const adherenceScore  = latestOutcome?.adherence_score ?? undefined
     const adherenceWeek   = latestOutcome?.check_in_week ?? undefined
 
-    // Reformulation eligibility
-    const assessedAt = new Date(latest.created_at)
-    const eligibleAt = new Date(assessedAt.getTime() + 42 * 24 * 60 * 60 * 1000)
-    const isEligible = new Date() >= eligibleAt
-    const eligibleDateStr = eligibleAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+    // Reformulation eligibility now determined by clinical_dates.review_date
+    const isEligible = clinical_dates.has_received && clinical_dates.review_date && new Date() >= clinical_dates.review_date
+    const eligibleDateStr = clinical_dates.review_date ? clinical_dates.review_date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Date confirmed on delivery'
 
     const currentScore = latest.skin_os_score ?? 50
     const scoreDiff = (outcomes && outcomes.length > 0) ? currentScore - 50 : 0 // Simplified trend logic
@@ -266,7 +270,6 @@ export default async function FormulaPage() {
     }
 
     const timelineNodes: TimelineNode[] = TIMELINE.map((item, index) => {
-        const expectedDate = new Date(assessedAt.getTime() + item.week * 7 * 24 * 60 * 60 * 1000)
         const outcome = outcomes?.find(o => o.check_in_week === item.week)
         const desc = getExpectation(item.week)
         const evidenceNote = EVIDENCE_NOTES[item.week]
@@ -275,23 +278,31 @@ export default async function FormulaPage() {
             return { week: item.week, state: 'COMPLETED', score: outcome.improvement_score, description: desc, evidenceNote }
         }
         
+        if (!clinical_dates.has_received) {
+            return { week: item.week, state: 'LOCKED', dateText: 'Date confirmed on delivery', description: desc, evidenceNote }
+        }
+
+        const checkin_date = item.week === 2 ? clinical_dates.week2_date : item.week === 4 ? clinical_dates.week4_date : clinical_dates.week8_date
+        
         // Ensure strictly sequential completion
         const previousWeek = index > 0 ? TIMELINE[index - 1].week : null
         const previousOutcome = previousWeek ? outcomes?.find(o => o.check_in_week === previousWeek) : null
-        
-        if (now >= expectedDate) {
-             if (index === 0 || previousOutcome) {
-                 hasDueCheckin = true
-                 if (dueCheckinWeek === 0) dueCheckinWeek = item.week
-                 return { week: item.week, state: 'DUE_NOW', dateText: 'Due now', description: desc, evidenceNote }
-             }
+        const isLocked = index > 0 && !previousOutcome
+
+        if (isLocked || !checkin_date) {
+            return { week: item.week, state: 'LOCKED', dateText: 'Available after previous check-in', description: desc, evidenceNote }
+        }
+
+        if (now >= checkin_date) {
+            hasDueCheckin = true
+            if (dueCheckinWeek === 0) dueCheckinWeek = item.week
+            return { week: item.week, state: 'DUE_NOW', dateText: 'Due now', description: desc, evidenceNote }
         }
         
-        const isLocked = index > 0 && !previousOutcome
         return { 
             week: item.week, 
-            state: isLocked ? 'LOCKED' : 'PENDING', 
-            dateText: `Available ${expectedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`,
+            state: 'PENDING', 
+            dateText: `Available ${checkin_date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`,
             description: desc,
             evidenceNote,
         }
@@ -400,10 +411,10 @@ export default async function FormulaPage() {
 
             {/* ── SYSTEM STATUS BAR ── */}
             <SystemStatusBar
-                assessedAt={latest.created_at}
                 formulaCode={latest.formula_code}
-                hasDueCheckin={hasDueCheckin}
-                dueCheckinWeek={dueCheckinWeek}
+                clinical_dates={clinical_dates}
+                order_state={order_state}
+                outcomes={outcomes || []}
                 isColdStart={isColdStart}
             />
 
@@ -450,15 +461,11 @@ export default async function FormulaPage() {
                 {/* 2. Right: Protocol (Dark Box) + Milestones */}
                 <div className="flex flex-col gap-6 h-full relative">
                     <TodaysBrief
-                        subscriptionStartedAt={subscriptionStartedAt}
-                        assessedAt={latest.created_at}
-                        primaryConcern={latest.primary_concern || ''}
-                        formulaTier={latest.formula_tier ?? null}
-                        orderStatus={orderStatus}
-                        dispatchHeldReason={dispatchHeldReason}
-                        hasDueCheckin={hasDueCheckin}
-                        dueCheckinWeek={dueCheckinWeek}
-                        barrierIntegrity={latest.analysis_scores?.barrier_integrity ?? 60}
+                        order_state={order_state}
+                        order={latestOrder || {}}
+                        clinical_dates={clinical_dates}
+                        assessment={latest}
+                        outcomes={outcomes || []}
                     />
                     
                     <div className="mt-2">
@@ -506,10 +513,12 @@ export default async function FormulaPage() {
                                 <>
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                                         <div className="text-2xl sm:text-3xl font-bold text-toneek-brown dark:text-[#F0E6DF] whitespace-nowrap">
-                                            {eligibleDateStr}
+                                            {clinical_dates.has_received ? eligibleDateStr : 'TBC'}
                                         </div>
                                         <p className="text-gray-600 dark:text-[#A3938C] text-[12px] font-medium leading-relaxed max-w-[280px] sm:text-right">
-                                            Your formula can be reviewed and seamlessly updated from <span className="text-toneek-brown dark:text-[#F0E6DF] font-bold">{eligibleDateStr}</span> — after 6 weeks of active use.
+                                            {clinical_dates.has_received 
+                                              ? <>Your formula can be reviewed and seamlessly updated from <span className="text-toneek-brown dark:text-[#F0E6DF] font-bold">{eligibleDateStr}</span> — after 6 weeks of active use.</>
+                                              : 'Formula review date will be set when you log delivery.'}
                                         </p>
                                     </div>
 
@@ -517,10 +526,7 @@ export default async function FormulaPage() {
                                     <div className="w-full mt-2">
                                         <div className="flex gap-1 h-3 w-full">
                                             {[1, 2, 3, 4, 5, 6].map((w) => {
-                                                // Calculate current week directly inline
-                                                const startIso = subscriptionStartedAt || latest.created_at;
-                                                const daysActive = Math.floor((new Date().getTime() - new Date(startIso).getTime()) / 86400000);
-                                                const currentWeek = Math.min(Math.floor(daysActive / 7) + 1, 6);
+                                                const currentWeek = clinical_dates.has_received ? Math.min(Math.floor((clinical_dates.days_since_receipt ?? 0) / 7) + 1, 6) : 0;
                                                 
                                                 return (
                                                     <div 
@@ -536,12 +542,10 @@ export default async function FormulaPage() {
                                         </div>
                                         <div className="flex gap-4 items-center mt-3">
                                             {(() => {
-                                                const startIso = subscriptionStartedAt || latest.created_at;
-                                                const daysActive = Math.floor((new Date().getTime() - new Date(startIso).getTime()) / 86400000);
-                                                const currentWeek = Math.min(Math.floor(daysActive / 7) + 1, 6);
+                                                const currentWeek = clinical_dates.has_received ? Math.min(Math.floor((clinical_dates.days_since_receipt ?? 0) / 7) + 1, 6) : 0;
                                                 return (
                                                     <p className="text-[11px] font-bold text-toneek-brown uppercase tracking-widest">
-                                                        Week {currentWeek}
+                                                        Week {currentWeek || 1}
                                                     </p>
                                                 );
                                             })()}
@@ -630,14 +634,13 @@ export default async function FormulaPage() {
                 {/* ── CLINICAL COMMITMENT & ADHERENCE (50/50 LAYOUT) ── */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <ClinicalCommitment
-                        assessedAt={latest.created_at}
+                        clinical_dates={clinical_dates}
                         outcomes={outcomes}
-                        subscriptionStartedAt={subscriptionStartedAt}
                         delayMs={840}
                     />
 
                     <AdherencePlaceholder
-                        assessedAt={latest.created_at}
+                        clinical_dates={clinical_dates}
                         adherenceScore={adherenceScore}
                         checkinWeek={adherenceWeek}
                         delayMs={850}

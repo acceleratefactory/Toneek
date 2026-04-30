@@ -1,52 +1,63 @@
 'use client'
 
 // src/components/formula/SystemStatusBar.tsx
-// System status bar for /dashboard/formula only.
-// Shows 4 data points: Phase, Status (pulsing dot), Formula, Next checkpoint.
-// Phase and next checkpoint calculated from assessedAt (assessment creation date).
-// Status dot: green pulse = monitoring, amber pulse = check-in due.
+import React from 'react'
+import type { ClinicalDates } from '@/lib/dates/clinicalDates'
+import type { OrderState } from '@/lib/orders/orderState'
+import { formatShortDate } from '@/lib/dates/clinicalDates'
 
 interface SystemStatusBarProps {
-  assessedAt: string        // ISO date string from assessment.created_at
   formulaCode: string
-  hasDueCheckin: boolean
-  dueCheckinWeek: number
+  clinical_dates: ClinicalDates
+  order_state: OrderState
+  outcomes: any[]
   isColdStart: boolean
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const CHECKIN_WEEKS = [2, 4, 8]
+function getNextCheckpoint(clinical_dates: ClinicalDates, outcomes: any[]): { label: string; dateStr: string } {
+  if (!clinical_dates.has_received) {
+    return { label: 'Week 2 check-in', dateStr: 'Date set on delivery' }
+  }
+  
+  const week2_done = outcomes.some(o => o.check_in_week === 2)
+  const week4_done = outcomes.some(o => o.check_in_week === 4)
+  const week8_done = outcomes.some(o => o.check_in_week === 8)
 
-function getDaysSince(isoDate: string): number {
-  const start = new Date(isoDate).getTime()
-  const now   = Date.now()
-  return Math.floor((now - start) / (1000 * 60 * 60 * 24))
+  if (!week2_done) {
+    return { 
+      label: 'Week 2 check-in', 
+      dateStr: formatShortDate(clinical_dates.week2_date) 
+    }
+  }
+  if (!week4_done) {
+    return { 
+      label: 'Week 4 check-in', 
+      dateStr: formatShortDate(clinical_dates.week4_date) 
+    }
+  }
+  if (!week8_done) {
+    return { 
+      label: 'Week 8 check-in', 
+      dateStr: formatShortDate(clinical_dates.week8_date) 
+    }
+  }
+  return { label: 'Formula review', dateStr: formatShortDate(clinical_dates.review_date) }
 }
 
-function getPhaseLabel(days: number, hasDueCheckin: boolean, dueCheckinWeek: number): string {
+function getPhaseLabel(clinical_dates: ClinicalDates, order_state: OrderState, hasDueCheckin: boolean, dueCheckinWeek: number): string {
   if (hasDueCheckin) {
     return `Check-in Required — Week ${dueCheckinWeek}`
   }
-  // Determine current week bracket
-  const week = Math.min(Math.floor(days / 7) + 1, 8)
-  if (week <= 1)  return 'Protocol Active — Week 1'
-  if (week <= 2)  return 'Protocol Active — Week 2'
-  if (week <= 4)  return 'Protocol Active — Week 4'
-  return 'Protocol Active — Week 8'
-}
-
-function getNextCheckpoint(isoDate: string, completedWeeks: number[]): { label: string; dateStr: string } {
-  const start = new Date(isoDate)
-
-  for (const week of CHECKIN_WEEKS) {
-    if (completedWeeks.includes(week)) continue
-    const checkDate = new Date(start.getTime() + week * 7 * 24 * 60 * 60 * 1000)
-    const dateStr = checkDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-    return { label: `Week ${week}`, dateStr }
+  if (!clinical_dates.has_received) {
+    if (order_state === 'pending_payment') return 'Protocol Setup'
+    if (order_state === 'in_production') return 'Formula in Production'
+    if (order_state === 'dispatched') return 'Awaiting Delivery'
+    return 'Protocol Setup'
   }
-
-  return { label: 'Complete', dateStr: 'All check-ins done' }
+  const week = Math.min(clinical_dates.week_number || 1, 8)
+  return `Protocol Active — Week ${week}`
 }
 
 // ─── Data point layout ───────────────────────────────────────────────────────
@@ -69,18 +80,34 @@ function DataPoint({ label, value, sub }: { label: string; value: React.ReactNod
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-import React from 'react'
-
 export default function SystemStatusBar({
-  assessedAt,
   formulaCode,
-  hasDueCheckin,
-  dueCheckinWeek,
+  clinical_dates,
+  order_state,
+  outcomes,
   isColdStart,
 }: SystemStatusBarProps) {
-  const days          = getDaysSince(assessedAt)
-  const phaseLabel    = getPhaseLabel(days, hasDueCheckin, dueCheckinWeek)
-  const nextCheckpoint = getNextCheckpoint(assessedAt, [])   // pages pass completed weeks if needed; defaults to showing next due
+  
+  // Determine if checkin is due
+  let hasDueCheckin = false
+  let dueCheckinWeek = 0
+  if (clinical_dates.has_received) {
+    const now = new Date()
+    const week2_done = outcomes.some(o => o.check_in_week === 2)
+    const week4_done = outcomes.some(o => o.check_in_week === 4)
+    const week8_done = outcomes.some(o => o.check_in_week === 8)
+
+    if (!week2_done && clinical_dates.week2_date && now >= clinical_dates.week2_date) {
+      hasDueCheckin = true; dueCheckinWeek = 2;
+    } else if (week2_done && !week4_done && clinical_dates.week4_date && now >= clinical_dates.week4_date) {
+      hasDueCheckin = true; dueCheckinWeek = 4;
+    } else if (week4_done && !week8_done && clinical_dates.week8_date && now >= clinical_dates.week8_date) {
+      hasDueCheckin = true; dueCheckinWeek = 8;
+    }
+  }
+
+  const phaseLabel = getPhaseLabel(clinical_dates, order_state, hasDueCheckin, dueCheckinWeek)
+  const nextCheckpoint = getNextCheckpoint(clinical_dates, outcomes)
 
   return (
     <div className="bg-[#F7F1EB] dark:bg-[#1E1410] border border-[#E8E0DA] dark:border-[#3A2820] rounded-lg px-5 py-4 mb-6">

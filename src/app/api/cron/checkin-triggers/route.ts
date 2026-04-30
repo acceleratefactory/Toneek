@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     // Get all active subscriptions with profile contact details
     const { data: subscriptions, error } = await adminClient
         .from('subscriptions')
-        .select('id, user_id, started_at, profiles!user_id(email, full_name, phone)')
+        .select('id, user_id, treatment_start_date, profiles!user_id(email, full_name, phone)')
         .eq('status', 'active')
 
     if (error || !subscriptions) {
@@ -29,8 +29,10 @@ export async function GET(request: NextRequest) {
     const now = new Date()
 
     for (const sub of subscriptions) {
+        if (!sub.treatment_start_date) continue
+
         const profile   = (sub as any).profiles
-        const startedAt = new Date(sub.started_at)
+        const startedAt = new Date(sub.treatment_start_date)
         const daysActive = Math.floor((now.getTime() - startedAt.getTime()) / (1000 * 60 * 60 * 24))
 
         // ── Initial prompts ──────────────────────────────────────────────────

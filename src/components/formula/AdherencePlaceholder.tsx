@@ -4,8 +4,11 @@
 // State 2 (outcomes exist): adherence score + amber progress bar + days estimate.
 // Per toneek_final_five_upgrades.md — GAP 3.
 
+import type { ClinicalDates } from '@/lib/dates/clinicalDates'
+import { formatDate } from '@/lib/dates/clinicalDates'
+
 interface AdherencePlaceholderProps {
-  assessedAt: string        // ISO date string — for calculating Week 2 date
+  clinical_dates: ClinicalDates
   adherenceScore?: number   // 0.0–1.0 from skin_outcomes.adherence_score (undefined = no outcomes yet)
   checkinWeek?: number      // most recent check_in_week from skin_outcomes
   delayMs?: number
@@ -20,24 +23,15 @@ function getDaysLabel(score: number): string {
   return '1–2 of 7 days applied'
 }
 
-// ─── Week 2 date string ───────────────────────────────────────────────────────
-
-function getWeek2Date(assessedAt: string): string {
-  const start = new Date(assessedAt)
-  const week2 = new Date(start.getTime() + 14 * 24 * 60 * 60 * 1000)
-  return week2.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
-}
-
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function AdherencePlaceholder({
-  assessedAt,
+  clinical_dates,
   adherenceScore,
   checkinWeek,
   delayMs = 0,
 }: AdherencePlaceholderProps) {
   const hasData = adherenceScore !== undefined && adherenceScore !== null
-  const week2Date = getWeek2Date(assessedAt)
 
   if (!hasData) {
     // State 1 — no outcomes yet
@@ -51,8 +45,16 @@ export default function AdherencePlaceholder({
         </p>
 
         <p className="text-[13px] text-gray-700 dark:text-[#D4C5BE] font-sans leading-relaxed mb-3">
-          Application consistency is recorded at each check-in. Your first adherence record will be available after your Week 2 check-in on{' '}
-          <span className="font-semibold text-toneek-brown dark:text-[#F0E6DF]">{week2Date}</span>.
+          {clinical_dates.has_received ? (
+            <>
+              Application consistency is recorded at each check-in. Your first adherence record will be available after your Week 2 check-in on{' '}
+              <span className="font-semibold text-toneek-brown dark:text-[#F0E6DF]">{formatDate(clinical_dates.week2_date)}</span>.
+            </>
+          ) : (
+            <>
+              Application consistency is recorded at each check-in. Your first adherence record will be available after your Week 2 check-in. Date confirmed on delivery.
+            </>
+          )}
         </p>
 
         <p className="text-[11px] italic text-[#8C7B72] dark:text-[#7A6A62] font-sans leading-relaxed">

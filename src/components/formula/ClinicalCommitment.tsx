@@ -4,10 +4,12 @@
 // Placed ABOVE AdherencePlaceholder on /dashboard/formula.
 // Per toneek_final_polish.md — Phase 3.
 
+import type { ClinicalDates } from '@/lib/dates/clinicalDates'
+import { formatDate } from '@/lib/dates/clinicalDates'
+
 interface ClinicalCommitmentProps {
-  assessedAt: string                              // ISO date — assessment creation
-  outcomes: { check_in_week: number }[] | null    // all skin_outcomes records
-  subscriptionStartedAt?: string | null           // from subscriptions table
+  clinical_dates: ClinicalDates
+  outcomes: { check_in_week: number }[] | null
   delayMs?: number
 }
 
@@ -15,26 +17,14 @@ const CHECKIN_WEEKS = [2, 4, 8]
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function getAnchorDate(subscriptionStartedAt: string | null | undefined, assessedAt: string): Date {
-  // Prefer subscription start; fall back to assessment date
-  if (subscriptionStartedAt) return new Date(subscriptionStartedAt)
-  return new Date(assessedAt)
-}
-
-function getExpectedCount(anchorDate: Date): number {
-  const now = new Date()
-  const msPerWeek = 7 * 24 * 60 * 60 * 1000
-  const weeksActive = (now.getTime() - anchorDate.getTime()) / msPerWeek
-
-  if (weeksActive < 2) return 0
-  if (weeksActive < 4) return 1
-  if (weeksActive < 8) return 2
+function getExpectedCount(clinical_dates: ClinicalDates): number {
+  if (!clinical_dates.has_received) return 0
+  const daysActive = clinical_dates.days_since_receipt ?? 0
+  
+  if (daysActive < 14) return 0
+  if (daysActive < 28) return 1
+  if (daysActive < 56) return 2
   return 3
-}
-
-function getWeek2Date(anchorDate: Date): string {
-  const week2 = new Date(anchorDate.getTime() + 14 * 24 * 60 * 60 * 1000)
-  return week2.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 // ─── Week pill ───────────────────────────────────────────────────────────────
@@ -66,19 +56,16 @@ function WeekPill({ week, completed, due }: { week: number; completed: boolean; 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function ClinicalCommitment({
-  assessedAt,
+  clinical_dates,
   outcomes,
-  subscriptionStartedAt,
   delayMs = 0,
 }: ClinicalCommitmentProps) {
-  const anchorDate    = getAnchorDate(subscriptionStartedAt, assessedAt)
-  const expected      = getExpectedCount(anchorDate)
+  const expected      = getExpectedCount(clinical_dates)
   const actual        = outcomes?.length ?? 0
   const completedWeeks = new Set((outcomes ?? []).map(o => o.check_in_week))
 
   // State A — before Week 2 opens, no check-ins expected yet
   if (actual === 0 && expected === 0) {
-    const week2Date = getWeek2Date(anchorDate)
     return (
       <div
         className="bg-white dark:bg-[#1A1210] border border-[#E8E0DA] dark:border-[#3A2820] rounded-xl px-6 py-5 shadow-sm animate-slide-up opacity-0"
@@ -88,8 +75,11 @@ export default function ClinicalCommitment({
           Clinical Commitment
         </p>
         <p className="text-[13px] text-gray-600 dark:text-[#C5B5AE] font-sans">
-          Your first check-in opens at Week 2 ·{' '}
-          <span className="font-semibold text-toneek-brown dark:text-[#F0E6DF]">{week2Date}</span>
+          {clinical_dates.has_received ? (
+            <>Your first check-in opens at Week 2 · <span className="font-semibold text-toneek-brown dark:text-[#F0E6DF]">{formatDate(clinical_dates.week2_date)}</span></>
+          ) : (
+            <>Your first check-in opens at Week 2 — date confirmed when you log delivery.</>
+          )}
         </p>
       </div>
     )
