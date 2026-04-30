@@ -79,7 +79,7 @@ export default function TodaysBrief({
   const indicators = {
     pending_payment: { text: 'PENDING PAYMENT', bg: '#D4700A', textColor: '#FFFFFF' },
     in_production: { text: 'IN PRODUCTION', bg: '#C87D3E', textColor: '#FFFFFF' },
-    dispatched: { text: 'DISPATCHED', bg: '#C87D3E', textColor: '#FFFFFF' },
+    dispatched: { text: 'DISPATCHED', bg: '#C87D3E', textColor: '#FFFFFF', pulse: true },
     active_protocol: checkinDue 
       ? { text: 'CHECK-IN DUE', bg: '#D4700A', textColor: '#FFFFFF', pulse: true }
       : { text: 'ON TRACK', bg: '#1C5C3A', textColor: '#FFFFFF', pulse: true },
