@@ -42,9 +42,19 @@ export default async function SubscriptionPage() {
     // Fetch subscription
     const { data: subscription } = await supabase
         .from('subscriptions')
-        .select('id, plan_tier, status, started_at, next_billing_date, pause_until, cancelled_at, cancel_reason, currency, monthly_amount')
+        .select('id, plan_tier, status, started_at, next_billing_date, pause_until, cancelled_at, cancel_reason, currency, monthly_amount, treatment_start_date')
         .eq('user_id', session.user.id)
         .order('started_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+    // Fetch latest paid order for amount
+    const { data: latestPaidOrder } = await supabase
+        .from('orders')
+        .select('payment_amount, currency, plan_tier, created_at')
+        .eq('user_id', session.user.id)
+        .eq('payment_status', 'confirmed')
+        .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle()
 
@@ -65,18 +75,26 @@ export default async function SubscriptionPage() {
         }
     }
 
-    const startedAt   = new Date(subscription.started_at)
-    const weeksActive = Math.floor((Date.now() - startedAt.getTime()) / (1000 * 60 * 60 * 24 * 7))
+    const anchor      = subscription.treatment_start_date ?? subscription.started_at
+    const weeksActive = Math.floor((Date.now() - new Date(anchor).getTime()) / (1000 * 60 * 60 * 24 * 7))
     const cfg         = STATUS_CONFIG[subscription.status] ?? { label: subscription.status, colour: '#888' }
 
     const SYMBOLS: Record<string, string> = { NGN: '₦', GBP: '£', USD: '$', EUR: '€', GHS: 'GH₵', CAD: 'CA$' }
-    const symbol = SYMBOLS[subscription.currency ?? 'NGN'] ?? '₦'
+    
+    const activeCurrency = latestPaidOrder?.currency ?? subscription.currency ?? 'NGN'
+    const symbol = SYMBOLS[activeCurrency] ?? '₦'
+    const monthlyAmount = latestPaidOrder?.payment_amount ?? subscription.monthly_amount
+
+    const weeksLabel = subscription.treatment_start_date ? 'Weeks active' : 'Subscription active'
+    const weeksValue = subscription.treatment_start_date 
+        ? `${weeksActive} week${weeksActive !== 1 ? 's' : ''}` 
+        : `${weeksActive} week${weeksActive !== 1 ? 's' : ''} (Treatment weeks begin on delivery)`
 
     const details = [
         { label: 'Plan',           value: PLAN_LABELS[subscription.plan_tier ?? ''] ?? subscription.plan_tier },
         { label: 'Formula',        value: assessment?.formula_code ?? '—' },
-        { label: 'Weeks active',   value: `${weeksActive} week${weeksActive !== 1 ? 's' : ''}` },
-        { label: 'Monthly amount', value: subscription.monthly_amount ? `${symbol}${subscription.monthly_amount.toLocaleString()}` : '—' },
+        { label: weeksLabel,       value: weeksValue },
+        { label: 'Monthly amount', value: monthlyAmount ? `${symbol}${monthlyAmount.toLocaleString()}` : '—' },
         {
             label: 'Next billing',
             value: subscription.next_billing_date

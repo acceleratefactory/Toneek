@@ -5,21 +5,34 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import LogDeliveryButton from '@/components/dashboard/LogDeliveryButton'
 
 export const metadata = { title: 'My Orders — Toneek' }
 
 // ─── Status config ────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG: Record<string, { label: string; colour: string; bg: string }> = {
-    pending_payment:      { label: 'Awaiting payment',   colour: '#888',    bg: 'rgba(136,136,136,0.1)' },
-    pending_verification: { label: 'Payment review',     colour: '#e09a3a', bg: 'rgba(224,154,58,0.1)'  },
-    confirmed:            { label: 'Payment confirmed',  colour: '#4caf82', bg: 'rgba(76,175,130,0.1)'  },
-    pending_production:   { label: 'Queued',             colour: '#d4a574', bg: 'rgba(212,165,116,0.1)' },
-    in_production:        { label: 'Being formulated',   colour: '#d4a574', bg: 'rgba(212,165,116,0.1)' },
-    pending_dispatch:     { label: 'Ready to dispatch',  colour: '#e09a3a', bg: 'rgba(224,154,58,0.1)'  },
-    dispatched:           { label: 'Dispatched',         colour: '#4caf82', bg: 'rgba(76,175,130,0.1)'  },
-    delivered:            { label: 'Delivered',          colour: '#4caf82', bg: 'rgba(76,175,130,0.1)'  },
-    cancelled:            { label: 'Cancelled',          colour: '#e05555', bg: 'rgba(224,85,85,0.1)'   },
+    // Payment pending states
+    pending: { label: 'Pending Payment', bg: '#FEF3E2', colour: '#D4700A' },
+    pending_verification: { label: 'Payment Unconfirmed', bg: '#FEF3E2', colour: '#D4700A' },
+    pending_payment: { label: 'Pending Payment', bg: '#FEF3E2', colour: '#D4700A' },
+    
+    // Production states  
+    payment_confirmed: { label: 'Payment Confirmed', bg: '#E8F2EC', colour: '#1C5C3A' },
+    pending_formulation: { label: 'In Production', bg: '#FEF3E2', colour: '#C87D3E' },
+    formulating: { label: 'In Production', bg: '#FEF3E2', colour: '#C87D3E' },
+    in_production: { label: 'In Production', bg: '#FEF3E2', colour: '#C87D3E' },
+    
+    // Dispatch states
+    pending_dispatch: { label: 'Ready to Dispatch', bg: '#FEF3E2', colour: '#C87D3E' },
+    ready_to_dispatch: { label: 'Ready to Dispatch', bg: '#FEF3E2', colour: '#C87D3E' },
+    dispatched: { label: 'Dispatched', bg: '#E8F2EC', colour: '#1C5C3A' },
+    
+    // Delivered
+    delivered: { label: 'Delivered', bg: '#1C5C3A', colour: '#FFFFFF' },
+    
+    // Fallback/Cancelled
+    cancelled: { label: 'Cancelled', bg: 'rgba(224,85,85,0.1)', colour: '#e05555' },
 }
 
 const HELD_MESSAGES: Record<string, { week: number; text: string }> = {
@@ -55,7 +68,7 @@ export default async function OrdersPage() {
 
     const { data: orders } = await supabase
         .from('orders')
-        .select('id, payment_reference, status, payment_status, formula_code, plan_tier, payment_amount, currency, created_at, dispatched_at, delivered_at, tracking_number, courier, dispatch_held_reason')
+        .select('id, payment_reference, status, payment_status, formula_code, plan_tier, payment_amount, currency, created_at, dispatched_at, delivered_at, tracking_number, tracking_url, courier, dispatch_held_reason, received_at')
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false })
 
@@ -171,7 +184,13 @@ export default async function OrdersPage() {
                                             <span className="text-gray-500 dark:text-gray-400 text-xs">Tracking</span>
                                             <span className="font-mono text-gray-700 dark:text-gray-300 text-xs">
                                                 {order.courier && <span className="mr-2 opacity-80">{order.courier}</span>}
-                                                {order.tracking_number}
+                                                {order.tracking_url ? (
+                                                    <a href={order.tracking_url} target="_blank" rel="noreferrer" className="underline hover:text-toneek-amber">
+                                                        {order.tracking_number}
+                                                    </a>
+                                                ) : (
+                                                    order.tracking_number
+                                                )}
                                             </span>
                                         </div>
                                     )}
@@ -182,6 +201,11 @@ export default async function OrdersPage() {
                                     <div className="mt-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-500/30 rounded-lg p-3 text-xs text-orange-700 dark:text-orange-400 font-medium">
                                         Order held pending check-in
                                     </div>
+                                )}
+
+                                {/* Log Delivery Button */}
+                                {['dispatched', 'ready_to_dispatch', 'pending_dispatch', 'delivered'].includes(order.status) && !order.received_at && (
+                                    <LogDeliveryButton orderId={order.id} />
                                 )}
                             </div>
                         )

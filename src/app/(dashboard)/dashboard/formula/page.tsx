@@ -112,20 +112,47 @@ export default async function FormulaPage() {
         .single()
     const subscriptionStartedAt = subscription?.started_at ?? null
 
-    // Fetch latest order status and received_at for core timeline calculations
-    const { data: latestOrder } = await adminClient
+    // Fetch latest order with ALL status fields
+    const { data: latestOrder, error: orderError } = await adminClient
         .from('orders')
-        .select('status, dispatch_held_reason, payment_status, courier, tracking_number, tracking_url, payment_reference, received_at')
+        .select(`
+            id,
+            status,
+            payment_status,
+            payment_confirmed_at,
+            received_at,
+            courier,
+            tracking_number,
+            tracking_url,
+            payment_reference,
+            payment_amount,
+            currency,
+            plan_tier,
+            dispatch_held_reason,
+            created_at,
+            dispatched_at
+        `)
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single()
+        .maybeSingle()
+
+    // Log to console for debugging (remove after fix confirmed)
+    console.log('ORDER DEBUG:', {
+        id: latestOrder?.id,
+        status: latestOrder?.status,
+        payment_status: latestOrder?.payment_status,
+        payment_confirmed_at: latestOrder?.payment_confirmed_at,
+        received_at: latestOrder?.received_at,
+    })
+
     const orderStatus         = latestOrder?.status ?? null
     const dispatchHeldReason  = latestOrder?.dispatch_held_reason ?? null
 
     // STEP 5: Centralize all clinical dates and order state
     const clinical_dates = calculateClinicalDates(latestOrder?.received_at ?? null)
     const order_state = determineOrderState(latestOrder)
+    console.log('ORDER STATE:', order_state)
 
     // Fetch all assessments for this user, newest first
     const { data: assessments, error: fetchError } = await adminClient

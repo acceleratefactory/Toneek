@@ -78,12 +78,13 @@ export async function POST(
         // B. Generate tracking number
         const tracking = `TNK-${crypto.randomUUID().split('-')[0].toUpperCase()}`
 
-        // C. Mark as pending_dispatch
+        // C. Mark as dispatched
         await adminClient
           .from('orders')
           .update({
-            status: 'pending_dispatch',
+            status: 'dispatched',
             tracking_number: tracking,
+            dispatched_at: new Date().toISOString(),
           })
           .eq('id', orderId)
       }
