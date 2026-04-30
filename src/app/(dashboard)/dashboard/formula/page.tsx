@@ -137,22 +137,12 @@ export default async function FormulaPage() {
         .limit(1)
         .maybeSingle()
 
-    // Log to console for debugging (remove after fix confirmed)
-    console.log('ORDER DEBUG:', {
-        id: latestOrder?.id,
-        status: latestOrder?.status,
-        payment_status: latestOrder?.payment_status,
-        payment_confirmed_at: latestOrder?.payment_confirmed_at,
-        received_at: latestOrder?.received_at,
-    })
-
     const orderStatus         = latestOrder?.status ?? null
     const dispatchHeldReason  = latestOrder?.dispatch_held_reason ?? null
 
     // STEP 5: Centralize all clinical dates and order state
     const clinical_dates = calculateClinicalDates(latestOrder?.received_at ?? null)
     const order_state = determineOrderState(latestOrder)
-    console.log('ORDER STATE:', order_state)
 
     // Fetch all assessments for this user, newest first
     const { data: assessments, error: fetchError } = await adminClient
