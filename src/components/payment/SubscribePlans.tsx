@@ -10,6 +10,8 @@ const BankTransferModal = dynamic(() => import('./BankTransferModal'), { ssr: fa
 
 
 
+import { PLAN_FEATURES, RoutineTier, PlanTier } from '@/lib/plans/planFeatures'
+
 interface SubscribePlansProps {
     assessmentId: string
     userId: string | null
@@ -38,37 +40,11 @@ export default function SubscribePlans({ assessmentId, userId, currency, plans, 
     const [error, setError] = useState('')
     const [modal, setModal] = useState<ModalData | null>(null)
 
-    const getFeatures = (planFeatures: string[], routineTier: string) => {
-        if (planFeatures && planFeatures.length > 0) return planFeatures;
-        
-        const base = [
-            'Full active ingredient breakdown',
-            'Climate-matched formulation',
-            'WhatsApp delivery updates'
-        ];
-
-        if (routineTier === 'just_one') {
-            return ['Monthly personalised formula', ...base];
-        }
-        if (routineTier === 'two_to_three') {
-            return [
-                'Monthly personalised formula (your treatment step)',
-                'Barrier-compatible gentle cleanser',
-                'Lightweight moisturiser matched to your formula',
-                ...base
-            ];
-        }
-        if (routineTier === 'whatever_it_takes') {
-            return [
-                'Monthly personalised formula (your treatment step)',
-                'Barrier-compatible gentle cleanser',
-                'Lightweight moisturiser matched to your formula',
-                'Fourth product tailored to your profile (SPF / Toner / Booster)',
-                'Full routine sequencing guide',
-                ...base
-            ];
-        }
-        return base;
+    const getPlanKey = (planName: string): PlanTier => {
+        const name = planName.toLowerCase().trim()
+        if (name.includes('restoration')) return 'restoration'
+        if (name.includes('full')) return 'full_protocol'
+        return 'essentials'
     }
 
     const handleSelect = async (planId: string) => {
@@ -104,6 +80,8 @@ export default function SubscribePlans({ assessmentId, userId, currency, plans, 
         }
     }
 
+    const validRoutineTier = (routineTier || 'just_one') as RoutineTier
+
     return (
         <>
             {/* Plan cards */}
@@ -111,27 +89,34 @@ export default function SubscribePlans({ assessmentId, userId, currency, plans, 
                 {plans.map((plan: any) => {
                     const price = plan.prices[currency] ?? plan.prices['USD']
                     const isLoading = loading === plan.id
-                    const displayFeatures = getFeatures(plan.features, routineTier)
+                    
+                    const planKey = getPlanKey(plan.name)
+                    const planContent = PLAN_FEATURES[validRoutineTier]?.[planKey]
+
+                    // If for some reason planContent is not found, fallback to original plan object
+                    const description = planContent?.description || plan.description
+                    const features = planContent?.features || plan.features || []
+                    const upgradeHook = planContent?.upgrade_hook
 
                     return (
                         <div
                             key={plan.id}
                             style={{
-                                background: plan.highlight ? 'rgba(196,123,60,0.06)' : 'var(--surface)',
-                                border: plan.highlight ? '1px solid var(--accent)' : '1px solid var(--border)',
+                                background: planKey === 'full_protocol' ? '#FEF9F4' : 'var(--surface)',
+                                border: planKey === 'full_protocol' ? '2px solid #C87D3E' : '1px solid #E8E0DA',
                                 borderRadius: '12px',
                                 padding: '1.5rem',
                                 position: 'relative',
                             }}
                         >
-                            {plan.highlight && (
+                            {planKey === 'full_protocol' && (
                                 <span style={{
                                     position: 'absolute',
                                     top: '-12px',
                                     left: '50%',
                                     transform: 'translateX(-50%)',
-                                    background: 'var(--accent)',
-                                    color: 'var(--color-toneek-brown)',
+                                    background: '#C87D3E',
+                                    color: '#fff',
                                     fontSize: '0.72rem',
                                     fontWeight: 700,
                                     letterSpacing: '0.08em',
@@ -139,43 +124,67 @@ export default function SubscribePlans({ assessmentId, userId, currency, plans, 
                                     padding: '0.25rem 0.85rem',
                                     borderRadius: '20px',
                                     whiteSpace: 'nowrap',
-                                }} className="dark:text-[#1A1210]">
+                                }}>
                                     Most popular
                                 </span>
                             )}
 
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
                                 <div>
-                                    <p className="dark:text-white" style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--foreground)', marginBottom: '0.2rem' }}>
+                                    <p className="dark:text-white" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, fontSize: '1.05rem', color: 'var(--foreground)', marginBottom: '0.2rem' }}>
                                         {plan.name}
+                                        {planKey === 'restoration' && (
+                                            <span style={{ background: '#22543D', color: '#fff', fontSize: '0.6rem', padding: '0.15rem 0.4rem', borderRadius: '4px', fontWeight: 700, letterSpacing: '0.05em' }}>
+                                                CLINICAL
+                                            </span>
+                                        )}
                                     </p>
                                     <p className="dark:text-gray-400" style={{ color: 'var(--muted)', fontSize: '0.85rem', lineHeight: '1.4' }}>
-                                        {plan.description}
+                                        {description}
                                     </p>
                                 </div>
                                 <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '1rem' }}>
-                                    <p className="dark:text-white" style={{ fontWeight: 700, fontSize: '1.4rem', color: plan.highlight ? 'var(--accent)' : 'var(--foreground)' }}>
-                                        {price.display}
+                                    <p className="dark:text-white" style={{ fontWeight: 700, fontSize: '1.4rem', color: planKey === 'full_protocol' ? '#C87D3E' : 'var(--foreground)' }}>
+                                        {price.display || `${currency === 'NGN' ? '₦' : currency === 'GBP' ? '£' : '$'}${price.toLocaleString()}`}
                                     </p>
                                     <p className="dark:text-gray-400" style={{ color: 'var(--muted)', fontSize: '0.75rem' }}>/month</p>
                                 </div>
                             </div>
+                            
+                            {upgradeHook && (
+                                <p className="text-[13px] text-[#C87D3E] italic mb-4 font-medium">
+                                    {upgradeHook}
+                                </p>
+                            )}
 
-                            <ul style={{ margin: '0 0 1.25rem', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                {displayFeatures.map((feature: string, i: number) => (
+                            <ul style={{ margin: '0', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                {features.map((feature: string, i: number) => (
                                     <li key={i} className="dark:text-gray-300" style={{ color: 'var(--muted)', fontSize: '0.85rem', display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
-                                        <span style={{ color: 'var(--accent)', flexShrink: 0 }}>✓</span>
+                                        <span style={{ color: '#C87D3E', flexShrink: 0 }}>✓</span>
                                         {feature}
                                     </li>
                                 ))}
                             </ul>
 
+                            {planKey === 'restoration' && (
+                                <p style={{ fontSize: '0.8rem', color: 'var(--muted)', marginTop: '0.75rem', fontStyle: 'italic', lineHeight: 1.4 }}>
+                                    Restoration Protocol is assigned when your assessment confirms barrier compromise. If you were not routed here by the assessment, choose Full Protocol.
+                                </p>
+                            )}
+
                             <button
                                 id={`plan-${plan.id}`}
                                 onClick={() => handleSelect(plan.id)}
                                 disabled={!!loading}
-                                className="btn-primary"
-                                style={{ width: '100%', opacity: loading && !isLoading ? 0.5 : 1 }}
+                                className={planKey === 'restoration' ? '' : 'btn-primary'}
+                                style={{ 
+                                    width: '100%', 
+                                    marginTop: '1.25rem',
+                                    opacity: loading && !isLoading ? 0.5 : 1,
+                                    ...(planKey === 'restoration' 
+                                        ? { background: '#22543D', color: '#fff', padding: '0.85rem', borderRadius: '8px', fontWeight: 600, border: 'none', cursor: 'pointer' } 
+                                        : {})
+                                }}
                             >
                                 {isLoading ? 'Setting up…' : `Choose ${plan.name}`}
                             </button>
@@ -183,6 +192,10 @@ export default function SubscribePlans({ assessmentId, userId, currency, plans, 
                     )
                 })}
             </div>
+
+            <p style={{ textAlign: 'center', fontSize: '12px', color: 'var(--muted)', marginTop: '1.5rem', fontFamily: 'var(--font-jost), sans-serif' }}>
+                Not sure which plan? Full Protocol is recommended for most profiles. Restoration Protocol is assigned — not chosen.
+            </p>
 
             {error && <p className="error-message" style={{ marginTop: '1rem' }}>{error}</p>}
 
