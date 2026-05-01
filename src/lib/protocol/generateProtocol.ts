@@ -199,60 +199,94 @@ function generateEveningSteps(input: ProtocolInput, is_restoration: boolean): Pr
 
 function generateFullRoutineProtocol(input: ProtocolInput, is_restoration: boolean) {
   const fourth_product = getFourthProduct(input)
+  const { skin_type, barrier_integrity, climate_zone } = input
 
-  const morning_steps: ProtocolStep[] = [
-    {
-      step: 1,
-      product: 'Toneek Cleanser',
-      instruction: 'Cleanse with lukewarm water. 60-second massage.',
-      timing: null,
-    },
-    ...(fourth_product.timing === 'morning' ? [{
-      step: 2,
-      product: fourth_product.name,
-      instruction: fourth_product.morning_instruction || '',
-      timing: null,
-    }] : []),
-    {
-      step: fourth_product.timing === 'morning' ? 3 : 2,
-      product: 'Toneek Moisturiser',
-      instruction: 'Apply pea-sized amount.',
-      timing: null,
-    },
-    {
-      step: fourth_product.timing === 'morning' ? 4 : 3,
-      product: 'Sunscreen SPF 50+',
-      instruction: 'Final step, every morning without exception.',
-      timing: null,
-    },
-  ]
+  const fourth_is_spf = fourth_product.name.toLowerCase().includes('spf')
+  const fourth_is_morning = fourth_product.timing === 'morning'
+  const fourth_is_evening = fourth_product.timing === 'evening'
 
-  const evening_steps: ProtocolStep[] = [
-    {
-      step: 1,
-      product: 'Toneek Cleanser',
-      instruction: 'Double cleanse if SPF or makeup was worn.',
-      timing: null,
-    },
-    ...(fourth_product.timing === 'evening' ? [{
+  const morning_steps: ProtocolStep[] = []
+
+  // Step 1: Always cleanser
+  morning_steps.push({
+    step: 1,
+    product: 'Toneek Cleanser',
+    instruction: skin_type === 'dry' || barrier_integrity < 60
+      ? 'Cleanse with lukewarm water. 60-second gentle massage. Hot water strips barrier lipids.'
+      : 'Cleanse with lukewarm water. 60-second massage. Rinse thoroughly.',
+  })
+
+  // Restoration only: formula goes between cleanser and moisturiser in AM
+  if (is_restoration) {
+    morning_steps.push({
       step: 2,
-      product: fourth_product.name,
-      instruction: fourth_product.evening_instruction || '',
-      timing: null,
-    }] : []),
-    {
-      step: fourth_product.timing === 'evening' ? 3 : 2,
       product: 'Your Toneek Formula',
-      instruction: '0.5ml. This is your active treatment step. 90 seconds absorption before next product.',
-      timing: null,
-    },
-    {
-      step: fourth_product.timing === 'evening' ? 4 : 3,
-      product: 'Toneek Moisturiser',
-      instruction: 'Seal in the formula. Apply generously on barrier-compromised skin.',
-      timing: null,
-    },
-  ]
+      instruction: 'Apply 0.5ml to clean, dry skin. Allow 60 seconds to absorb before next step.',
+    })
+  }
+
+  // Moisturiser
+  morning_steps.push({
+    step: morning_steps.length + 1,
+    product: 'Toneek Moisturiser',
+    instruction: barrier_integrity < 60
+      ? 'Apply generously — your barrier needs hydration support.'
+      : 'Apply pea-sized amount to clean skin.',
+  })
+
+  // If fourth product is morning-timed AND is SPF: it is the final step
+  if (fourth_is_morning) {
+    morning_steps.push({
+      step: morning_steps.length + 1,
+      product: fourth_product.name,
+      instruction: fourth_is_spf
+        ? 'Apply as the final morning step. Two finger-lengths for full face coverage. This is your daily UV protection.'
+        : fourth_product.morning_instruction || 'Apply after moisturiser.',
+    })
+  } else {
+    // Add text note for SPF since their fourth product is in the evening
+    morning_steps.push({
+      step: morning_steps.length + 1,
+      product: 'Sunscreen SPF 50+ (your own)',
+      instruction: climate_zone === 'humid_tropical' || climate_zone === 'equatorial' || climate_zone === 'semi_arid'
+        ? 'Non-negotiable in your climate. UV exposure is the primary PIH trigger. Use any mineral SPF 50+.'
+        : 'Apply SPF 30+ as the final step. Source your own mineral or chemical SPF.',
+      note: 'Not included in this tier — your fourth product is in the evening routine.',
+    })
+  }
+
+  const evening_steps: ProtocolStep[] = []
+
+  // Step 1: Cleanser
+  evening_steps.push({
+    step: 1,
+    product: 'Toneek Cleanser',
+    instruction: 'Double cleanse if SPF or makeup was worn. First cleanse removes SPF, second cleanse cleans skin.',
+  })
+
+  if (fourth_is_evening) {
+    evening_steps.push({
+      step: 2,
+      product: fourth_product.name,
+      instruction: fourth_product.evening_instruction || 'Apply after cleansing. Pat gently into skin.',
+    })
+  }
+
+  // Formula: active treatment step
+  evening_steps.push({
+    step: evening_steps.length + 1,
+    product: 'Your Toneek Formula',
+    instruction: '0.5ml. This is your active treatment step. Allow 90 seconds to fully absorb before applying moisturiser.',
+  })
+
+  // Moisturiser: always last
+  evening_steps.push({
+    step: evening_steps.length + 1,
+    product: 'Toneek Moisturiser',
+    instruction: barrier_integrity < 60
+      ? 'Apply generously. Your barrier needs overnight hydration support to work alongside the actives.'
+      : 'Apply pea-sized amount. Seal in the formula and support overnight repair.',
+  })
 
   return {
     routine_type: 'full_routine' as const,

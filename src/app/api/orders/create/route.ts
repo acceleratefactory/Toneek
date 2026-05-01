@@ -45,6 +45,24 @@ function getBankDetails(currency: string) {
 
 // ─── Route handler ────────────────────────────────────────────────────────────
 
+function determineFourthProduct(assessment: any): string {
+    const { primary_concern, climate_zone, skin_type, barrier_integrity } = assessment
+    
+    if (['equatorial', 'semi_arid', 'humid_tropical'].includes(climate_zone || '') && primary_concern === 'PIH') {
+        return 'toneek_mineral_spf_50'
+    }
+    
+    if ((skin_type === 'dry' || barrier_integrity < 60) && ['temperate_maritime', 'cold_continental'].includes(climate_zone || '')) {
+        return 'toneek_hydrating_toner'
+    }
+    
+    if (['PIH', 'tone'].includes(primary_concern || '')) {
+        return 'toneek_brightening_toner'
+    }
+    
+    return 'toneek_mineral_spf_50'
+}
+
 export async function POST(request: NextRequest) {
     try {
         const { assessment_id, user_id, plan_tier, currency } = await request.json()
@@ -58,10 +76,10 @@ export async function POST(request: NextRequest) {
 
 
 
-        // Get assessment to link formula_code to the order
+        // Get assessment to link formula_code to the order and determine companion products
         const { data: assessment } = await adminClient
             .from('skin_assessments')
-            .select('formula_code')
+            .select('formula_code, routine_expectation, primary_concern, climate_zone, skin_type, barrier_integrity')
             .eq('id', assessment_id)
             .single()
 
@@ -89,6 +107,11 @@ export async function POST(request: NextRequest) {
         // Generate secure single-use admin confirmation token (double UUID)
         const confirm_token = `${crypto.randomUUID()}-${crypto.randomUUID()}`
 
+        const routine_tier = assessment?.routine_expectation || 'just_one'
+        const fourth_product = routine_tier === 'whatever_it_takes'
+            ? determineFourthProduct(assessment || {})
+            : null
+
         // Create order (user_id may be null until OTP confirmed)
         const orderPayload: Record<string, any> = {
             plan_tier,
@@ -100,6 +123,8 @@ export async function POST(request: NextRequest) {
             payment_confirm_token: confirm_token,
             payment_token_used: false,
             status: 'pending_payment',
+            routine_tier,
+            fourth_product,
         }
 
         if (user_id)          orderPayload.user_id = user_id

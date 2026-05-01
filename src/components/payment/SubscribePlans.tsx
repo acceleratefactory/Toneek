@@ -168,7 +168,7 @@ export default function SubscribePlans({ assessmentId, userId, currency, plans, 
 
                             {planKey === 'restoration' && (
                                 <p style={{ fontSize: '0.8rem', color: 'var(--muted)', marginTop: '0.75rem', fontStyle: 'italic', lineHeight: 1.4 }}>
-                                    Restoration Protocol is assigned when your assessment confirms barrier compromise. If you were not routed here by the assessment, choose Full Protocol.
+                                    Restoration Protocol is our most intensive system. It delivers the greatest results when your assessment confirms barrier damage. For most profiles, Full Protocol provides equivalent outcome tracking and priority reformulation.
                                 </p>
                             )}
 

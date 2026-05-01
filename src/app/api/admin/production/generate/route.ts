@@ -5,7 +5,7 @@ export async function POST() {
   // Get all orders in payment_confirmed, pending_formulation, or pending_production status
   const { data: rawOrders } = await adminClient
     .from('orders')
-    .select('id, status, user_id, payment_reference, created_at')
+    .select('id, status, user_id, payment_reference, created_at, routine_tier, fourth_product')
     .in('status', ['payment_confirmed', 'pending_formulation', 'pending_production'])
     .order('created_at', { ascending: true })
 
@@ -79,6 +79,31 @@ export async function POST() {
     })
   }
 
+  // Calculate companion product counts
+  const companionProductCounts: Record<string, number> = {
+    'TNK-CLN-100': 0,
+    'TNK-MST-50': 0,
+    'TNK-SPF-30': 0,
+    'TNK-TON-BRT': 0,
+    'TNK-TON-HYD': 0,
+  }
+
+  for (const order of orders) {
+    if (order.routine_tier === 'two_to_three' || order.routine_tier === 'whatever_it_takes') {
+      companionProductCounts['TNK-CLN-100']++
+      companionProductCounts['TNK-MST-50']++
+    }
+    if (order.routine_tier === 'whatever_it_takes' && order.fourth_product) {
+      const sku_map: Record<string, string> = {
+        'toneek_mineral_spf_50': 'TNK-SPF-30',
+        'toneek_brightening_toner': 'TNK-TON-BRT',
+        'toneek_hydrating_toner': 'TNK-TON-HYD',
+      }
+      const sku = sku_map[order.fourth_product]
+      if (sku) companionProductCounts[sku]++
+    }
+  }
+
   // Create production_queue record
   const { data: productionRun, error } = await adminClient
     .from('production_queue')
@@ -86,7 +111,10 @@ export async function POST() {
       id: crypto.randomUUID(), // Explicitly bypass database uuid generation just in case
       production_date: new Date().toISOString().split('T')[0],
       status: 'pending',
-      batches,
+      batches: {
+        formula_batches: batches,
+        companion_products: companionProductCounts
+      },
       total_orders_covered: orders.length
     })
     .select()

@@ -12,6 +12,15 @@ export async function POST(
     const resolvedParams = await params
     const id = resolvedParams.id
 
+    // Check for form data (could be empty if just a POST with no body from older clients)
+    let companion_confirmed = false
+    try {
+      const formData = await request.formData()
+      companion_confirmed = formData.get('companion_confirmed') === 'true'
+    } catch (e) {
+      // Ignore if no form data
+    }
+
     const { data: run } = await adminClient
       .from('production_queue')
       .select('*')
@@ -20,6 +29,16 @@ export async function POST(
 
     if (!run) {
       return NextResponse.redirect(new URL('/admin/production?error=not_found', process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'))
+    }
+
+    const isObject = !Array.isArray(run.batches) && run.batches !== null
+    const formulaBatches = isObject ? run.batches.formula_batches || [] : run.batches || []
+    const companionCounts = isObject ? run.batches.companion_products || {} : {}
+    
+    const hasCompanions = Object.values(companionCounts).some((count: any) => count > 0)
+
+    if (hasCompanions && !companion_confirmed) {
+      return NextResponse.redirect(new URL('/admin/production?error=unconfirmed_companions', process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'))
     }
 
     // 1. Mark queue as complete
@@ -31,8 +50,31 @@ export async function POST(
       })
       .eq('id', id)
 
-    // 2. Process all orders in this batch
-    const orderIds = run.batches.flatMap((b: any) => b.order_ids ?? [])
+    // 2. Deduct inventory for companion products
+    if (hasCompanions) {
+      for (const [sku, count] of Object.entries(companionCounts)) {
+        const unitsNeeded = count as number
+        if (unitsNeeded > 0) {
+          const { data: inv } = await adminClient
+            .from('companion_product_inventory')
+            .select('units_in_stock')
+            .eq('product_sku', sku)
+            .single()
+            
+          const current = inv?.units_in_stock || 0
+          // Allow negative stock for tracking if they over-dispatched, but here we floor at 0 for safety unless business logic says otherwise. Let's just do math.
+          const newAmount = current - unitsNeeded
+          
+          await adminClient
+            .from('companion_product_inventory')
+            .update({ units_in_stock: newAmount, updated_at: new Date().toISOString() })
+            .eq('product_sku', sku)
+        }
+      }
+    }
+
+    // 3. Process all orders in this batch
+    const orderIds = formulaBatches.flatMap((b: any) => b.order_ids ?? [])
 
     if (orderIds.length > 0) {
       for (const orderId of orderIds) {

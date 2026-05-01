@@ -24,15 +24,73 @@ async function getProductionData() {
     .select('*', { count: 'exact', head: true })
     .in('status', ['payment_confirmed', 'pending_formulation', 'pending_production'])
 
+  // Fetch companion product inventory
+  const { data: inventoryData } = await adminClient
+    .from('companion_product_inventory')
+    .select('*')
+
+  const inventory = inventoryData?.reduce((acc: any, item: any) => {
+    acc[item.product_sku] = item
+    return acc
+  }, {}) || {}
+
+  let activeRunOrders: any[] = []
+  const activeRun = activeRuns && activeRuns.length > 0 ? activeRuns[0] : null
+  
+  if (activeRun) {
+    const isObject = !Array.isArray(activeRun.batches) && activeRun.batches !== null
+    const formula_batches = isObject ? activeRun.batches.formula_batches : activeRun.batches
+    
+    let allOrderIds: string[] = []
+    if (formula_batches) {
+      for (const batch of formula_batches) {
+        if (batch.order_ids) allOrderIds.push(...batch.order_ids)
+      }
+    }
+    
+    if (allOrderIds.length > 0) {
+      const { data: orders } = await adminClient
+        .from('orders')
+        .select('id, payment_reference, user_id, routine_tier, fourth_product, formula_code, plan_tier')
+        .in('id', allOrderIds)
+      activeRunOrders = orders || []
+    }
+  }
+
   return {
-    activeRun: activeRuns && activeRuns.length > 0 ? activeRuns[0] : null,
+    activeRun,
     historyRuns: historyRuns ?? [],
     ordersReady: ordersReady ?? 0,
+    inventory,
+    activeRunOrders
   }
 }
 
 export default async function ProductionQueuePage() {
   const data = await getProductionData()
+
+  let formulaBatches = []
+  let companionCounts: Record<string, number> = {}
+  
+  if (data.activeRun) {
+    const isObject = !Array.isArray(data.activeRun.batches) && data.activeRun.batches !== null
+    formulaBatches = isObject ? data.activeRun.batches.formula_batches || [] : data.activeRun.batches || []
+    companionCounts = isObject ? data.activeRun.batches.companion_products || {} : {}
+  }
+
+  const skus = [
+    { sku: 'TNK-CLN-100', name: 'Toneek Barrier Cleanser 100ml' },
+    { sku: 'TNK-MST-50', name: 'Toneek Lightweight Moisturiser 50ml' },
+    { sku: 'TNK-SPF-30', name: 'Toneek Mineral SPF 50 30ml' },
+    { sku: 'TNK-TON-BRT', name: 'Toneek Brightening Toner 30ml' },
+    { sku: 'TNK-TON-HYD', name: 'Toneek Hydrating Toner 30ml' },
+  ]
+
+  const fourthProductMap: Record<string, string> = {
+    'toneek_mineral_spf_50': 'Toneek Mineral SPF 50 30ml',
+    'toneek_brightening_toner': 'Toneek Brightening Toner 30ml',
+    'toneek_hydrating_toner': 'Toneek Hydrating Toner 30ml',
+  }
 
   return (
     <div className="space-y-6 text-gray-800">
@@ -76,15 +134,21 @@ export default async function ProductionQueuePage() {
             </div>
             <div className="flex gap-2">
               {data.activeRun.status === 'pending' && (
-                // In an MVP, we could have a route to simply update status to in_production. 
-                // For now it's visual. Mark Complete is the critical action.
                 <div className="px-4 py-2 border border-toneek-lightgray text-toneek-gray rounded-md text-sm font-bold opacity-80 cursor-not-allowed">
                   Starts processing...
                 </div>
               )}
               {data.activeRun.status !== 'complete' && data.activeRun.status !== 'dispatched' && (
-                 <form action={`/api/admin/production/${data.activeRun.id}/complete`} method="POST">
-                   <button type="submit" className="bg-toneek-forest hover:bg-[#144229] text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors">
+                 <form action={`/api/admin/production/${data.activeRun.id}/complete`} method="POST" className="flex items-center gap-4">
+                   {Object.values(companionCounts).some(count => count > 0) && (
+                     <div className="flex items-center gap-2 bg-toneek-cream px-3 py-2 rounded border border-toneek-lightgray">
+                       <input type="checkbox" id="companion_confirmed" name="companion_confirmed" value="true" required className="w-4 h-4 text-toneek-forest rounded border-gray-300 cursor-pointer" />
+                       <label htmlFor="companion_confirmed" className="text-xs font-bold text-toneek-brown cursor-pointer uppercase tracking-wider">
+                         All companions pulled
+                       </label>
+                     </div>
+                   )}
+                   <button type="submit" className="bg-toneek-forest hover:bg-[#144229] text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors whitespace-nowrap">
                      Mark Complete & Dispatch
                    </button>
                  </form>
@@ -95,7 +159,7 @@ export default async function ProductionQueuePage() {
           <div className="p-6">
             <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Formula Batches</h3>
             <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-              {Array.isArray(data.activeRun.batches) && data.activeRun.batches.map((batch: any, index: number) => (
+              {formulaBatches.map((batch: any, index: number) => (
                 <div key={index} className="bg-gray-50 rounded-lg p-5 border border-gray-200">
                   <div className="flex justify-between items-center mb-3">
                     <span className="font-mono font-bold text-lg text-toneek-brown">{batch.formula_code}</span>
@@ -131,6 +195,90 @@ export default async function ProductionQueuePage() {
                 </div>
               ))}
             </div>
+
+            {Object.keys(companionCounts).length > 0 && (
+              <>
+                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mt-10 mb-4">Companion Products — Pull From Stock</h3>
+                <div className="overflow-hidden border border-gray-200 rounded-lg">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Product</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">SKU</th>
+                        <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Units Needed</th>
+                        <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">In Stock</th>
+                        <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {skus.map(({ sku, name }) => {
+                        const needed = companionCounts[sku] || 0
+                        if (needed === 0) return null
+                        const inStock = data.inventory[sku]?.units_in_stock || 0
+                        const isShortage = inStock < needed
+
+                        return (
+                          <tr key={sku}>
+                            <td className="px-4 py-4 text-sm font-medium text-gray-900">{name}</td>
+                            <td className="px-4 py-4 text-sm text-gray-500 font-mono">{sku}</td>
+                            <td className="px-4 py-4 text-sm font-bold text-center text-toneek-brown">{needed}</td>
+                            <td className={`px-4 py-4 text-sm font-bold text-center ${isShortage ? 'text-red-600' : 'text-gray-900'}`}>
+                              {inStock}
+                            </td>
+                            <td className="px-4 py-4 text-sm text-right">
+                              {isShortage ? (
+                                <span className="text-red-600 font-bold bg-red-50 px-2 py-1 rounded border border-red-200 text-xs">⚠️ Shortage</span>
+                              ) : (
+                                <span className="text-green-700 font-bold bg-green-50 px-2 py-1 rounded border border-green-200 text-xs">✓ Ready</span>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mt-10 mb-4">Packing List</h3>
+                <div className="grid gap-4 grid-cols-1">
+                  {data.activeRunOrders.map((order: any) => (
+                    <div key={order.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                      <div className="font-bold text-gray-900 mb-2 pb-2 border-b border-gray-100 flex justify-between">
+                        <span>Order {order.payment_reference}</span>
+                        <span className="text-gray-500 text-sm font-normal">Formula: <span className="font-mono text-toneek-brown font-bold">{order.formula_code || 'TBD'}</span> | Plan: {order.routine_tier}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-gray-700">
+                        <div className="flex items-center gap-2">
+                          <input type="checkbox" className="w-4 h-4 text-toneek-forest rounded border-gray-300" />
+                          <span>Formula (Custom: {order.formula_code})</span>
+                        </div>
+                        
+                        {(order.routine_tier === 'two_to_three' || order.routine_tier === 'whatever_it_takes') && (
+                          <>
+                            <div className="flex items-center gap-2">
+                              <input type="checkbox" className="w-4 h-4 text-toneek-forest rounded border-gray-300" />
+                              <span>Toneek Barrier Cleanser 100ml</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <input type="checkbox" className="w-4 h-4 text-toneek-forest rounded border-gray-300" />
+                              <span>Toneek Lightweight Moisturiser 50ml</span>
+                            </div>
+                          </>
+                        )}
+
+                        {order.routine_tier === 'whatever_it_takes' && order.fourth_product && (
+                          <div className="flex items-center gap-2">
+                            <input type="checkbox" className="w-4 h-4 text-toneek-forest rounded border-gray-300" />
+                            <span className="font-bold text-toneek-brown">{fourthProductMap[order.fourth_product] || order.fourth_product}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
           </div>
         </div>
       ) : (
@@ -160,7 +308,10 @@ export default async function ProductionQueuePage() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {data.historyRuns.map((run: any) => {
-                  const uniqueFormulas = Array.isArray(run.batches) ? run.batches.map((b: any) => b.formula_code).join(', ') : '—'
+                  const isObject = !Array.isArray(run.batches) && run.batches !== null
+                  const fBatches = isObject ? run.batches.formula_batches || [] : run.batches || []
+                  const uniqueFormulas = fBatches.map((b: any) => b.formula_code).join(', ') || '—'
+                  
                   return (
                     <tr key={run.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
