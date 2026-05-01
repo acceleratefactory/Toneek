@@ -12,6 +12,14 @@ export interface ProtocolInput {
   analysis_scores: Record<string, number>
 }
 
+export interface ProtocolStep {
+  step: number
+  product: string
+  instruction: string
+  timing?: string | null
+  note?: string
+}
+
 export function generateProtocol(input: ProtocolInput) {
   const { formula_tier, routine_expectation, formula_code } = input
 
@@ -82,14 +90,14 @@ function generateThreeProductProtocol(input: ProtocolInput, is_restoration: bool
   }
 }
 
-function generateMorningSteps(input: ProtocolInput, is_restoration: boolean) {
+function generateMorningSteps(input: ProtocolInput, is_restoration: boolean): ProtocolStep[] {
   const { skin_type, climate_zone } = input
 
   const cleanser_note = skin_type === 'dry' || input.barrier_integrity < 60
     ? 'Use lukewarm water — not hot. Hot water strips barrier lipids.'
     : 'Massage gently for 60 seconds. Rinse thoroughly.'
 
-  const steps = [
+  const steps: ProtocolStep[] = [
     {
       step: 1,
       product: 'Toneek Cleanser',
@@ -135,7 +143,7 @@ function generateMorningSteps(input: ProtocolInput, is_restoration: boolean) {
   return steps
 }
 
-function generateEveningSteps(input: ProtocolInput, is_restoration: boolean) {
+function generateEveningSteps(input: ProtocolInput, is_restoration: boolean): ProtocolStep[] {
   const { skin_type, barrier_integrity } = input
 
   const cleanser_note = skin_type === 'dry'
@@ -192,65 +200,69 @@ function generateEveningSteps(input: ProtocolInput, is_restoration: boolean) {
 function generateFullRoutineProtocol(input: ProtocolInput, is_restoration: boolean) {
   const fourth_product = getFourthProduct(input)
 
+  const morning_steps: ProtocolStep[] = [
+    {
+      step: 1,
+      product: 'Toneek Cleanser',
+      instruction: 'Cleanse with lukewarm water. 60-second massage.',
+      timing: null,
+    },
+    ...(fourth_product.timing === 'morning' ? [{
+      step: 2,
+      product: fourth_product.name,
+      instruction: fourth_product.morning_instruction || '',
+      timing: null,
+    }] : []),
+    {
+      step: fourth_product.timing === 'morning' ? 3 : 2,
+      product: 'Toneek Moisturiser',
+      instruction: 'Apply pea-sized amount.',
+      timing: null,
+    },
+    {
+      step: fourth_product.timing === 'morning' ? 4 : 3,
+      product: 'Sunscreen SPF 50+',
+      instruction: 'Final step, every morning without exception.',
+      timing: null,
+    },
+  ]
+
+  const evening_steps: ProtocolStep[] = [
+    {
+      step: 1,
+      product: 'Toneek Cleanser',
+      instruction: 'Double cleanse if SPF or makeup was worn.',
+      timing: null,
+    },
+    ...(fourth_product.timing === 'evening' ? [{
+      step: 2,
+      product: fourth_product.name,
+      instruction: fourth_product.evening_instruction || '',
+      timing: null,
+    }] : []),
+    {
+      step: fourth_product.timing === 'evening' ? 3 : 2,
+      product: 'Your Toneek Formula',
+      instruction: '0.5ml. This is your active treatment step. 90 seconds absorption before next product.',
+      timing: null,
+    },
+    {
+      step: fourth_product.timing === 'evening' ? 4 : 3,
+      product: 'Toneek Moisturiser',
+      instruction: 'Seal in the formula. Apply generously on barrier-compromised skin.',
+      timing: null,
+    },
+  ]
+
   return {
     routine_type: 'full_routine' as const,
     morning: {
       title: 'MORNING ROUTINE',
-      steps: [
-        {
-          step: 1,
-          product: 'Toneek Cleanser',
-          instruction: 'Cleanse with lukewarm water. 60-second massage.',
-          timing: null,
-        },
-        ...(fourth_product.timing === 'morning' ? [{
-          step: 2,
-          product: fourth_product.name,
-          instruction: fourth_product.morning_instruction,
-          timing: null,
-        }] : []),
-        {
-          step: fourth_product.timing === 'morning' ? 3 : 2,
-          product: 'Toneek Moisturiser',
-          instruction: 'Apply pea-sized amount.',
-          timing: null,
-        },
-        {
-          step: fourth_product.timing === 'morning' ? 4 : 3,
-          product: 'Sunscreen SPF 50+',
-          instruction: 'Final step, every morning without exception.',
-          timing: null,
-        },
-      ],
+      steps: morning_steps,
     },
     evening: {
       title: 'EVENING ROUTINE',
-      steps: [
-        {
-          step: 1,
-          product: 'Toneek Cleanser',
-          instruction: 'Double cleanse if SPF or makeup was worn.',
-          timing: null,
-        },
-        ...(fourth_product.timing === 'evening' ? [{
-          step: 2,
-          product: fourth_product.name,
-          instruction: fourth_product.evening_instruction,
-          timing: null,
-        }] : []),
-        {
-          step: fourth_product.timing === 'evening' ? 3 : 2,
-          product: 'Your Toneek Formula',
-          instruction: '0.5ml. This is your active treatment step. 90 seconds absorption before next product.',
-          timing: null,
-        },
-        {
-          step: fourth_product.timing === 'evening' ? 4 : 3,
-          product: 'Toneek Moisturiser',
-          instruction: 'Seal in the formula. Apply generously on barrier-compromised skin.',
-          timing: null,
-        },
-      ],
+      steps: evening_steps,
     },
     fourth_product_note: `Your ${fourth_product.name} is included because: ${fourth_product.rationale}`,
     what_to_avoid: getAvoidList(input),
