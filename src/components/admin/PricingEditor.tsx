@@ -8,6 +8,7 @@ interface TierData {
   id: string
   name: string
   description: string
+  routine_tier: string
   prices: Record<string, { amount: number; display: string }>
 }
 
@@ -18,6 +19,7 @@ export default function PricingEditor({ initialTiers }: { initialTiers: TierData
   const [savingId, setSavingId] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
+  const [activeTab, setActiveTab] = useState<string>('just_one')
 
   // Supported currencies in the platform
   const currencies = ['NGN', 'GBP', 'USD', 'EUR', 'GHS', 'CAD']
@@ -81,7 +83,40 @@ export default function PricingEditor({ initialTiers }: { initialTiers: TierData
          </div>
       )}
 
-      {tiers.map((tier) => (
+      <div className="flex border-b border-gray-200 mb-6 overflow-x-auto">
+        <button
+          onClick={() => setActiveTab('just_one')}
+          className={`whitespace-nowrap py-3 px-6 text-sm font-bold border-b-2 transition-colors ${
+            activeTab === 'just_one'
+              ? 'border-toneek-amber text-toneek-amber'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Just One Product
+        </button>
+        <button
+          onClick={() => setActiveTab('two_to_three')}
+          className={`whitespace-nowrap py-3 px-6 text-sm font-bold border-b-2 transition-colors ${
+            activeTab === 'two_to_three'
+              ? 'border-toneek-amber text-toneek-amber'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Two to Three Products
+        </button>
+        <button
+          onClick={() => setActiveTab('whatever_it_takes')}
+          className={`whitespace-nowrap py-3 px-6 text-sm font-bold border-b-2 transition-colors ${
+            activeTab === 'whatever_it_takes'
+              ? 'border-toneek-amber text-toneek-amber'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Full Routine
+        </button>
+      </div>
+
+      {tiers.filter((tier) => tier.routine_tier === activeTab).map((tier) => (
         <div key={tier.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
           
           <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">

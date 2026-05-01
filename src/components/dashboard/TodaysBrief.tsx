@@ -4,6 +4,7 @@
 import React, { useState } from 'react'
 import type { ClinicalDates } from '@/lib/dates/clinicalDates'
 import type { OrderState } from '@/lib/orders/orderState'
+import { generateDoTodayInstructions } from '@/lib/today/generateTodayInstructions'
 
 interface TodaysBriefProps {
   order_state: OrderState
@@ -20,6 +21,7 @@ interface TodaysBriefProps {
     primary_concern: string
     formula_tier: string | null
     analysis_scores: Record<string, number> | null
+    routine_expectation?: string
   }
   outcomes: any[]
 }
@@ -147,11 +149,29 @@ export default function TodaysBrief({
         </>
       )
     }
-    const tier = assessment.formula_tier
-    const text = tier === 'restoration' 
-      ? 'Apply your formula morning and evening. 0.5ml each application.'
-      : 'Apply your formula tonight at bedtime. 0.5ml — pea-sized amount.'
-    return <p className="text-[14px] leading-relaxed mb-4" style={{ color: '#F7F1EB' }}>{text}</p>
+    
+    const isRestoration = assessment.formula_tier === 'restoration'
+    const daysSinceReceipt = clinical_dates.days_since_receipt ?? 0
+    const expectation = assessment.routine_expectation || 'just_one'
+    
+    const instructions = generateDoTodayInstructions(expectation, daysSinceReceipt, isRestoration)
+
+    if (Array.isArray(instructions)) {
+      return (
+        <div className="flex flex-col gap-1.5 mb-4">
+          {instructions.map((line, i) => {
+             const isHeading = line.endsWith(':')
+             return (
+               <p key={i} className={`text-[13px] leading-relaxed ${isHeading ? 'font-bold mt-2 text-[#C87D3E]' : 'text-[#F7F1EB]'}`}>
+                 {line}
+               </p>
+             )
+          })}
+        </div>
+      )
+    }
+
+    return <p className="text-[14px] leading-relaxed mb-4" style={{ color: '#F7F1EB' }}>{instructions}</p>
   }
 
   // Render right column content

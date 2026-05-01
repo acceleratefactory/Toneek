@@ -83,12 +83,16 @@ export default async function ResultsPage({
     const actives: any[] = Array.isArray(rawActives[0]) ? rawActives.flat() : rawActives
 
     // Generate the behavioural protocol for this formula
-    const protocol = generateProtocol(
-        assessment.formula_code || '',
-        assessment.formula_tier,
-        actives,
-        assessment.pregnant_or_breastfeeding,
-    )
+    const protocol = generateProtocol({
+        formula_code: assessment.formula_code || '',
+        formula_tier: assessment.formula_tier || 'standard',
+        routine_expectation: assessment.routine_expectation || 'just_one',
+        primary_concern: assessment.primary_concern || '',
+        climate_zone: assessment.climate_zone || '',
+        skin_type: assessment.skin_type || '',
+        barrier_integrity: (assessment.analysis_scores as any)?.barrier_integrity || 100,
+        analysis_scores: (assessment.analysis_scores as any) || {}
+    })
 
     // Generate the formula logic explanation paragraphs
     const logicParagraphs = generateFormulaLogic({

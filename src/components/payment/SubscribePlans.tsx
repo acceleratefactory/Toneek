@@ -15,6 +15,7 @@ interface SubscribePlansProps {
     userId: string | null
     currency: string
     plans: any[]
+    routineTier?: string
 }
 
 interface ModalData {
@@ -32,10 +33,43 @@ interface ModalData {
     }
 }
 
-export default function SubscribePlans({ assessmentId, userId, currency, plans }: SubscribePlansProps) {
+export default function SubscribePlans({ assessmentId, userId, currency, plans, routineTier = 'just_one' }: SubscribePlansProps) {
     const [loading, setLoading] = useState<string | null>(null)
     const [error, setError] = useState('')
     const [modal, setModal] = useState<ModalData | null>(null)
+
+    const getFeatures = (planFeatures: string[], routineTier: string) => {
+        if (planFeatures && planFeatures.length > 0) return planFeatures;
+        
+        const base = [
+            'Full active ingredient breakdown',
+            'Climate-matched formulation',
+            'WhatsApp delivery updates'
+        ];
+
+        if (routineTier === 'just_one') {
+            return ['Monthly personalised formula', ...base];
+        }
+        if (routineTier === 'two_to_three') {
+            return [
+                'Monthly personalised formula (your treatment step)',
+                'Barrier-compatible gentle cleanser',
+                'Lightweight moisturiser matched to your formula',
+                ...base
+            ];
+        }
+        if (routineTier === 'whatever_it_takes') {
+            return [
+                'Monthly personalised formula (your treatment step)',
+                'Barrier-compatible gentle cleanser',
+                'Lightweight moisturiser matched to your formula',
+                'Fourth product tailored to your profile (SPF / Toner / Booster)',
+                'Full routine sequencing guide',
+                ...base
+            ];
+        }
+        return base;
+    }
 
     const handleSelect = async (planId: string) => {
         setLoading(planId)
@@ -77,6 +111,7 @@ export default function SubscribePlans({ assessmentId, userId, currency, plans }
                 {plans.map((plan: any) => {
                     const price = plan.prices[currency] ?? plan.prices['USD']
                     const isLoading = loading === plan.id
+                    const displayFeatures = getFeatures(plan.features, routineTier)
 
                     return (
                         <div
@@ -104,31 +139,31 @@ export default function SubscribePlans({ assessmentId, userId, currency, plans }
                                     padding: '0.25rem 0.85rem',
                                     borderRadius: '20px',
                                     whiteSpace: 'nowrap',
-                                }}>
+                                }} className="dark:text-[#1A1210]">
                                     Most popular
                                 </span>
                             )}
 
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
                                 <div>
-                                    <p style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--foreground)', marginBottom: '0.2rem' }}>
+                                    <p className="dark:text-white" style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--foreground)', marginBottom: '0.2rem' }}>
                                         {plan.name}
                                     </p>
-                                    <p style={{ color: 'var(--muted)', fontSize: '0.85rem', lineHeight: '1.4' }}>
+                                    <p className="dark:text-gray-400" style={{ color: 'var(--muted)', fontSize: '0.85rem', lineHeight: '1.4' }}>
                                         {plan.description}
                                     </p>
                                 </div>
                                 <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '1rem' }}>
-                                    <p style={{ fontWeight: 700, fontSize: '1.4rem', color: plan.highlight ? 'var(--accent)' : 'var(--foreground)' }}>
+                                    <p className="dark:text-white" style={{ fontWeight: 700, fontSize: '1.4rem', color: plan.highlight ? 'var(--accent)' : 'var(--foreground)' }}>
                                         {price.display}
                                     </p>
-                                    <p style={{ color: 'var(--muted)', fontSize: '0.75rem' }}>/month</p>
+                                    <p className="dark:text-gray-400" style={{ color: 'var(--muted)', fontSize: '0.75rem' }}>/month</p>
                                 </div>
                             </div>
 
                             <ul style={{ margin: '0 0 1.25rem', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                {plan.features.map((feature: string, i: number) => (
-                                    <li key={i} style={{ color: 'var(--muted)', fontSize: '0.85rem', display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                                {displayFeatures.map((feature: string, i: number) => (
+                                    <li key={i} className="dark:text-gray-300" style={{ color: 'var(--muted)', fontSize: '0.85rem', display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
                                         <span style={{ color: 'var(--accent)', flexShrink: 0 }}>✓</span>
                                         {feature}
                                     </li>

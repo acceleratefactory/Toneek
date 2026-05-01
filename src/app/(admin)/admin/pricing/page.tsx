@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 export default async function AdminPricingPage() {
   const { data: tiers, error } = await adminClient
     .from('subscription_tiers')
-    .select('id, name, description, prices')
+    .select('id, name, description, prices, routine_tier')
     .order('sort_order', { ascending: true })
 
   return (

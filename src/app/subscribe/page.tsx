@@ -21,21 +21,23 @@ export default async function SubscribePage({
 
     if (!assessment_id) redirect('/assessment')
 
-    // Fetch assessment to get country → currency and formula
+    // Fetch assessment to get country → currency, formula, and routine expectation
     const { data: assessment, error } = await adminClient
         .from('skin_assessments')
-        .select('id, user_id, country_of_residence, formula_code, skin_os_score')
+        .select('id, user_id, country_of_residence, formula_code, skin_os_score, routine_expectation')
         .eq('id', assessment_id)
         .single()
 
     if (error || !assessment) redirect('/assessment')
 
     const currency = resolveCurrency(assessment.country_of_residence ?? 'Nigeria')
+    const routine_tier = assessment.routine_expectation ?? 'just_one'
 
-    // Fetch dynamic plans from the database directly
+    // Fetch dynamic plans from the database directly, matching the routine tier
     const { data: plansData, error: plansError } = await adminClient
         .from('subscription_tiers')
         .select('*')
+        .eq('routine_tier', routine_tier)
         .order('sort_order', { ascending: true })
 
     if (plansError || !plansData) {
@@ -63,11 +65,23 @@ export default async function SubscribePage({
                     </div>
                 </div>
 
+                <div className="text-center py-4">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                        You selected: {routine_tier === 'just_one' ? 'Just one product' : routine_tier === 'two_to_three' ? 'Two to three products' : 'Whatever it takes'}
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {routine_tier === 'just_one' && 'Prices include your bespoke formula only.'}
+                        {routine_tier === 'two_to_three' && 'Prices include your formula + cleanser + moisturiser, all personalised to your skin and climate.'}
+                        {routine_tier === 'whatever_it_takes' && 'Prices include your full 4-product routine, all personalised to your skin and climate.'}
+                    </p>
+                </div>
+
                 <SubscribePlans
                     assessmentId={assessment_id}
                     userId={assessment.user_id ?? null}
                     currency={currency}
                     plans={plansData || []}
+                    routineTier={routine_tier}
                 />
 
                 <p className="text-center text-gray-400 dark:text-gray-500 text-[11px] mt-6 max-w-md mx-auto leading-relaxed font-medium">
