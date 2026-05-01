@@ -17,7 +17,7 @@ export function generateProtocol(input: ProtocolInput) {
 
   // Is this a restoration protocol formula?
   const is_restoration = formula_tier === 'restoration' || 
-                         (formula_code && formula_code.startsWith('RP-'))
+                         (formula_code ? formula_code.startsWith('RP-') : false)
 
   switch (routine_expectation) {
     case 'just_one':
