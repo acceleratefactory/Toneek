@@ -34,6 +34,17 @@ export default async function AdminCustomersPage({
   const { tab = 'all' } = await searchParams
   const { customers, flagged } = await getCustomers(tab)
 
+  // Fetch dynamic plan names
+  const { data: tiers } = await adminClient.from('subscription_tiers').select('id, name')
+  const PLAN_LABELS: Record<string, string> = {
+      essentials: 'Essentials',
+      full_protocol: 'Full Protocol',
+      restoration: 'Restoration Protocol',
+  }
+  if (tiers) {
+      tiers.forEach(t => { PLAN_LABELS[t.id] = t.name })
+  }
+
   return (
     <div className="space-y-6 text-gray-800">
       
@@ -188,7 +199,7 @@ export default async function AdminCustomersPage({
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-mono font-bold text-toneek-brown">{formula}</div>
-                          <div className="text-xs text-gray-500 mt-0.5">Tier: {c.subscription_tier?.replace(/_/g, ' ') ?? 'None'}</div>
+                          <div className="text-xs text-gray-500 mt-0.5">Tier: {PLAN_LABELS[c.subscription_tier ?? ''] ?? c.subscription_tier?.replace(/_/g, ' ') ?? 'None'}</div>
                           <span className={`mt-1.5 px-2 py-0.5 inline-flex text-[10px] font-bold uppercase tracking-wider rounded border ${
                             c.subscription_status === 'active' ? 'bg-toneek-sage border-toneek-sage text-toneek-forest' : 'bg-toneek-cream border-toneek-lightgray text-toneek-brown'
                           }`}>

@@ -10,6 +10,17 @@ async function getPayments() {
 
   if (error) console.error("Error fetching payments log:", error)
 
+  // Fetch dynamic plan names
+  const { data: tiers } = await adminClient.from('subscription_tiers').select('id, name')
+  const PLAN_LABELS: Record<string, string> = {
+      essentials: 'Essentials',
+      full_protocol: 'Full Protocol',
+      restoration: 'Restoration Protocol',
+  }
+  if (tiers) {
+      tiers.forEach(t => { PLAN_LABELS[t.id] = t.name })
+  }
+
   // Map profile names manually
   const enriched = await Promise.all((orders ?? []).map(async (o: any) => {
     let name = 'Unknown Customer'
@@ -20,7 +31,7 @@ async function getPayments() {
        if (profile?.whatsapp) contactDetail = profile.whatsapp
        else if (profile?.phone) contactDetail = profile.phone
     }
-    return { ...o, customer_name: name, customer_contact: contactDetail }
+    return { ...o, customer_name: name, customer_contact: contactDetail, resolved_plan_tier: PLAN_LABELS[o.plan_tier ?? ''] ?? o.plan_tier?.replace(/_/g, ' ') }
   }))
 
   return enriched
@@ -81,7 +92,7 @@ export default async function AdminPaymentsPage() {
                      {payment.currency} {payment.payment_amount?.toLocaleString() || '—'}
                    </td>
                    <td className="px-6 py-4 whitespace-nowrap text-xs uppercase font-semibold text-gray-500 tracking-wider">
-                     {payment.plan_tier?.replace(/_/g, ' ')}
+                     {payment.resolved_plan_tier}
                    </td>
                    <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <span className={`px-2 py-1 inline-flex text-[10px] uppercase tracking-wider font-bold rounded-md border ${
