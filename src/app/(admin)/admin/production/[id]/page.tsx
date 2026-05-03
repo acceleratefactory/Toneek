@@ -25,6 +25,18 @@ export default async function ProductionRunDetailPage({
 
   if (!run) notFound()
 
+  const isObject = !Array.isArray(run.batches) && run.batches !== null
+  const formulaBatches = isObject ? run.batches.formula_batches || [] : run.batches || []
+  const companionCounts = isObject ? run.batches.companion_products || {} : {}
+
+  const skus = [
+    { sku: 'TNK-CLN-100', name: 'Toneek Barrier Cleanser 100ml' },
+    { sku: 'TNK-MST-50', name: 'Toneek Lightweight Moisturiser 50ml' },
+    { sku: 'TNK-SPF-30', name: 'Toneek Mineral SPF 50 30ml' },
+    { sku: 'TNK-TON-BRT', name: 'Toneek Brightening Toner 30ml' },
+    { sku: 'TNK-TON-HYD', name: 'Toneek Hydrating Toner 30ml' },
+  ]
+
   return (
     <div className="space-y-8" style={{ color: '#0f0f0f' }}>
       
@@ -64,7 +76,7 @@ export default async function ProductionRunDetailPage({
         </div>
         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
            <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Total Formulas Batched</p>
-           <p className="text-3xl font-black text-gray-900 mt-2">{Array.isArray(run.batches) ? run.batches.length : 0}</p>
+           <p className="text-3xl font-black text-gray-900 mt-2">{formulaBatches.length}</p>
         </div>
         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
            <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Completed At</p>
@@ -79,7 +91,7 @@ export default async function ProductionRunDetailPage({
          </div>
          <div className="p-6">
             <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-              {Array.isArray(run.batches) && run.batches.map((batch: any, index: number) => (
+              {formulaBatches.map((batch: any, index: number) => (
                 <div key={index} className="bg-gray-50 rounded-lg p-5 border border-gray-200">
                   <div className="flex justify-between items-center mb-3">
                     <span className="font-bold text-lg text-gray-900">{batch.formula_code}</span>
@@ -117,6 +129,39 @@ export default async function ProductionRunDetailPage({
             </div>
          </div>
       </div>
+
+      {/* ── COMPANION PRODUCTS ARCHIVE ── */}
+      {Object.keys(companionCounts).length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mt-8">
+           <div className="bg-gray-50 border-b border-gray-200 px-6 py-4">
+             <h2 className="font-bold text-gray-900">Companion Products Pulled</h2>
+           </div>
+           <div className="p-0">
+             <table className="min-w-full divide-y divide-gray-200">
+               <thead className="bg-white">
+                 <tr>
+                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase">Product</th>
+                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 tracking-wide uppercase">SKU</th>
+                   <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 tracking-wide uppercase">Units Pulled</th>
+                 </tr>
+               </thead>
+               <tbody className="bg-white divide-y divide-gray-100">
+                 {skus.map(({ sku, name }) => {
+                   const count = companionCounts[sku] || 0
+                   if (count === 0) return null
+                   return (
+                     <tr key={sku} className="hover:bg-gray-50/50 transition-colors">
+                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{name}</td>
+                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">{sku}</td>
+                       <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">{count}</td>
+                     </tr>
+                   )
+                 })}
+               </tbody>
+             </table>
+           </div>
+        </div>
+      )}
     </div>
   )
 }
