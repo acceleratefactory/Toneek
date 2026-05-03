@@ -5,6 +5,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import SubscriptionActions from '@/components/dashboard/SubscriptionActions'
+import { adminClient } from '@/lib/supabase/admin'
 
 export const metadata = { title: 'My Plan — Toneek' }
 
@@ -67,6 +68,12 @@ export default async function SubscriptionPage() {
         .limit(1)
         .maybeSingle()
 
+    const { data: tiers } = await adminClient.from('subscription_tiers').select('id, name')
+    const DYNAMIC_PLAN_LABELS: Record<string, string> = { ...PLAN_LABELS }
+    if (tiers) {
+        tiers.forEach(t => { DYNAMIC_PLAN_LABELS[t.id] = t.name })
+    }
+
     if (!subscription) {
         if (assessment?.id) {
             redirect(`/subscribe?assessment_id=${assessment.id}`)
@@ -91,7 +98,7 @@ export default async function SubscriptionPage() {
         : `${weeksActive} week${weeksActive !== 1 ? 's' : ''} (Treatment weeks begin on delivery)`
 
     const details = [
-        { label: 'Plan',           value: PLAN_LABELS[subscription.plan_tier ?? ''] ?? subscription.plan_tier },
+        { label: 'Plan',           value: DYNAMIC_PLAN_LABELS[subscription.plan_tier ?? ''] ?? subscription.plan_tier },
         { label: 'Formula',        value: assessment?.formula_code ?? '—' },
         { label: weeksLabel,       value: weeksValue },
         { label: 'Monthly amount', value: monthlyAmount ? `${symbol}${monthlyAmount.toLocaleString()}` : '—' },
@@ -132,7 +139,7 @@ export default async function SubscriptionPage() {
                             Current plan
                         </p>
                         <p className="font-bold text-2xl text-gray-900 dark:text-gray-100">
-                            {PLAN_LABELS[subscription.plan_tier ?? ''] ?? subscription.plan_tier}
+                            {DYNAMIC_PLAN_LABELS[subscription.plan_tier ?? ''] ?? subscription.plan_tier}
                         </p>
                     </div>
                     <span style={{

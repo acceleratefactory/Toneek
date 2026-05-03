@@ -5,6 +5,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import ProfileForm from '@/components/dashboard/ProfileForm'
+import { adminClient } from '@/lib/supabase/admin'
 
 export const metadata = { title: 'My Profile — Toneek' }
 
@@ -51,11 +52,22 @@ export default async function ProfilePage() {
         ? eligibleAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
         : null
 
+    // Fetch dynamic plan names
+    const { data: tiers } = await adminClient.from('subscription_tiers').select('id, name')
+    const PLAN_LABELS: Record<string, string> = {
+        essentials: 'Essentials',
+        full_protocol: 'Full Protocol',
+        restoration: 'Restoration Protocol',
+    }
+    if (tiers) {
+        tiers.forEach(t => { PLAN_LABELS[t.id] = t.name })
+    }
+
     const READ_ONLY = [
         { label: 'Primary concern',    value: assessment?.primary_concern   ?? '—' },
         { label: 'Skin type',          value: assessment?.skin_type         ?? '—' },
         { label: 'Formula',            value: assessment?.formula_code      ?? '—' },
-        { label: 'Subscription plan',  value: profile?.subscription_tier   ?? '—' },
+        { label: 'Subscription plan',  value: PLAN_LABELS[profile?.subscription_tier ?? ''] ?? profile?.subscription_tier ?? '—' },
         { label: 'Account email',      value: profile?.email ?? session.user.email ?? '—' },
     ]
 

@@ -6,6 +6,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import LogDeliveryButton from '@/components/dashboard/LogDeliveryButton'
+import { adminClient } from '@/lib/supabase/admin'
 
 export const metadata = { title: 'My Orders — Toneek' }
 
@@ -76,6 +77,17 @@ export default async function OrdersPage() {
     const heldOrder = orders?.find(o => o.dispatch_held_reason)
 
     const SYMBOLS: Record<string, string> = { NGN: '₦', GBP: '£', USD: '$', EUR: '€', GHS: 'GH₵', CAD: 'CA$' }
+
+    // Fetch dynamic plan names
+    const { data: tiers } = await adminClient.from('subscription_tiers').select('id, name')
+    const PLAN_LABELS: Record<string, string> = {
+        essentials: 'Essentials',
+        full_protocol: 'Full Protocol',
+        restoration: 'Restoration Protocol',
+    }
+    if (tiers) {
+        tiers.forEach(t => { PLAN_LABELS[t.id] = t.name })
+    }
 
     return (
         <div className="flex flex-col gap-6 font-sans">
@@ -161,7 +173,7 @@ export default async function OrdersPage() {
                                         <div className="flex justify-between items-center">
                                             <span className="text-gray-500 dark:text-gray-400 text-xs">Plan</span>
                                             <span className="text-gray-700 dark:text-gray-300 text-xs capitalize">
-                                                {order.plan_tier.replace(/_/g, ' ')}
+                                                {PLAN_LABELS[order.plan_tier] ?? order.plan_tier.replace(/_/g, ' ')}
                                             </span>
                                         </div>
                                     )}

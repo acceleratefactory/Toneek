@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
 
     // ── Activate subscription (only if user_id exists) ────────────────────────
     if (order.user_id) {
-        await adminClient.from('subscriptions').insert({
+        const { error: subError } = await adminClient.from('subscriptions').insert({
             user_id:           order.user_id,
             plan_tier:         order.plan_tier,
             status:            'active',
@@ -100,14 +100,34 @@ export async function GET(request: NextRequest) {
             next_billing_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         })
 
+        if (subError) {
+            console.error('Failed to insert subscription:', subError)
+            return html(`<div class="box">
+                <div class="icon">❌</div>
+                <h2 class="warn">Subscription Activation Failed</h2>
+                <p>Payment was marked confirmed, but creating the subscription failed.</p>
+                <p style="font-size:12px;color:#999;margin-top:10px">${subError.message}</p>
+            </div>`)
+        }
+
         // Update profile subscription status
-        await adminClient
+        const { error: profileError } = await adminClient
             .from('profiles')
             .update({
                 subscription_status: 'active',
                 subscription_tier:   order.plan_tier,
             })
             .eq('id', order.user_id)
+            
+        if (profileError) {
+            console.error('Failed to update profile subscription status:', profileError)
+            return html(`<div class="box">
+                <div class="icon">❌</div>
+                <h2 class="warn">Profile Update Failed</h2>
+                <p>Subscription was created, but updating the user profile failed.</p>
+                <p style="font-size:12px;color:#999;margin-top:10px">${profileError.message}</p>
+            </div>`)
+        }
     }
 
     // ── Move order to pending_production ──────────────────────────────────────
