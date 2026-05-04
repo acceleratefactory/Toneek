@@ -154,24 +154,44 @@ export default function TodaysBrief({
     const daysSinceReceipt = clinical_dates.days_since_receipt ?? 0
     const expectation = assessment.routine_expectation || 'just_one'
     
-    const instructions = generateDoTodayInstructions(expectation, daysSinceReceipt, isRestoration)
+    const todayInstructions = generateDoTodayInstructions(expectation, daysSinceReceipt, isRestoration)
 
-    if (Array.isArray(instructions)) {
-      return (
-        <div className="flex flex-col gap-1.5 mb-4">
-          {instructions.map((line, i) => {
-             const isHeading = line.endsWith(':')
-             return (
-               <p key={i} className={`text-[13px] leading-relaxed ${isHeading ? 'font-bold mt-2 text-[#C87D3E]' : 'text-[#F7F1EB]'}`}>
-                 {line}
-               </p>
-             )
-          })}
-        </div>
-      )
-    }
+    let stepCount = 0
+    return (
+      <div className="mb-4">
+        {Array.isArray(todayInstructions.do_today) ? (
+          <div className="flex flex-col gap-1.5">
+            {todayInstructions.do_today.map((step, i) => {
+               const isHeading = step.endsWith(':')
+               const cleanStep = step.replace(/^\d+\.\s*/, '')
+               if (isHeading) {
+                 stepCount = 0 // reset counter for next section
+                 return (
+                   <p key={i} className="text-[13px] font-bold mt-2" style={{ color: '#C87D3E' }}>
+                     {cleanStep}
+                   </p>
+                 )
+               }
+               stepCount++
+               return (
+                 <div key={i} className="flex gap-2 text-[13px]" style={{ color: '#F7F1EB' }}>
+                   <span className="font-semibold min-w-[14px]" style={{ color: '#C87D3E' }}>{stepCount}.</span>
+                   <span className="opacity-90">{cleanStep}</span>
+                 </div>
+               )
+            })}
+          </div>
+        ) : (
+          <p className="text-[14px] leading-relaxed" style={{ color: '#F7F1EB' }}>{todayInstructions.do_today}</p>
+        )}
 
-    return <p className="text-[14px] leading-relaxed mb-4" style={{ color: '#F7F1EB' }}>{instructions}</p>
+        {todayInstructions.context && (
+          <p className="text-[12px] mt-3 italic" style={{ color: '#D4C5BE' }}>
+            {todayInstructions.context}
+          </p>
+        )}
+      </div>
+    )
   }
 
   // Render right column content

@@ -130,7 +130,8 @@ export default async function FormulaPage() {
             plan_tier,
             dispatch_held_reason,
             created_at,
-            dispatched_at
+            dispatched_at,
+            fourth_product_name
         `)
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false })
@@ -181,7 +182,8 @@ export default async function FormulaPage() {
         climate_zone: latest.climate_zone || '',
         skin_type: latest.skin_type || '',
         barrier_integrity: (latest.analysis_scores as any)?.barrier_integrity || 100,
-        analysis_scores: (latest.analysis_scores as any) || {}
+        analysis_scores: (latest.analysis_scores as any) || {},
+        latest_order_fourth_product_name: latestOrder?.fourth_product_name
     })
 
     // Generate the formula logic explanation paragraphs

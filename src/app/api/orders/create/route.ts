@@ -45,23 +45,7 @@ function getBankDetails(currency: string) {
 
 // ─── Route handler ────────────────────────────────────────────────────────────
 
-function determineFourthProduct(assessment: any): string {
-    const { primary_concern, climate_zone, skin_type, barrier_integrity } = assessment
-    
-    if (['equatorial', 'semi_arid', 'humid_tropical'].includes(climate_zone || '') && primary_concern === 'PIH') {
-        return 'toneek_mineral_spf_50'
-    }
-    
-    if ((skin_type === 'dry' || barrier_integrity < 60) && ['temperate_maritime', 'cold_continental'].includes(climate_zone || '')) {
-        return 'toneek_hydrating_toner'
-    }
-    
-    if (['PIH', 'tone'].includes(primary_concern || '')) {
-        return 'toneek_brightening_toner'
-    }
-    
-    return 'toneek_mineral_spf_50'
-}
+import { assignFourthProduct } from '@/lib/orders/assignFourthProduct'
 
 export async function POST(request: NextRequest) {
     try {
@@ -79,7 +63,7 @@ export async function POST(request: NextRequest) {
         // Get assessment to link formula_code to the order and determine companion products
         const { data: assessment } = await adminClient
             .from('skin_assessments')
-            .select('formula_code, routine_expectation, primary_concern, climate_zone, skin_type, barrier_integrity')
+            .select('formula_code, routine_expectation, primary_concern, climate_zone, skin_type, barrier_integrity, formula_tier, analysis_scores, medications, pregnant_or_breastfeeding')
             .eq('id', assessment_id)
             .single()
 
@@ -108,9 +92,27 @@ export async function POST(request: NextRequest) {
         const confirm_token = `${crypto.randomUUID()}-${crypto.randomUUID()}`
 
         const routine_tier = assessment?.routine_expectation || 'just_one'
-        const fourth_product = routine_tier === 'whatever_it_takes'
-            ? determineFourthProduct(assessment || {})
-            : null
+        
+        let fourth_product_sku = null
+        let fourth_product_name = null
+        let fourth_product_rationale = null
+
+        if (routine_tier === 'whatever_it_takes' && assessment) {
+            const assignment = assignFourthProduct({
+                primary_concern: assessment.primary_concern,
+                skin_type: assessment.skin_type,
+                climate_zone: assessment.climate_zone,
+                barrier_integrity: assessment.analysis_scores?.barrier_integrity ?? 75,
+                analysis_scores: assessment.analysis_scores ?? {},
+                formula_tier: assessment.formula_tier,
+                medications: assessment.medications ?? [],
+                pregnant_or_breastfeeding: assessment.pregnant_or_breastfeeding ?? false,
+            })
+
+            fourth_product_sku = assignment.sku
+            fourth_product_name = assignment.display_name
+            fourth_product_rationale = assignment.rationale
+        }
 
         // Create order (user_id may be null until OTP confirmed)
         const orderPayload: Record<string, any> = {
@@ -124,7 +126,9 @@ export async function POST(request: NextRequest) {
             payment_token_used: false,
             status: 'pending_payment',
             routine_tier,
-            fourth_product,
+            fourth_product: fourth_product_sku,
+            fourth_product_name,
+            fourth_product_rationale,
         }
 
         if (user_id)          orderPayload.user_id = user_id

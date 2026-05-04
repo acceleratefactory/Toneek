@@ -10,6 +10,7 @@ export interface ProtocolInput {
   skin_type: string
   barrier_integrity: number  // from analysis_scores
   analysis_scores: Record<string, number>
+  latest_order_fourth_product_name?: string | null
 }
 
 export interface ProtocolStep {
@@ -125,7 +126,7 @@ function generateMorningSteps(input: ProtocolInput, is_restoration: boolean): Pr
       product: 'Toneek Moisturiser',
       instruction: 'Apply a pea-sized amount to clean, dry skin.',
       timing: null,
-    })
+      })
   }
 
   const spf_note = climate_zone === 'humid_tropical' || climate_zone === 'equatorial' || climate_zone === 'semi_arid'
@@ -199,6 +200,10 @@ function generateEveningSteps(input: ProtocolInput, is_restoration: boolean): Pr
 
 function generateFullRoutineProtocol(input: ProtocolInput, is_restoration: boolean) {
   const fourth_product = getFourthProduct(input)
+  
+  // Override the product name with the canonical source from the database if available
+  const fourth_product_display_name = input.latest_order_fourth_product_name ?? fourth_product.name
+  
   const { skin_type, barrier_integrity, climate_zone } = input
 
   const fourth_is_spf = fourth_product.name.toLowerCase().includes('spf')
@@ -238,7 +243,7 @@ function generateFullRoutineProtocol(input: ProtocolInput, is_restoration: boole
   if (fourth_is_morning) {
     morning_steps.push({
       step: morning_steps.length + 1,
-      product: fourth_product.name,
+      product: fourth_product_display_name,
       instruction: fourth_is_spf
         ? 'Apply as the final morning step. Two finger-lengths for full face coverage. This is your daily UV protection.'
         : fourth_product.morning_instruction || 'Apply after moisturiser.',
@@ -267,7 +272,7 @@ function generateFullRoutineProtocol(input: ProtocolInput, is_restoration: boole
   if (fourth_is_evening) {
     evening_steps.push({
       step: 2,
-      product: fourth_product.name,
+      product: fourth_product_display_name,
       instruction: fourth_product.evening_instruction || 'Apply after cleansing. Pat gently into skin.',
     })
   }
@@ -298,7 +303,7 @@ function generateFullRoutineProtocol(input: ProtocolInput, is_restoration: boole
       title: 'EVENING ROUTINE',
       steps: evening_steps,
     },
-    fourth_product_note: `Your ${fourth_product.name} is included because: ${fourth_product.rationale}`,
+    fourth_product_note: `Your ${fourth_product_display_name} is included because: ${fourth_product.rationale}`,
     what_to_avoid: getAvoidList(input),
     first_week_note: getFirstWeekNote(input, is_restoration),
     general_notes: [
