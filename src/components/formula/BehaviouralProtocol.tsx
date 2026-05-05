@@ -211,6 +211,15 @@ export default function BehaviouralProtocol({
                   {line}
                 </p>
               ))}
+              <div className="mt-3 pt-3 border-t border-toneek-amber/20">
+                <a
+                  href="/dashboard/checkin?mode=emergency"
+                  className="inline-flex items-center gap-1.5 text-[12px] font-bold text-red-600 dark:text-red-400 hover:underline"
+                >
+                  <span>⚠</span>
+                  Experiencing a reaction? Report a concern immediately
+                </a>
+              </div>
             </div>
           </div>
         </div>

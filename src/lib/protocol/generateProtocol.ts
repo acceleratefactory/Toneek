@@ -384,10 +384,10 @@ function getFirstWeekNote(input: ProtocolInput, is_restoration: boolean): string
 
   const base = 'Mild tingling or warmth in the first few applications is normal and expected. This is not a reaction — it is the actives making contact with the skin.'
 
-  const reaction_note = 'If you experience burning, redness that does not fade within 20 minutes, or visible irritation: stop application for 48 hours and complete your check-in immediately.'
+  const reaction_note = 'If you experience burning, redness that does not fade within 20 minutes, or visible irritation: stop application for 48 hours and use the "Report a Concern" link on your dashboard to log it immediately.'
 
   const multi_product_note = routine_expectation !== 'just_one'
-    ? '\n\nFor multi-product routines: introduce each product one at a time over the first week. Use just the cleanser for days 1–2. Add moisturiser on day 3. Add your formula on day 5. This identifies any individual product reactions.'
+    ? '\n\nFor multi-product routines: introduce each product one at a time over the first week. Use just the cleanser for days 1–2. Add moisturiser on day 3. Add your formula on day 3. This identifies any individual product reactions.'
     : ''
 
   const restoration_note = is_restoration

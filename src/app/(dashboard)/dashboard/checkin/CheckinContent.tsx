@@ -18,7 +18,7 @@ const CHANGES_OPTIONS = [
     { id: 'nothing_significant',       label: 'Nothing significant'                   },
 ]
 
-export default function CheckinContent({ week }: { week: number }) {
+export default function CheckinContent({ week, isEmergency = false }: { week: number; isEmergency?: boolean }) {
     const [step,            setStep]            = useState(1)
     const [score,           setScore]           = useState<number | null>(null)
     const [hasReaction,     setHasReaction]     = useState<boolean | null>(null)
@@ -87,6 +87,7 @@ export default function CheckinContent({ week }: { week: number }) {
                     new_city: movedCity ? newCity : null,
                     new_country: movedCity ? newCountry : null,
                     photo_url,
+                    is_emergency: isEmergency,
                 }),
             })
 
@@ -142,8 +143,12 @@ export default function CheckinContent({ week }: { week: number }) {
 
             {/* Header */}
             <div className="bg-white dark:bg-[#261B18] pt-6 px-10 rounded-b-xl shadow-sm border-b border-gray-200 dark:border-[#3A2820] -mt-8 sm:-mt-8 mx-[-1rem] sm:mx-[-2rem] mb-2 relative pb-6">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Week {week} Check-in</h1>
-                <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Step {step} of {TOTAL_STEPS}</p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  {isEmergency ? 'Emergency Reaction Report' : `Week ${week} Check-in`}
+                </h1>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+                  {isEmergency ? 'Complete all steps to submit your report to the clinical team' : `Step ${step} of ${TOTAL_STEPS}`}
+                </p>
             </div>
 
             {/* Progress bar */}

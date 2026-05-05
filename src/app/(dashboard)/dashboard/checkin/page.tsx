@@ -21,7 +21,11 @@ function getCurrentCheckinWeek(dates: ClinicalDates, outcomes: any[]): number | 
   return null
 }
 
-export default async function CheckinPage() {
+export default async function CheckinPage({
+  searchParams,
+}: {
+  searchParams: { mode?: string; week?: string }
+}) {
     const cookieStore = await cookies()
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -40,6 +44,8 @@ export default async function CheckinPage() {
         redirect('/login')
     }
 
+    const isEmergency = searchParams?.mode === 'emergency'
+
     const { data: latestOrder } = await adminClient
         .from('orders')
         .select('received_at')
@@ -56,6 +62,25 @@ export default async function CheckinPage() {
     const clinical_dates = calculateClinicalDates(latestOrder?.received_at ?? null)
     const currentCheckinWeek = getCurrentCheckinWeek(clinical_dates, outcomes || [])
 
+    // ── Emergency mode: bypass date lock, always show form ───────────
+    if (isEmergency && clinical_dates.has_received) {
+        return (
+            <Suspense fallback={<div style={{ padding: '2rem', color: '#888' }}>Loading…</div>}>
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-6 flex items-start gap-3">
+                    <span className="text-red-600 text-lg flex-shrink-0">⚠</span>
+                    <div>
+                        <p className="text-sm font-bold text-red-700 dark:text-red-400">Emergency Reaction Report</p>
+                        <p className="text-xs text-red-600 dark:text-red-500 mt-0.5">
+                            Please describe your reaction below. Stop the suspected product and do not apply your formula until you have submitted this report.
+                        </p>
+                    </div>
+                </div>
+                <CheckinContent week={currentCheckinWeek ?? 2} isEmergency={true} />
+            </Suspense>
+        )
+    }
+
+    // ── Standard schedule: no check-in due ───────────────────────────
     if (!currentCheckinWeek) {
         return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '2rem' }}>
@@ -80,3 +105,4 @@ export default async function CheckinPage() {
         </Suspense>
     )
 }
+
