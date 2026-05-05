@@ -9,6 +9,7 @@ export default function AdminNav() {
   const links = [
     { name: 'System Health', href: '/admin' },
     { name: 'Production', href: '/admin/production' },
+    { name: 'Concern Reports', href: '/admin/concern-reports', urgent: true },
     { name: 'Orders', href: '/admin/orders' },
     { name: 'Customers', href: '/admin/customers' },
     { name: 'Payments', href: '/admin/payments' },
@@ -30,13 +31,19 @@ export default function AdminNav() {
                   <Link
                     key={link.name}
                     href={link.href}
-                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                    className={`inline-flex items-center gap-1.5 px-1 pt-1 border-b-2 text-sm font-medium ${
                       isActive
                         ? 'border-green-500 text-gray-900'
                         : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                     }`}
                   >
                     {link.name}
+                    {(link as any).urgent && (
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+                      </span>
+                    )}
                   </Link>
                 )
               })}
