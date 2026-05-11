@@ -124,9 +124,71 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // ── Phase D: Automatically update formula to barrier-safe conservative ──
+    // No new assessment form needed. The system adapts the formula immediately
+    // the moment a concern is reported. The original formula is preserved so
+    // admin can restore it after resolution if appropriate.
+    const ADVERSE_SAFE_MAP: Record<string, string> = {
+      'LG-OA-01': 'LG-DH-01',  // humid/oily acne        → barrier repair
+      'LG-OB-01': 'LG-DB-01',  // humid/oily PIH         → conservative PIH
+      'LG-CA-01': 'LG-DH-01',  // humid/combo acne       → barrier repair
+      'LG-CB-01': 'LG-DB-01',  // humid/combo PIH        → conservative PIH
+      'LG-OH-01': 'LG-DH-01',  // humid/oily oiliness    → barrier repair
+      'AB-OA-01': 'AB-DH-01',  // arid/oily acne         → barrier repair
+      'AB-OB-01': 'AB-DB-01',  // arid/oily PIH          → conservative PIH
+      'GN-CA-01': 'GN-DH-01',  // general/combo          → barrier repair
+      'GN-CB-01': 'GN-NB-01',  // general/combo PIH      → conservative PIH
+      'GN-OT-01': 'GN-DH-01',  // general/oily           → barrier repair
+      'GN-NT-01': 'GN-DH-01',  // general/normal         → barrier repair
+      'GN-NB-01': 'GN-DH-01',  // general/normal PIH     → barrier repair
+      'M-OA-01':  'M-OB-01',   // male/oily              → conservative
+      'M-CA-01':  'GN-SN-01',  // male/combo acne        → sensitive/minimal
+      'RP-HT-02': 'RP-HT-01',  // restoration advanced   → restoration baseline
+      'RP-SA-02': 'RP-SA-01',  // restoration arid adv   → restoration baseline
+      'RP-HT-03': 'RP-HT-01',  // restoration optimised  → restoration baseline
+      'RP-SA-03': 'RP-SA-01',  // restoration arid opt   → restoration baseline
+    }
+
+    let autoAdjustedFormula: string | null = null
+    try {
+      const { data: currentAssessment } = await adminClient
+        .from('skin_assessments')
+        .select('id, formula_code, formula_tier')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (currentAssessment?.formula_code) {
+        const currentCode = currentAssessment.formula_code
+        const safeCode    = ADVERSE_SAFE_MAP[currentCode] ?? 'GN-SN-01'
+
+        // Only update if the formula actually changes (avoid redundant writes)
+        if (safeCode !== currentCode) {
+          await adminClient
+            .from('skin_assessments')
+            .update({
+              formula_code:            safeCode,
+              formula_tier:            'conservative',
+              formula_before_concern:  currentCode,   // preserve original for restore after resolution
+            })
+            .eq('id', currentAssessment.id)
+
+          autoAdjustedFormula = safeCode
+          console.log(`[Phase D] Formula auto-adjusted: ${currentCode} → ${safeCode} for user ${session.user.id}`)
+        }
+      }
+    } catch (err) {
+      // Non-fatal — concern is still saved even if formula update fails
+      console.error('Phase D formula auto-update failed (non-fatal):', err)
+    }
+
     // ── Fire immediate WhatsApp to admin ─────────────────────────────
     const severityEmoji = severity === 'severe' ? '🔴' : severity === 'moderate' ? '🟠' : '🟡'
-    const whatsappMessage = `${severityEmoji} URGENT — CONCERN REPORT\n\nCustomer: ${customerName}\nFormula: ${formulaCode}\nSeverity: ${severity.toUpperCase()}\nSuspected product: ${suspected_product}\nDay of protocol: ${day_of_protocol || 'Not specified'}\n\nReport:\n"${description}"\n\nReview now: ${adminUrl}`
+    const formulaAdjustNote = autoAdjustedFormula
+      ? `\n⚙️ Formula auto-adjusted: ${formulaCode} → ${autoAdjustedFormula} (conservative)`
+      : ''
+    const whatsappMessage = `${severityEmoji} URGENT — CONCERN REPORT\n\nCustomer: ${customerName}\nFormula: ${formulaCode}\nSeverity: ${severity.toUpperCase()}\nSuspected product: ${suspected_product}\nDay of protocol: ${day_of_protocol || 'Not specified'}${formulaAdjustNote}\n\nReport:\n"${description}"\n\nReview now: ${adminUrl}`
 
     await fireWhatsApp(whatsappMessage)
 
@@ -141,6 +203,7 @@ export async function POST(request: NextRequest) {
       photoUrl: photo_url,
       adminUrl,
       reportId: report?.id,
+      autoAdjustedFormula,
     })
 
     return NextResponse.json({ success: true, report_id: report?.id })
@@ -180,6 +243,7 @@ async function fireAdminEmail({
   photoUrl,
   adminUrl,
   reportId,
+  autoAdjustedFormula,
 }: any) {
   try {
     const { Resend } = await import('resend')
@@ -225,6 +289,11 @@ async function fireAdminEmail({
                 <td style="padding:8px 0;color:#6B7280;font-size:13px;font-weight:600;">Suspected Product</td>
                 <td style="padding:8px 0;color:#111827;font-size:13px;">${suspectedProduct}</td>
               </tr>
+              ${autoAdjustedFormula ? `
+              <tr style="background:#FEF3C7;">
+                <td style="padding:8px 0;color:#92400E;font-size:13px;font-weight:700;">⚙️ System Action</td>
+                <td style="padding:8px 0;color:#92400E;font-size:13px;font-weight:700;">Formula auto-adjusted: ${formulaCode} → ${autoAdjustedFormula} (conservative)</td>
+              </tr>` : ''}
               <tr>
                 <td style="padding:8px 0;color:#6B7280;font-size:13px;font-weight:600;">Day of Protocol</td>
                 <td style="padding:8px 0;color:#111827;font-size:13px;">${dayOfProtocol || 'Not specified'}</td>
