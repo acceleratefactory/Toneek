@@ -498,7 +498,7 @@ export default async function FormulaPage() {
                         )}
                         {latestConcernReport.status === 'open' && (
                             <p className="text-xs text-amber-700 mt-1">
-                                Our clinical team has been alerted and will respond shortly. If your symptoms worsen, please call your local health provider immediately.
+                                Our clinical team has been alerted and will review your report and get back to you shortly. Please continue to pause the suspected product in the meantime — we are on top of this.
                             </p>
                         )}
                         <a

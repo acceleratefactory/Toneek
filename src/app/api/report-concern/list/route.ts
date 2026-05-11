@@ -27,7 +27,37 @@ export async function GET(request: NextRequest) {
     .in('id', userIds)
 
   const profileMap = Object.fromEntries((profiles ?? []).map((p: any) => [p.id, p]))
-  const enriched = reports.map((r: any) => ({ ...r, profile: profileMap[r.user_id] ?? null }))
+
+  // For reports where formula_code was not saved (null or 'N/A'), look it up from skin_assessments
+  const missingFormulaUserIds = reports
+    .filter((r: any) => !r.formula_code || r.formula_code === 'N/A')
+    .map((r: any) => r.user_id)
+    .filter(Boolean)
+
+  const formulaFallbackMap: Record<string, string> = {}
+  if (missingFormulaUserIds.length > 0) {
+    const { data: assessments } = await adminClient
+      .from('skin_assessments')
+      .select('user_id, formula_code')
+      .in('user_id', missingFormulaUserIds)
+      .not('formula_code', 'is', null)
+      .order('created_at', { ascending: false })
+
+    // Keep only the most recent assessment per user
+    ;(assessments ?? []).forEach((a: any) => {
+      if (a.user_id && a.formula_code && !formulaFallbackMap[a.user_id]) {
+        formulaFallbackMap[a.user_id] = a.formula_code
+      }
+    })
+  }
+
+  const enriched = reports.map((r: any) => ({
+    ...r,
+    formula_code: (r.formula_code && r.formula_code !== 'N/A')
+      ? r.formula_code
+      : (formulaFallbackMap[r.user_id] ?? null),
+    profile: profileMap[r.user_id] ?? null,
+  }))
 
   return NextResponse.json({ reports: enriched })
 }
