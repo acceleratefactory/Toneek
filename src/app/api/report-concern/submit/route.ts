@@ -49,8 +49,20 @@ export async function POST(request: NextRequest) {
       .limit(1)
       .maybeSingle()
 
+    // Fall back to skin_assessments if formula_code not on order
+    let formulaCode = latestOrder?.formula_code ?? null
+    if (!formulaCode) {
+      const { data: assessment } = await adminClient
+        .from('skin_assessments')
+        .select('formula_code')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      formulaCode = assessment?.formula_code ?? 'N/A'
+    }
+
     const customerName = profile?.full_name ?? 'Unknown Customer'
-    const formulaCode  = latestOrder?.formula_code ?? 'N/A'
     const adminUrl     = `${process.env.NEXT_PUBLIC_BASE_URL}/admin/concern-reports`
 
     // ── Save to database ─────────────────────────────────────────────
