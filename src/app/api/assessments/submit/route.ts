@@ -16,6 +16,36 @@ export async function POST(request: NextRequest) {
     // Step 1: Apply trigger modifiers before calling rule engine
     const modified = applyTriggerModifiers(assessment)
 
+    // Step 1b: Phase D — check for adverse reaction history
+    // If this email belongs to an existing customer who had an adverse concern report,
+    // set adverse_reaction_flag so assign-formula routes to a barrier-safe formula.
+    if (assessment.email) {
+        try {
+            const { data: existingProfile } = await adminClient
+                .from('profiles')
+                .select('id')
+                .eq('email', assessment.email.toLowerCase().trim())
+                .maybeSingle()
+
+            if (existingProfile?.id) {
+                const { data: adverseReport } = await adminClient
+                    .from('concern_reports')
+                    .select('id')
+                    .eq('user_id', existingProfile.id)
+                    .eq('status', 'open')  // only active/unresolved concerns trigger override
+                    .maybeSingle()
+
+                if (adverseReport) {
+                    modified.adverse_reaction_flag = true
+                    console.log(`[Phase D] Adverse reaction flag set for user ${existingProfile.id}`)
+                }
+            }
+        } catch (err) {
+            // Non-fatal — if check fails, proceed with normal formula assignment
+            console.error('Adverse reaction check failed (non-fatal):', err)
+        }
+    }
+
     // Step 2: Call rule engine
     const formulaRes = await fetch(`${BASE_URL}/api/assign-formula`, {
         method: 'POST',

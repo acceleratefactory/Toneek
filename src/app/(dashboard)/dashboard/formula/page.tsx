@@ -215,6 +215,15 @@ export default async function FormulaPage() {
     const adherenceScore  = latestOutcome?.adherence_score ?? undefined
     const adherenceWeek   = latestOutcome?.check_in_week ?? undefined
 
+    // Fetch latest concern report for this user (Phase C — dashboard status)
+    const { data: latestConcernReport } = await adminClient
+        .from('concern_reports')
+        .select('id, status, severity, description, admin_notes, submitted_at, resolved_at')
+        .eq('user_id', session.user.id)
+        .order('submitted_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
     // Reformulation eligibility now determined by clinical_dates.review_date
     const isEligible = clinical_dates.has_received && clinical_dates.review_date && new Date() >= clinical_dates.review_date
     const eligibleDateStr = clinical_dates.review_date ? clinical_dates.review_date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Date confirmed on delivery'
@@ -446,6 +455,60 @@ export default async function FormulaPage() {
 
             {hasDueCheckin && (
                 <HeldOrderBanner checkinWeekRequired={dueCheckinWeek} />
+            )}
+
+            {/* ── CONCERN REPORT STATUS BANNER (Phase C) ── */}
+            {latestConcernReport && (
+                <div className={`mx-0 mb-4 rounded-xl border-2 overflow-hidden ${
+                    latestConcernReport.status === 'resolved'
+                        ? 'border-green-200 bg-green-50'
+                        : 'border-amber-200 bg-amber-50'
+                }`}>
+                    <div className={`px-5 py-3 flex items-center justify-between gap-3 ${
+                        latestConcernReport.status === 'resolved' ? 'bg-green-100' : 'bg-amber-100'
+                    }`}>
+                        <div className="flex items-center gap-2">
+                            <span className="text-lg">
+                                {latestConcernReport.status === 'resolved' ? '✅' : '⚠️'}
+                            </span>
+                            <p className={`text-sm font-bold ${
+                                latestConcernReport.status === 'resolved' ? 'text-green-800' : 'text-amber-800'
+                            }`}>
+                                {latestConcernReport.status === 'resolved'
+                                    ? 'Concern Resolved — Clinical Response Ready'
+                                    : 'Concern Report Under Review'}
+                            </p>
+                        </div>
+                        <span className={`text-xs font-medium ${
+                            latestConcernReport.status === 'resolved' ? 'text-green-600' : 'text-amber-600'
+                        }`}>
+                            {new Date(latestConcernReport.submitted_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                        </span>
+                    </div>
+                    <div className="px-5 py-4">
+                        <p className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">Your Report</p>
+                        <p className="text-sm text-gray-700 italic mb-3">&ldquo;{latestConcernReport.description}&rdquo;</p>
+                        {latestConcernReport.status === 'resolved' && latestConcernReport.admin_notes && (
+                            <>
+                                <p className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">Clinical Team Response</p>
+                                <div className="bg-white border border-green-100 rounded-lg p-3">
+                                    <p className="text-sm text-gray-800 leading-relaxed">{latestConcernReport.admin_notes}</p>
+                                </div>
+                            </>
+                        )}
+                        {latestConcernReport.status === 'open' && (
+                            <p className="text-xs text-amber-700 mt-1">
+                                Our clinical team has been alerted and will respond shortly. If your symptoms worsen, please call your local health provider immediately.
+                            </p>
+                        )}
+                        <a
+                            href="/dashboard/report-concern"
+                            className="inline-block mt-3 text-xs font-semibold text-[#2A0F06] underline underline-offset-2"
+                        >
+                            Submit a new concern report →
+                        </a>
+                    </div>
+                </div>
             )}
 
             {/* ── PHASE 2: HERO SECTION (2 CARDS 50/50) ── */}

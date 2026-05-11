@@ -44,6 +44,31 @@ export async function POST(request: NextRequest) {
     const customerName = profile?.full_name ?? 'Customer'
     const resolution   = admin_notes?.trim() || 'Our clinical team has reviewed your report and determined no further action is required at this time. Please continue monitoring your skin and contact us if symptoms persist.'
 
+    // ── Phase B: Write clinical decision back to the customer's profile ──
+    // 1. Store the clinical note on skin_assessments so formula generation
+    //    and future clinical reviews can read what happened and what was advised.
+    const clinicalNote = `[${new Date().toLocaleDateString('en-GB')}] Concern report resolved — Severity: ${report.severity}. Suspected: ${report.suspected_product}. Day: ${report.day_of_protocol || 'unknown'}. Clinical response: ${resolution}`
+
+    await adminClient
+      .from('skin_assessments')
+      .update({
+        clinical_notes:        clinicalNote,
+        is_flagged_for_review: false,   // unflag now that it is resolved
+      })
+      .eq('user_id', report.user_id)
+      .order('created_at', { ascending: false })
+
+    // 2. Update the adverse skin_outcomes record (check_in_week = 0)
+    //    with the resolution so the outcome history is complete end-to-end.
+    await adminClient
+      .from('skin_outcomes')
+      .update({
+        adverse_detail: `${report.description} | RESOLVED: ${resolution}`,
+      })
+      .eq('user_id', report.user_id)
+      .eq('check_in_week', 0)
+      .eq('check_in_channel', 'concern_report')
+
     // ── Notify customer via WhatsApp ─────────────────────────────────
     if (profile?.phone) {
       const message = `Hi ${customerName}, your concern report with Toneek has been reviewed by our clinical team.\n\n📋 Our response:\n"${resolution}"\n\nIf symptoms persist or worsen, please don't hesitate to report again via your dashboard. — Toneek Clinical Team`

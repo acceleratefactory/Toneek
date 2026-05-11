@@ -93,6 +93,30 @@ export async function POST(request: NextRequest) {
     // Step 4: Assign formula
     let formula_code = assignFormula(assessment, routing, confidence_score)
 
+    // Step 4b: Adverse reaction override (Phase D — clinical feedback loop)
+    // If the customer has a prior concern report adverse reaction on record,
+    // force a conservative barrier-safe formula and flag the tier accordingly.
+    // This mirrors the isotretinoin_flag pattern already in use.
+    if (assessment.adverse_reaction_flag) {
+        // Map current formula to its conservative barrier-safe equivalent
+        const ADVERSE_SAFE_MAP: Record<string, string> = {
+            'LG-OA-01': 'LG-DH-01',  // oily acne → barrier repair
+            'LG-OB-01': 'LG-DB-01',  // oily PIH → conservative PIH
+            'LG-CA-01': 'LG-DH-01',  // combo acne → barrier repair
+            'LG-CB-01': 'LG-DB-01',  // combo PIH → conservative PIH
+            'LG-OH-01': 'LG-DH-01',  // oily/oiliness → barrier repair
+            'AB-OA-01': 'AB-DH-01',  // arid oily → barrier repair
+            'AB-OB-01': 'AB-DB-01',  // arid oily PIH → conservative
+            'GN-CA-01': 'GN-DH-01',  // general combo → barrier repair
+            'GN-CB-01': 'GN-NB-01',  // general combo PIH → conservative
+            'GN-OT-01': 'GN-DH-01',  // general oily → barrier repair
+            'GN-NT-01': 'GN-DH-01',  // general normal → barrier repair
+            'M-OA-01':  'M-OB-01',   // male oily → conservative
+            'M-CA-01':  'GN-SN-01',  // male combo acne → sensitive/minimal
+        }
+        formula_code = ADVERSE_SAFE_MAP[formula_code] ?? 'GN-SN-01'
+    }
+
     // Step 5: Isotretinoin SA exclusion — swap formula if SA-containing
     if (assessment.isotretinoin_flag && SA_CONTAINING.includes(formula_code)) {
         formula_code = SA_FREE_MAP[formula_code] ?? 'GN-SN-01'
@@ -112,9 +136,11 @@ export async function POST(request: NextRequest) {
     const profile_segment = buildProfileSegment(assessment)
 
     // Step 9: Determine formula tier
-    const formula_tier =
-        confidence_score >= 0.7 ? 'optimised' :
-            confidence_score >= 0.4 ? 'standard' : 'conservative'
+    // If adverse reaction flag is set, force conservative regardless of confidence score
+    const formula_tier = assessment.adverse_reaction_flag
+        ? 'conservative'
+        : confidence_score >= 0.7 ? 'optimised'
+        : confidence_score >= 0.4 ? 'standard' : 'conservative'
 
     // Step 10: Log to rule_performance
     await logRulePerformance(formula_code)
@@ -170,6 +196,10 @@ function calculateRiskScore(assessment: any): number {
 
     // Concern complexity
     if ((assessment.secondary_concerns?.length ?? 0) >= 3) risk += 0.10
+
+    // Concern report adverse reaction history
+    // Set by assessments/submit when customer has an open/unresolved concern report
+    if (assessment.adverse_reaction_flag) risk += 0.25
 
     // Data quality inverse contribution
     const data_risk = 1.0 - calculateConfidenceScore(assessment)
