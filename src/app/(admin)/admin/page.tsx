@@ -14,6 +14,7 @@ async function getSystemHealth() {
     { count: flaggedAssessments },
     { data: allOrders },
     { data: allSubscriptions },
+    { data: openConcernReports },
   ] = await Promise.all([
     adminClient.from('subscriptions').select('*', { count: 'exact', head: true }),
     adminClient.from('subscriptions').select('*', { count: 'exact', head: true })
@@ -38,6 +39,11 @@ async function getSystemHealth() {
       .neq('status', 'cancelled'),
     adminClient.from('subscriptions')
       .select('created_at, status'),
+    adminClient.from('concern_reports')
+      .select('id, severity, description, day_of_protocol, formula_code, submitted_at, profiles!concern_reports_user_id_fkey(full_name)')
+      .eq('status', 'open')
+      .order('submitted_at', { ascending: false })
+      .limit(5),
   ])
 
   // Process historical data for interactive charts
@@ -63,7 +69,8 @@ async function getSystemHealth() {
     recentOutcomes: recentOutcomes ?? [],
     flaggedAssessments: flaggedAssessments ?? 0,
     historicalOrders,
-    historicalSubscriptions
+    historicalSubscriptions,
+    openConcernReports: openConcernReports ?? [],
   }
 }
 
@@ -263,6 +270,71 @@ export default async function AdminDashboardPage() {
         </div>
         
       </div>
+
+      {/* ── Concern Reports Card ── */}
+      <a
+        href="/admin/concern-reports"
+        className={`block bg-white rounded-xl shadow-sm border-2 overflow-hidden transition-all hover:shadow-md ${
+          data.openConcernReports.length > 0 ? 'border-red-300' : 'border-gray-100'
+        }`}
+      >
+        <div className={`px-6 py-4 flex items-center justify-between ${
+          data.openConcernReports.length > 0 ? 'bg-red-50' : 'bg-gray-50/50'
+        } border-b ${
+          data.openConcernReports.length > 0 ? 'border-red-100' : 'border-gray-100'
+        }`}>
+          <div className="flex items-center gap-3">
+            <span className="text-xl">⚠</span>
+            <h2 className="text-sm font-bold text-gray-800">Concern Reports</h2>
+            {data.openConcernReports.length > 0 && (
+              <span className="bg-red-600 text-white text-xs font-bold px-2.5 py-0.5 rounded-full animate-pulse">
+                {data.openConcernReports.length} open
+              </span>
+            )}
+          </div>
+          <span className="text-xs text-red-600 font-semibold hover:underline">
+            View all →
+          </span>
+        </div>
+        <div className="divide-y divide-gray-50">
+          {data.openConcernReports.length === 0 ? (
+            <div className="p-8 text-center">
+              <p className="text-gray-400 text-sm">✅ No open concern reports</p>
+            </div>
+          ) : (
+            data.openConcernReports.map((report: any) => {
+              const severityColor =
+                report.severity === 'severe'   ? 'bg-red-100 text-red-800 border-red-200' :
+                report.severity === 'moderate' ? 'bg-amber-100 text-amber-800 border-amber-200' :
+                                                 'bg-yellow-100 text-yellow-800 border-yellow-200'
+              return (
+                <div key={report.id} className="px-6 py-4 flex items-start justify-between gap-4 hover:bg-red-50/30 transition-colors">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <span className={`flex-shrink-0 mt-0.5 px-2 py-0.5 rounded text-xs font-bold border ${severityColor}`}>
+                      {report.severity}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-gray-900 truncate">
+                        {(report.profiles as any)?.full_name ?? 'Unknown'}
+                        <span className="font-normal text-gray-400 ml-2 text-xs">{report.formula_code ?? ''}</span>
+                      </p>
+                      <p className="text-xs text-gray-500 truncate mt-0.5">"{report.description}"</p>
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-xs text-gray-400">
+                      {report.day_of_protocol ? `Day ${report.day_of_protocol}` : '—'}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {new Date(report.submitted_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                </div>
+              )
+            })
+          )}
+        </div>
+      </a>
 
       {/* ── Row 3: Outcomes & Alerts (Preserving Functionality) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-12">
