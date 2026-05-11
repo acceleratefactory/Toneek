@@ -25,6 +25,7 @@ const PRODUCT_LABELS: Record<string, string> = {
 export default function AdminConcernReportsPage() {
   const [tab, setTab]         = useState('open')
   const [reports, setReports] = useState<any[]>([])
+  const [systemFlags, setSystemFlags] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [resolving, setResolving] = useState<string | null>(null)
   const [adminNotes, setAdminNotes] = useState<Record<string, string>>({})
@@ -34,7 +35,11 @@ export default function AdminConcernReportsPage() {
     setLoading(true)
     fetch(`/api/report-concern/list?tab=${tab}`)
       .then(r => r.json())
-      .then(d => { setReports(d.reports ?? []); setLoading(false) })
+      .then(d => { 
+        setReports(d.reports ?? [])
+        setSystemFlags(d.systemFlags ?? [])
+        setLoading(false) 
+      })
       .catch(() => setLoading(false))
   }, [tab])
 
@@ -81,6 +86,26 @@ export default function AdminConcernReportsPage() {
           </div>
         </div>
       </div>
+
+      {/* ── System Alerts (Phase F) ── */}
+      {systemFlags.length > 0 && (
+        <div className="bg-red-900 border border-red-950 rounded-xl p-5 shadow-sm text-white">
+          <h2 className="text-lg font-bold flex items-center gap-2 mb-3">
+            <span className="text-xl">🚨</span> System Intelligence Flags
+          </h2>
+          <div className="flex flex-col gap-3">
+            {systemFlags.map(flag => (
+              <div key={flag.id} className="bg-white/10 p-3 rounded-lg flex items-center gap-4">
+                <span className="font-bold text-red-200">{flag.formula_code}</span>
+                <span className="text-sm flex-1">
+                  {flag.adverse_report_count} adverse reports received across different customers. Chemist concentration review required.
+                </span>
+                <span className="text-xs text-white/50">{new Date(flag.flagged_at).toLocaleDateString()}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Urgency Banner ── */}
       {tab === 'open' && openCount > 0 && (

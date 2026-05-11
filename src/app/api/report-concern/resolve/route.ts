@@ -47,29 +47,43 @@ export async function POST(request: NextRequest) {
     const resolution   = admin_notes?.trim() || 'Our clinical team has reviewed your report and determined no further action is required at this time. Please continue monitoring your skin and contact us if symptoms persist.'
 
     // ── Phase B: Write clinical decision back to the customer's profile ──
-    // 1. Store the clinical note on skin_assessments so formula generation
-    //    and future clinical reviews can read what happened and what was advised.
-    const clinicalNote = `[${new Date().toLocaleDateString('en-GB')}] Concern report resolved — Severity: ${report.severity}. Suspected: ${report.suspected_product}. Day: ${report.day_of_protocol || 'unknown'}. Clinical response: ${resolution}`
+    // 1. Fetch the most recent assessment to read existing clinical_notes
+    //    so we can APPEND to them rather than overwrite. This preserves the
+    //    full longitudinal clinical history across all concern reports.
+    const { data: latestAssessment } = await adminClient
+      .from('skin_assessments')
+      .select('id, clinical_notes, flag_reason')
+      .eq('user_id', report.user_id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    const newEntry    = `[${new Date().toLocaleDateString('en-GB')} — ${report.severity.charAt(0).toUpperCase() + report.severity.slice(1)}] Concern report resolved — Suspected: ${report.suspected_product}. Day: ${report.day_of_protocol || 'unknown'}. Clinical response: ${resolution}`
+    const existing    = latestAssessment?.clinical_notes?.trim() ?? ''
+    const appendedNote = existing ? `${existing}\n${newEntry}` : newEntry
+
+    // Determine whether to unflag — chemist_review_required flag (set in Phase C)
+    // prevents auto-unflagging when 2+ adverse reports are on record.
+    const requiresChemist = latestAssessment?.flag_reason?.includes('Chemist review required') ?? false
 
     await adminClient
       .from('skin_assessments')
       .update({
-        clinical_notes:        clinicalNote,
-        is_flagged_for_review: false,   // unflag now that it is resolved
+        clinical_notes:        appendedNote,
+        is_flagged_for_review: requiresChemist ? true : false,
       })
-      .eq('user_id', report.user_id)
-      .order('created_at', { ascending: false })
+      .eq('id', latestAssessment?.id ?? '')
 
-    // 2. Update the adverse skin_outcomes record (check_in_week = 0)
-    //    with the resolution so the outcome history is complete end-to-end.
+    // 2. Update THIS concern report's specific skin_outcomes row.
+    // Phase B fix: use concern_report_id to target the exact row, not the
+    // generic check_in_week=0 filter which hits the wrong row when a customer
+    // has submitted multiple concern reports.
     await adminClient
       .from('skin_outcomes')
       .update({
         adverse_detail: `${report.description} | RESOLVED: ${resolution}`,
       })
-      .eq('user_id', report.user_id)
-      .eq('check_in_week', 0)
-      .eq('check_in_channel', 'concern_report')
+      .eq('concern_report_id', report_id)
 
     // ── Formula Decision (admin-controlled) ──────────────────────────
     // The formula was auto-set to conservative on concern submission.

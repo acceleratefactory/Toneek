@@ -59,5 +59,12 @@ export async function GET(request: NextRequest) {
     profile: profileMap[r.user_id] ?? null,
   }))
 
-  return NextResponse.json({ reports: enriched })
+  // Phase F: Fetch system-level formula flags (chemist review required)
+  const { data: systemFlags } = await adminClient
+    .from('rule_performance')
+    .select('*')
+    .eq('flag', 'concentration_review_required')
+    .order('updated_at', { ascending: false })
+
+  return NextResponse.json({ reports: enriched, systemFlags: systemFlags ?? [] })
 }

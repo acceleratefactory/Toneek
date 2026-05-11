@@ -93,12 +93,32 @@ export async function POST(request: NextRequest) {
     // Step 4: Assign formula
     let formula_code = assignFormula(assessment, routing, confidence_score)
 
-    // Step 4b: Adverse reaction override (Phase D — clinical feedback loop)
-    // If the customer has a prior concern report adverse reaction on record,
-    // force a conservative barrier-safe formula and flag the tier accordingly.
-    // This mirrors the isotretinoin_flag pattern already in use.
-    if (assessment.adverse_reaction_flag) {
-        // Map current formula to its conservative barrier-safe equivalent
+    // Phase E: Fetch permanent adverse formula history from DB
+    let isBlacklisted = false
+    let fallbackReason = ''
+
+    if (assessment.user_id) {
+        const { data: pastAssessment } = await adminClient
+            .from('skin_assessments')
+            .select('adverse_formula_history')
+            .eq('user_id', assessment.user_id)
+            .not('adverse_formula_history', 'is', null)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+
+        if (pastAssessment?.adverse_formula_history && Array.isArray(pastAssessment.adverse_formula_history)) {
+            if (pastAssessment.adverse_formula_history.includes(formula_code)) {
+                isBlacklisted = true
+                fallbackReason = `[Phase E] Formula ${formula_code} excluded — adverse history.`
+            }
+        }
+    }
+
+    // Step 4b: Adverse reaction override (Phase D/E — clinical feedback loop)
+    // If the customer has an active concern (adverse_reaction_flag) OR the assigned 
+    // formula is in their permanent blacklist, force a conservative barrier-safe formula.
+    if (assessment.adverse_reaction_flag || isBlacklisted) {
         const ADVERSE_SAFE_MAP: Record<string, string> = {
             'LG-OA-01': 'LG-DH-01',  // oily acne → barrier repair
             'LG-OB-01': 'LG-DB-01',  // oily PIH → conservative PIH
@@ -114,7 +134,14 @@ export async function POST(request: NextRequest) {
             'M-OA-01':  'M-OB-01',   // male oily → conservative
             'M-CA-01':  'GN-SN-01',  // male combo acne → sensitive/minimal
         }
-        formula_code = ADVERSE_SAFE_MAP[formula_code] ?? 'GN-SN-01'
+        
+        const safeCode = ADVERSE_SAFE_MAP[formula_code] ?? 'GN-SN-01'
+        
+        if (isBlacklisted) {
+            console.log(`${fallbackReason} Assigned ${safeCode} instead.`)
+        }
+        
+        formula_code = safeCode
     }
 
     // Step 5: Isotretinoin SA exclusion — swap formula if SA-containing
@@ -136,8 +163,8 @@ export async function POST(request: NextRequest) {
     const profile_segment = buildProfileSegment(assessment)
 
     // Step 9: Determine formula tier
-    // If adverse reaction flag is set, force conservative regardless of confidence score
-    const formula_tier = assessment.adverse_reaction_flag
+    // If adverse reaction flag or blacklist is set, force conservative regardless of confidence score
+    const formula_tier = (assessment.adverse_reaction_flag || isBlacklisted)
         ? 'conservative'
         : confidence_score >= 0.7 ? 'optimised'
         : confidence_score >= 0.4 ? 'standard' : 'conservative'

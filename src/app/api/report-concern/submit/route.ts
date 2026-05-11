@@ -87,42 +87,64 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: dbError.message }, { status: 500 })
     }
 
-    // ── Phase A: Feed back into the clinical profile ──────────────────
-    // 1. Flag skin_assessments so admin Customers section surfaces this customer
-    const flagReason = `Adverse reaction reported on Day ${day_of_protocol || '?'}: ${description.slice(0, 120)}`
-    await adminClient
+    // ── Phase A, C, D: Feed back into the clinical profile ──────────────────
+    // Phase C: Count how many concern reports exist for this user.
+    const { count: reportCount } = await adminClient
+      .from('concern_reports')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', session.user.id)
+
+    const isRepeat = (reportCount || 1) >= 2
+
+    // Phase D: Fetch current adverse_formula_history to append the new reaction
+    const { data: currentAssessment } = await adminClient
       .from('skin_assessments')
-      .update({
-        is_flagged_for_review: true,
-        flag_reason:           flagReason,
-      })
+      .select('id, adverse_formula_history')
       .eq('user_id', session.user.id)
       .order('created_at', { ascending: false })
-
-    // 2. Insert a skin_outcomes record marking adverse_reactions = true
-    // This means the check-in history permanently reflects the reaction
-    // even if the customer has not yet reached their scheduled check-in date.
-    // We use check_in_week = 0 to distinguish this from scheduled check-ins.
-    const { data: existingAdverse } = await adminClient
-      .from('skin_outcomes')
-      .select('id')
-      .eq('user_id', session.user.id)
-      .eq('check_in_week', 0)
+      .limit(1)
       .maybeSingle()
 
-    if (!existingAdverse) {
-      await adminClient.from('skin_outcomes').insert({
-        user_id:           session.user.id,
-        check_in_week:     0,
-        improvement_score: null,
-        adverse_reactions: true,
-        adverse_detail:    `Emergency concern report — Day ${day_of_protocol || 'unknown'}: ${description}`,
-        check_in_channel:  'concern_report',
-        recorded_at:       new Date().toISOString(),
-        anything_changed:  false,
-        change_detail:     null,
-      })
+    const currentHistory = Array.isArray(currentAssessment?.adverse_formula_history) 
+      ? currentAssessment!.adverse_formula_history 
+      : []
+    const updatedHistory = [...currentHistory, formulaCode]
+
+    // 1. Flag skin_assessments so admin Customers section surfaces this customer
+    const baseFlagReason = `Adverse reaction reported on Day ${day_of_protocol || '?'}: ${description.slice(0, 120)}`
+    const flagReason = isRepeat 
+      ? `Chemist review required — 2+ adverse reports on ${formulaCode}`
+      : baseFlagReason
+
+    const updatePayload = {
+      is_flagged_for_review: true,
+      flag_reason:           flagReason,
+      adverse_formula_history: updatedHistory,
     }
+
+    if (currentAssessment?.id) {
+      await adminClient.from('skin_assessments').update(updatePayload).eq('id', currentAssessment.id)
+    } else {
+      await adminClient.from('skin_assessments').update(updatePayload).eq('user_id', session.user.id)
+    }
+
+    // 2. Insert a skin_outcomes record for THIS specific concern report.
+    // Every concern gets its own row — linked by concern_report_id.
+    // This builds a complete longitudinal adverse reaction history.
+    // Phase B fix: removed the existingAdverse guard so multiple concerns
+    // are each permanently recorded, not silently dropped after the first.
+    await adminClient.from('skin_outcomes').insert({
+      user_id:           session.user.id,
+      check_in_week:     0,
+      improvement_score: null,
+      adverse_reactions: true,
+      adverse_detail:    `Emergency concern report — Day ${day_of_protocol || 'unknown'}: ${description}`,
+      check_in_channel:  'concern_report',
+      concern_report_id: report?.id ?? null,   // links this row to its specific report
+      recorded_at:       new Date().toISOString(),
+      anything_changed:  false,
+      change_detail:     null,
+    })
 
     // ── Phase D: Automatically update formula to barrier-safe conservative ──
     // No new assessment form needed. The system adapts the formula immediately
@@ -188,7 +210,8 @@ export async function POST(request: NextRequest) {
     const formulaAdjustNote = autoAdjustedFormula
       ? `\n⚙️ Formula auto-adjusted: ${formulaCode} → ${autoAdjustedFormula} (conservative)`
       : ''
-    const whatsappMessage = `${severityEmoji} URGENT — CONCERN REPORT\n\nCustomer: ${customerName}\nFormula: ${formulaCode}\nSeverity: ${severity.toUpperCase()}\nSuspected product: ${suspected_product}\nDay of protocol: ${day_of_protocol || 'Not specified'}${formulaAdjustNote}\n\nReport:\n"${description}"\n\nReview now: ${adminUrl}`
+    const repeatAlert = isRepeat ? '⚠️ REPEAT ADVERSE REPORTER — 2nd+ concern\n' : ''
+    const whatsappMessage = `${repeatAlert}${severityEmoji} URGENT — CONCERN REPORT\n\nCustomer: ${customerName}\nFormula: ${formulaCode}\nSeverity: ${severity.toUpperCase()}\nSuspected product: ${suspected_product}\nDay of protocol: ${day_of_protocol || 'Not specified'}${formulaAdjustNote}\n\nReport:\n"${description}"\n\nReview now: ${adminUrl}`
 
     await fireWhatsApp(whatsappMessage)
 
@@ -204,7 +227,40 @@ export async function POST(request: NextRequest) {
       adminUrl,
       reportId: report?.id,
       autoAdjustedFormula,
+      isRepeat,
     })
+
+    // ── Phase F: Systemic Adaptation (Population-Level Pattern Detection) ──
+    try {
+      if (formulaCode && formulaCode !== 'N/A') {
+        const { count: globalFormulaCount } = await adminClient
+          .from('concern_reports')
+          .select('*', { count: 'exact', head: true })
+          .eq('formula_code', formulaCode)
+
+        if (globalFormulaCount && globalFormulaCount >= 5) {
+          // Upsert to rule_performance table
+          await adminClient
+            .from('rule_performance')
+            .upsert({
+              formula_code: formulaCode,
+              adverse_report_count: globalFormulaCount,
+              flag: 'concentration_review_required',
+              flagged_at: new Date().toISOString(),
+              notes: 'System flagged due to 5+ adverse reports across different customers.',
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'formula_code' })
+          
+          // Send one-time system alert when crossing the exact threshold
+          if (globalFormulaCount === 5) {
+            const systemAlert = `⚠️ SYSTEM FLAG — ${formulaCode} has received 5 adverse reaction reports across different customers. A chemist concentration review is recommended.`;
+            await fireWhatsApp(systemAlert);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Phase F systemic adaptation error:', err)
+    }
 
     return NextResponse.json({ success: true, report_id: report?.id })
 
@@ -244,6 +300,7 @@ async function fireAdminEmail({
   adminUrl,
   reportId,
   autoAdjustedFormula,
+  isRepeat,
 }: any) {
   try {
     const { Resend } = await import('resend')
@@ -255,13 +312,21 @@ async function fireAdminEmail({
 
     const severityLabel = severity.charAt(0).toUpperCase() + severity.slice(1)
 
+    const repeatBanner = isRepeat ? `
+      <div style="background:#B91C1C;padding:12px 24px;">
+        <p style="color:white;margin:0;font-size:14px;font-weight:700;">
+          ⚠️ REPEAT ADVERSE REPORTER — Chemist review required
+        </p>
+      </div>
+    ` : ''
+
     await resend.emails.send({
       from: process.env.FROM_EMAIL || 'notifications@toneek.com',
       to:   process.env.ADMIN_EMAIL || 'admin@toneek.com',
       subject: `⚠️ Urgent Concern Report — ${customerName} (${severityLabel})`,
       html: `
         <div style="font-family:system-ui;max-width:600px;margin:0 auto;border:2px solid ${severityColor};border-radius:12px;overflow:hidden;">
-          
+          ${repeatBanner}
           <div style="background:${severityColor};padding:20px 24px;">
             <h1 style="color:white;margin:0;font-size:20px;">
               ⚠️ Urgent Concern Report — Action Required
