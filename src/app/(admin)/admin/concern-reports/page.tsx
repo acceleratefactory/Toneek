@@ -28,6 +28,7 @@ export default function AdminConcernReportsPage() {
   const [loading, setLoading] = useState(true)
   const [resolving, setResolving] = useState<string | null>(null)
   const [adminNotes, setAdminNotes] = useState<Record<string, string>>({})
+  const [formulaDecision, setFormulaDecision] = useState<Record<string, string>>({})
 
   useEffect(() => {
     setLoading(true)
@@ -44,7 +45,11 @@ export default function AdminConcernReportsPage() {
     const res = await fetch('/api/report-concern/resolve', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ report_id: reportId, admin_notes: adminNotes[reportId] ?? '' }),
+      body: JSON.stringify({
+        report_id:        reportId,
+        admin_notes:      adminNotes[reportId] ?? '',
+        formula_decision: formulaDecision[reportId] ?? 'keep_conservative',
+      }),
     })
     if (res.ok) {
       setReports(prev => prev.map(r => r.id === reportId ? { ...r, status: 'resolved', admin_notes: adminNotes[reportId] } : r))
@@ -229,6 +234,61 @@ export default function AdminConcernReportsPage() {
 
                     {isOpen ? (
                       <div className="flex flex-col gap-3">
+
+                        {/* ── Formula Decision ── */}
+                        <div>
+                          <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">
+                            Formula Decision After Resolution
+                          </label>
+                          <div className="flex flex-col gap-2">
+                            {[
+                              {
+                                value: 'keep_conservative',
+                                label: 'Keep conservative formula',
+                                desc:  'Customer stays on the barrier-safe formula. Recommended if reaction was moderate or severe.',
+                                color: 'border-amber-300 bg-amber-50',
+                                active: 'border-amber-500 bg-amber-100',
+                              },
+                              {
+                                value: 'restore_original',
+                                label: 'Restore original formula',
+                                desc:  'Reverts to the formula the customer had before the concern was reported. Use only when reaction was mild and resolved.',
+                                color: 'border-blue-200 bg-blue-50',
+                                active: 'border-blue-500 bg-blue-100',
+                              },
+                              {
+                                value: 'flag_for_chemist',
+                                label: 'Flag for chemist review',
+                                desc:  'Keeps conservative formula and flags this customer for a concentration adjustment review by your chemist.',
+                                color: 'border-purple-200 bg-purple-50',
+                                active: 'border-purple-500 bg-purple-100',
+                              },
+                            ].map(opt => {
+                              const selected = (formulaDecision[report.id] ?? 'keep_conservative') === opt.value
+                              return (
+                                <label
+                                  key={opt.value}
+                                  className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${selected ? opt.active : opt.color}`}
+                                >
+                                  <input
+                                    type="radio"
+                                    name={`formula_decision_${report.id}`}
+                                    value={opt.value}
+                                    checked={selected}
+                                    onChange={() => setFormulaDecision(prev => ({ ...prev, [report.id]: opt.value }))}
+                                    className="mt-0.5 flex-shrink-0"
+                                  />
+                                  <div>
+                                    <p className="text-xs font-bold text-gray-800">{opt.label}</p>
+                                    <p className="text-xs text-gray-500 mt-0.5">{opt.desc}</p>
+                                  </div>
+                                </label>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        {/* ── Clinical Response / Admin Notes ── */}
                         <div>
                           <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 block">
                             Clinical Response / Admin Notes

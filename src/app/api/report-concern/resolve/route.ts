@@ -7,8 +7,10 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
-    const { report_id, admin_notes } = await request.json()
+    const { report_id, admin_notes, formula_decision } = await request.json()
     if (!report_id) return NextResponse.json({ error: 'Missing report_id' }, { status: 400 })
+    // formula_decision: 'keep_conservative' | 'restore_original' | 'flag_for_chemist'
+    const decision = formula_decision ?? 'keep_conservative'
 
     // ── Fetch the report + customer details ──────────────────────────
     const { data: report, error: fetchError } = await adminClient
@@ -68,6 +70,52 @@ export async function POST(request: NextRequest) {
       .eq('user_id', report.user_id)
       .eq('check_in_week', 0)
       .eq('check_in_channel', 'concern_report')
+
+    // ── Formula Decision (admin-controlled) ──────────────────────────
+    // The formula was auto-set to conservative on concern submission.
+    // Admin now decides what happens next — independently of clinical notes.
+    if (decision === 'restore_original') {
+      // Fetch the original formula that was saved before the concern was submitted
+      const { data: assessment } = await adminClient
+        .from('skin_assessments')
+        .select('id, formula_before_concern, formula_tier')
+        .eq('user_id', report.user_id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (assessment?.formula_before_concern) {
+        await adminClient
+          .from('skin_assessments')
+          .update({
+            formula_code:           assessment.formula_before_concern,
+            formula_tier:           'standard',           // restore to standard tier
+            formula_before_concern: null,                 // clear the backup field
+          })
+          .eq('id', assessment.id)
+      }
+    } else if (decision === 'flag_for_chemist') {
+      // Keep the conservative formula but flag the assessment for the chemist
+      // to review active concentrations — this appears in the admin Flagged tab
+      const { data: assessment } = await adminClient
+        .from('skin_assessments')
+        .select('id')
+        .eq('user_id', report.user_id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (assessment?.id) {
+        await adminClient
+          .from('skin_assessments')
+          .update({
+            is_flagged_for_review: true,
+            flag_reason: `Chemist review requested — concern resolved but concentration adjustment may be needed. See clinical notes: ${resolution.slice(0, 100)}`,
+          })
+          .eq('id', assessment.id)
+      }
+    }
+    // 'keep_conservative' — formula already at conservative variant, no action needed
 
     // ── Notify customer via WhatsApp ─────────────────────────────────
     if (profile?.phone) {
