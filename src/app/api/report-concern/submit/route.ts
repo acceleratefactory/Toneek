@@ -87,6 +87,43 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: dbError.message }, { status: 500 })
     }
 
+    // ── Phase A: Feed back into the clinical profile ──────────────────
+    // 1. Flag skin_assessments so admin Customers section surfaces this customer
+    const flagReason = `Adverse reaction reported on Day ${day_of_protocol || '?'}: ${description.slice(0, 120)}`
+    await adminClient
+      .from('skin_assessments')
+      .update({
+        is_flagged_for_review: true,
+        flag_reason:           flagReason,
+      })
+      .eq('user_id', session.user.id)
+      .order('created_at', { ascending: false })
+
+    // 2. Insert a skin_outcomes record marking adverse_reactions = true
+    // This means the check-in history permanently reflects the reaction
+    // even if the customer has not yet reached their scheduled check-in date.
+    // We use check_in_week = 0 to distinguish this from scheduled check-ins.
+    const { data: existingAdverse } = await adminClient
+      .from('skin_outcomes')
+      .select('id')
+      .eq('user_id', session.user.id)
+      .eq('check_in_week', 0)
+      .maybeSingle()
+
+    if (!existingAdverse) {
+      await adminClient.from('skin_outcomes').insert({
+        user_id:           session.user.id,
+        check_in_week:     0,
+        improvement_score: null,
+        adverse_reactions: true,
+        adverse_detail:    `Emergency concern report — Day ${day_of_protocol || 'unknown'}: ${description}`,
+        check_in_channel:  'concern_report',
+        recorded_at:       new Date().toISOString(),
+        anything_changed:  false,
+        change_detail:     null,
+      })
+    }
+
     // ── Fire immediate WhatsApp to admin ─────────────────────────────
     const severityEmoji = severity === 'severe' ? '🔴' : severity === 'moderate' ? '🟠' : '🟡'
     const whatsappMessage = `${severityEmoji} URGENT — CONCERN REPORT\n\nCustomer: ${customerName}\nFormula: ${formulaCode}\nSeverity: ${severity.toUpperCase()}\nSuspected product: ${suspected_product}\nDay of protocol: ${day_of_protocol || 'Not specified'}\n\nReport:\n"${description}"\n\nReview now: ${adminUrl}`
