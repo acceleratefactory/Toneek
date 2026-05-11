@@ -40,7 +40,7 @@ async function getSystemHealth() {
     adminClient.from('subscriptions')
       .select('created_at, status'),
     adminClient.from('concern_reports')
-      .select('id, severity, description, day_of_protocol, formula_code, submitted_at, profiles!concern_reports_user_id_fkey(full_name)')
+      .select('id, user_id, severity, description, day_of_protocol, formula_code, submitted_at')
       .eq('status', 'open')
       .order('submitted_at', { ascending: false })
       .limit(5),
@@ -61,6 +61,16 @@ async function getSystemHealth() {
     return { ...order, customer_name: name }
   }))
 
+  // Fetch profile names for open concern reports separately
+  const rawConcernReports = openConcernReports ?? []
+  let concernReportsWithProfiles: any[] = []
+  if (rawConcernReports.length > 0) {
+    const userIds = [...new Set(rawConcernReports.map((r: any) => r.user_id).filter(Boolean))]
+    const { data: crProfiles } = await adminClient.from('profiles').select('id, full_name').in('id', userIds)
+    const crProfileMap = Object.fromEntries((crProfiles ?? []).map((p: any) => [p.id, p]))
+    concernReportsWithProfiles = rawConcernReports.map((r: any) => ({ ...r, profile: crProfileMap[r.user_id] ?? null }))
+  }
+
   return {
     totalSubscribers: totalSubscribers ?? 0,
     activeSubscribers: activeSubscribers ?? 0,
@@ -70,7 +80,7 @@ async function getSystemHealth() {
     flaggedAssessments: flaggedAssessments ?? 0,
     historicalOrders,
     historicalSubscriptions,
-    openConcernReports: openConcernReports ?? [],
+    openConcernReports: concernReportsWithProfiles,
   }
 }
 
@@ -315,7 +325,7 @@ export default async function AdminDashboardPage() {
                     </span>
                     <div className="min-w-0">
                       <p className="text-sm font-bold text-gray-900 truncate">
-                        {(report.profiles as any)?.full_name ?? 'Unknown'}
+                        {(report.profile as any)?.full_name ?? 'Unknown'}
                         <span className="font-normal text-gray-400 ml-2 text-xs">{report.formula_code ?? ''}</span>
                       </p>
                       <p className="text-xs text-gray-500 truncate mt-0.5">"{report.description}"</p>

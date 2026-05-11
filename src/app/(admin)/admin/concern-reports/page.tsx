@@ -26,12 +26,7 @@ const PRODUCT_LABELS: Record<string, string> = {
 async function getConcernReports(tab: string) {
   const query = adminClient
     .from('concern_reports')
-    .select(`
-      id, formula_code, suspected_product, severity, description,
-      day_of_protocol, photo_url, status, admin_notes,
-      submitted_at, resolved_at,
-      profiles!concern_reports_user_id_fkey(full_name, email, phone)
-    `)
+    .select('id, user_id, formula_code, suspected_product, severity, description, day_of_protocol, photo_url, status, admin_notes, submitted_at, resolved_at')
     .order('submitted_at', { ascending: false })
 
   if (tab === 'open') {
@@ -40,9 +35,23 @@ async function getConcernReports(tab: string) {
     query.eq('status', 'resolved')
   }
 
-  const { data, error } = await query
+  const { data: reports, error } = await query
   if (error) console.error('concern_reports fetch error:', error)
-  return data ?? []
+  if (!reports || reports.length === 0) return []
+
+  // Fetch profiles separately to avoid FK constraint name dependency
+  const userIds = [...new Set(reports.map((r: any) => r.user_id).filter(Boolean))]
+  const { data: profiles } = await adminClient
+    .from('profiles')
+    .select('id, full_name, email, phone')
+    .in('id', userIds)
+
+  const profileMap = Object.fromEntries((profiles ?? []).map((p: any) => [p.id, p]))
+
+  return reports.map((r: any) => ({
+    ...r,
+    profile: profileMap[r.user_id] ?? null,
+  }))
 }
 
 async function resolveReport(formData: FormData) {
@@ -64,8 +73,7 @@ export default async function AdminConcernReportsPage({
   const { tab = 'open' } = await searchParams
   const reports = await getConcernReports(tab)
 
-  const openCount     = reports.filter(r => r.status === 'open').length
-  const resolvedCount = reports.filter(r => r.status === 'resolved').length
+  const openCount = tab === 'open' ? reports.length : reports.filter((r: any) => r.status === 'open').length
 
   return (
     <div className="space-y-6 text-gray-800">
@@ -133,7 +141,7 @@ export default async function AdminConcernReportsPage({
       ) : (
         <div className="flex flex-col gap-6">
           {reports.map((report: any) => {
-            const profile   = report.profiles as any
+            const profile   = report.profile as any
             const severity  = SEVERITY_CONFIG[report.severity] ?? SEVERITY_CONFIG.mild
             const isOpen    = report.status === 'open'
 
@@ -189,8 +197,8 @@ export default async function AdminConcernReportsPage({
                         <p className="text-sm text-gray-700 leading-relaxed">"{report.description}"</p>
                       </div>
                     </div>
-                    {profile?.phone && (
-                      <div className="flex gap-3">
+                    <div className="flex gap-3">
+                      {profile?.phone && (
                         <a
                           href={`https://wa.me/${profile.phone.replace(/\D/g, '')}`}
                           target="_blank"
@@ -199,14 +207,16 @@ export default async function AdminConcernReportsPage({
                         >
                           📱 WhatsApp Customer
                         </a>
+                      )}
+                      {profile?.email && (
                         <a
-                          href={`mailto:${profile?.email}`}
+                          href={`mailto:${profile.email}`}
                           className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 text-white text-xs font-bold rounded-lg hover:bg-gray-900 transition-colors"
                         >
                           ✉ Email Customer
                         </a>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
 
                   {/* Photo + Resolve */}
