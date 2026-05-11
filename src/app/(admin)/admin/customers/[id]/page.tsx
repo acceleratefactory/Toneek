@@ -1,5 +1,6 @@
 import { adminClient } from '@/lib/supabase/admin'
 import { notFound } from 'next/navigation'
+import ChemistReviewForm from '@/components/admin/ChemistReviewForm'
 
 export const dynamic = 'force-dynamic'
 
@@ -103,11 +104,15 @@ export default async function CustomerDetailPage(
           <p className={`${latestAssessment.flag_reason?.includes('Chemist') ? 'text-white' : 'text-toneek-error'} mt-2 text-sm`}>
             Reason: <span className="font-bold">{latestAssessment.flag_reason}</span>
           </p>
-          <div className="mt-4 flex gap-3">
-             <button className={`${latestAssessment.flag_reason?.includes('Chemist') ? 'bg-red-500 hover:bg-red-600' : 'bg-toneek-error hover:bg-[#A03226]'} text-white px-4 py-2 text-xs font-bold rounded shadow-sm`}>
-               {latestAssessment.flag_reason?.includes('Chemist') ? 'Confirm Chemist Review' : 'Trigger Dermatology Bridge'}
-             </button>
-             <button className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-4 py-2 text-xs font-bold rounded shadow-sm">Clear Flag</button>
+          <div className="mt-4 flex gap-3 flex-wrap">
+             {latestAssessment.flag_reason?.includes('Chemist') ? (
+               <ChemistReviewForm userId={data.profile.id} defaultFormula={latestAssessment.formula_code} />
+             ) : (
+               <button className="bg-toneek-error hover:bg-[#A03226] text-white px-4 py-2 text-xs font-bold rounded shadow-sm">Trigger Dermatology Bridge</button>
+             )}
+             {!latestAssessment.flag_reason?.includes('Chemist') && (
+               <button className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-4 py-2 text-xs font-bold rounded shadow-sm">Clear Flag</button>
+             )}
           </div>
         </div>
       )}
@@ -117,6 +122,18 @@ export default async function CustomerDetailPage(
         {/* ── LEFT COLUMN ── */}
         <div className="space-y-8">
           
+          {/* Chemist Notes (Global) */}
+          {(data.profile as any).chemist_notes && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-6 shadow-sm">
+              <h2 className="font-bold text-red-900 flex items-center gap-2 mb-3">
+                <span className="text-xl">🩺</span> Chemist Clinical Notes
+              </h2>
+              <div className="text-sm text-red-800 whitespace-pre-wrap leading-relaxed font-medium">
+                {(data.profile as any).chemist_notes}
+              </div>
+            </div>
+          )}
+
           {/* Assessment Summary */}
           {latestAssessment && (
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
