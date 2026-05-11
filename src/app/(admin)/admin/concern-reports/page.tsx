@@ -167,7 +167,14 @@ export default function AdminConcernReportsPage() {
                       {severity.label}
                     </div>
                     <div>
-                      <p className="font-bold text-gray-900">{profile.full_name ?? 'Unknown Customer'}</p>
+                      <p className="font-bold text-gray-900 flex items-center gap-2 flex-wrap">
+                        {profile.full_name ?? 'Unknown Customer'}
+                        {report.total_reports_count > 1 && (
+                          <span className="bg-red-600 text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded flex items-center shadow-sm">
+                            🔁 Repeat Reporter ({report.total_reports_count - 1} previous)
+                          </span>
+                        )}
+                      </p>
                       <p className="text-xs text-gray-500">{profile.email ?? '—'}</p>
                     </div>
                   </div>
@@ -205,6 +212,22 @@ export default function AdminConcernReportsPage() {
                         <p className="text-sm text-gray-700 leading-relaxed">"{report.description}"</p>
                       </div>
                     </div>
+
+                    {/* Blacklisted Formulas (Phase D UI) */}
+                    {report.adverse_formula_history && report.adverse_formula_history.length > 0 && (
+                      <div>
+                        <p className="text-xs font-bold text-red-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                          <span className="text-sm">🚫</span> Blacklisted Formulas
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {[...new Set(report.adverse_formula_history as string[])].map((code, i) => (
+                            <span key={i} className="px-2.5 py-1 bg-red-50 text-red-700 text-xs font-bold rounded-md border border-red-200">
+                              {code}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Contact buttons */}
                     <div>

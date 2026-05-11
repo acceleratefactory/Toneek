@@ -28,35 +28,42 @@ export async function GET(request: NextRequest) {
 
   const profileMap = Object.fromEntries((profiles ?? []).map((p: any) => [p.id, p]))
 
-  // For reports where formula_code was not saved (null or 'N/A'), look it up from skin_assessments
-  const missingFormulaUserIds = reports
-    .filter((r: any) => !r.formula_code || r.formula_code === 'N/A')
-    .map((r: any) => r.user_id)
-    .filter(Boolean)
+  // Fetch total concern reports count for these users
+  const { data: allUserReports } = await adminClient
+    .from('concern_reports')
+    .select('user_id')
+    .in('user_id', userIds)
 
-  const formulaFallbackMap: Record<string, string> = {}
-  if (missingFormulaUserIds.length > 0) {
-    const { data: assessments } = await adminClient
-      .from('skin_assessments')
-      .select('user_id, formula_code')
-      .in('user_id', missingFormulaUserIds)
-      .not('formula_code', 'is', null)
-      .order('created_at', { ascending: false })
+  const reportCounts: Record<string, number> = {}
+  allUserReports?.forEach((r: any) => {
+    if (r.user_id) reportCounts[r.user_id] = (reportCounts[r.user_id] || 0) + 1
+  })
 
-    // Keep only the most recent assessment per user
-    ;(assessments ?? []).forEach((a: any) => {
-      if (a.user_id && a.formula_code && !formulaFallbackMap[a.user_id]) {
-        formulaFallbackMap[a.user_id] = a.formula_code
+  // Fetch skin_assessments to get adverse_formula_history and fallback formula_codes
+  const { data: assessments } = await adminClient
+    .from('skin_assessments')
+    .select('user_id, formula_code, adverse_formula_history')
+    .in('user_id', userIds)
+    .order('created_at', { ascending: false })
+
+  const userMeta: Record<string, any> = {}
+  ;(assessments ?? []).forEach((a: any) => {
+    if (a.user_id && !userMeta[a.user_id]) {
+      userMeta[a.user_id] = {
+        formula_code: a.formula_code,
+        adverse_formula_history: Array.isArray(a.adverse_formula_history) ? a.adverse_formula_history : []
       }
-    })
-  }
+    }
+  })
 
   const enriched = reports.map((r: any) => ({
     ...r,
     formula_code: (r.formula_code && r.formula_code !== 'N/A')
       ? r.formula_code
-      : (formulaFallbackMap[r.user_id] ?? null),
+      : (userMeta[r.user_id]?.formula_code ?? null),
     profile: profileMap[r.user_id] ?? null,
+    total_reports_count: reportCounts[r.user_id] || 1,
+    adverse_formula_history: userMeta[r.user_id]?.adverse_formula_history || [],
   }))
 
   // Phase F: Fetch system-level formula flags (chemist review required)
