@@ -96,15 +96,17 @@ export default async function CustomerDetailPage(
 
       {/* ── ALERTS / FLAGS ── */}
       {isFlagged && (
-        <div className="bg-toneek-errorbg border border-toneek-error rounded-xl p-5 shadow-sm">
-          <h2 className="text-toneek-error font-bold flex items-center gap-2">
-            ⚠️ Assessment Flagged For Review
+        <div className={`${latestAssessment.flag_reason?.includes('Chemist') ? 'bg-red-900 border-red-950 text-white' : 'bg-toneek-errorbg border-toneek-error'} rounded-xl p-5 shadow-sm`}>
+          <h2 className={`${latestAssessment.flag_reason?.includes('Chemist') ? 'text-red-200' : 'text-toneek-error'} font-bold flex items-center gap-2`}>
+            {latestAssessment.flag_reason?.includes('Chemist') ? '🚨 Chemist Review Required' : '⚠️ Assessment Flagged For Review'}
           </h2>
-          <p className="text-toneek-error mt-2 text-sm">
+          <p className={`${latestAssessment.flag_reason?.includes('Chemist') ? 'text-white' : 'text-toneek-error'} mt-2 text-sm`}>
             Reason: <span className="font-bold">{latestAssessment.flag_reason}</span>
           </p>
           <div className="mt-4 flex gap-3">
-             <button className="bg-toneek-error hover:bg-[#A03226] text-white px-4 py-2 text-xs font-bold rounded shadow-sm">Trigger Dermatology Bridge</button>
+             <button className={`${latestAssessment.flag_reason?.includes('Chemist') ? 'bg-red-500 hover:bg-red-600' : 'bg-toneek-error hover:bg-[#A03226]'} text-white px-4 py-2 text-xs font-bold rounded shadow-sm`}>
+               {latestAssessment.flag_reason?.includes('Chemist') ? 'Confirm Chemist Review' : 'Trigger Dermatology Bridge'}
+             </button>
              <button className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-4 py-2 text-xs font-bold rounded shadow-sm">Clear Flag</button>
           </div>
         </div>
@@ -146,6 +148,23 @@ export default async function CustomerDetailPage(
                        </span>
                     </div>
                   </div>
+
+                  {/* Blacklisted Formulas */}
+                  {latestAssessment.adverse_formula_history && latestAssessment.adverse_formula_history.length > 0 && (
+                    <div className="pt-4 border-t border-gray-100">
+                      <p className="text-xs font-bold text-red-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <span className="text-sm">🚫</span> Clinical Blacklist
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {[...new Set(latestAssessment.adverse_formula_history as string[])].map((code, i) => (
+                          <span key={i} className="px-2.5 py-1 bg-red-50 text-red-700 text-xs font-bold rounded border border-red-200 shadow-sm">
+                            {code}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-400 mt-2">These formulas will never be automatically assigned to this customer again.</p>
+                    </div>
+                  )}
                </div>
             </div>
           )}

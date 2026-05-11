@@ -15,6 +15,7 @@ async function getSystemHealth() {
     { data: allOrders },
     { data: allSubscriptions },
     { data: openConcernReports },
+    { data: systemFlags },
   ] = await Promise.all([
     adminClient.from('subscriptions').select('*', { count: 'exact', head: true }),
     adminClient.from('subscriptions').select('*', { count: 'exact', head: true })
@@ -44,6 +45,10 @@ async function getSystemHealth() {
       .eq('status', 'open')
       .order('submitted_at', { ascending: false })
       .limit(5),
+    adminClient.from('rule_performance')
+      .select('*')
+      .eq('flag', 'concentration_review_required')
+      .order('updated_at', { ascending: false }),
   ])
 
   // Process historical data for interactive charts
@@ -81,6 +86,7 @@ async function getSystemHealth() {
     historicalOrders,
     historicalSubscriptions,
     openConcernReports: concernReportsWithProfiles,
+    systemFlags: systemFlags ?? [],
   }
 }
 
@@ -390,19 +396,42 @@ export default async function AdminDashboardPage() {
           <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
             <h2 className="text-sm font-bold text-gray-800">System Activity & Alerts</h2>
           </div>
-          <div className="p-6 overflow-auto flex-1">
-            {data.flaggedAssessments > 0 ? (
+          <div className="p-6 overflow-auto flex-1 space-y-4">
+            
+            {/* Global Chemist Flags */}
+            {data.systemFlags.length > 0 && (
+               <div className="bg-red-900 border-l-4 border-red-500 p-4 rounded text-white shadow-sm">
+                 <div className="flex">
+                    <span className="font-bold mr-2 text-lg">🚨</span>
+                    <div>
+                       <h3 className="font-bold border-b border-red-500/30 pb-1">Global Chemist Review</h3>
+                       {data.systemFlags.map((flag: any) => (
+                         <p key={flag.id} className="text-sm mt-2">
+                           Formula <strong>{flag.formula_code}</strong> has {flag.adverse_report_count} adverse reports. Concentration review required.
+                         </p>
+                       ))}
+                       <a href="/admin/concern-reports" className="inline-block mt-3 bg-white px-3 py-1.5 text-xs font-bold border border-red-900 rounded shadow-sm hover:bg-gray-100 transition-colors text-red-900">Go to Concern Reports</a>
+                    </div>
+                 </div>
+               </div>
+            )}
+
+            {/* Individual Assessment Flags */}
+            {data.flaggedAssessments > 0 && (
                <div className="bg-toneek-errorbg border-l-4 border-toneek-error p-4 rounded text-toneek-error">
                  <div className="flex">
                     <span className="font-bold mr-2 text-lg">⚠️</span>
                     <div>
-                      <h3 className="font-bold border-b border-toneek-error/10 pb-1">Review Required</h3>
-                       <p className="text-sm mt-1">{data.flaggedAssessments} assessments are automatically flagged for potentional medical contraindications.</p>
-                       <a href="/admin/customers" className="inline-block mt-3 bg-white px-3 py-1.5 text-xs font-bold border border-toneek-errorbg rounded shadow-sm hover:bg-gray-50 transition-colors text-toneek-error">Review Flags</a>
+                      <h3 className="font-bold border-b border-toneek-error/10 pb-1">Customer Review Required</h3>
+                       <p className="text-sm mt-1">{data.flaggedAssessments} assessments are automatically flagged for potential medical contraindications or individual chemist review.</p>
+                       <a href="/admin/customers" className="inline-block mt-3 bg-white px-3 py-1.5 text-xs font-bold border border-toneek-errorbg rounded shadow-sm hover:bg-gray-50 transition-colors text-toneek-error">Review Customers</a>
                     </div>
                  </div>
                </div>
-            ) : (
+            )}
+
+            {/* Empty State */}
+            {data.flaggedAssessments === 0 && data.systemFlags.length === 0 && (
                <div className="h-full flex items-center justify-center">
                  <div className="text-center text-gray-400">
                     <p className="mb-2 text-3xl">✓</p>
