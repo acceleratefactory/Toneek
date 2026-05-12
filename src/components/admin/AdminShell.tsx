@@ -25,7 +25,7 @@ import {
 export default function AdminShell({ children, userProfile }: { children: React.ReactNode, userProfile: any }) {
   const pathname = usePathname()
   const router = useRouter()
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<'notifications' | 'settings' | 'profile' | 'search' | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   

@@ -31,13 +31,8 @@ export default function DashboardShell({ children, userProfile }: { children: Re
   const [activeDropdown, setActiveDropdown] = useState<'profile' | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    // Auto-open sidebar by default on desktop screens
-    if (typeof window !== 'undefined' && window.innerWidth >= 768) {
-      setIsSidebarOpen(true)
-    }
-  }, [])
-  
+
+
   // Theme Toggle Logic
   const [isDarkMode, setIsDarkMode] = useState(false)
   
