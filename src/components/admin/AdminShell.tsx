@@ -18,7 +18,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
-  Tags
+  Tags,
+  LineChart
 } from 'lucide-react'
 
 export default function AdminShell({ children, userProfile }: { children: React.ReactNode, userProfile: any }) {
@@ -90,7 +91,8 @@ export default function AdminShell({ children, userProfile }: { children: React.
     { name: 'Customers', href: '/admin/customers', icon: Users },
     { name: 'Payments', href: '/admin/payments', icon: CreditCard },
     { name: 'Outcomes', href: '/admin/outcomes', icon: Stethoscope },
-    { name: 'Pricing', href: '/admin/pricing', icon: Tags }
+    { name: 'Pricing', href: '/admin/pricing', icon: Tags },
+    { name: 'Analytics', href: '/admin/analytics', icon: LineChart }
   ]
 
   return (

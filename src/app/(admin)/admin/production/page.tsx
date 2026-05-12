@@ -53,7 +53,26 @@ async function getProductionData() {
         .from('orders')
         .select('id, payment_reference, user_id, routine_tier, fourth_product, formula_code, plan_tier')
         .in('id', allOrderIds)
-      activeRunOrders = orders || []
+
+      // CRITICAL LOOP CHECK: Verify if any order's formula has changed clinically since the batch was created
+      const ordersWithClinicalCheck = await Promise.all((orders || []).map(async (order: any) => {
+        const { data: latestAssessment } = await adminClient
+          .from('skin_assessments')
+          .select('formula_code')
+          .eq('user_id', order.user_id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        
+        const currentClinicalFormula = latestAssessment?.formula_code ?? order.formula_code
+        return {
+          ...order,
+          current_clinical_formula: currentClinicalFormula,
+          is_mismatched: currentClinicalFormula !== order.formula_code
+        }
+      }))
+      
+      activeRunOrders = ordersWithClinicalCheck
     }
   }
 
@@ -243,14 +262,40 @@ export default async function ProductionQueuePage() {
                 <div className="grid gap-4 grid-cols-1">
                   {data.activeRunOrders.map((order: any) => (
                     <div key={order.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                      <div className="font-bold text-gray-900 mb-2 pb-2 border-b border-gray-100 flex justify-between">
-                        <span>Order {order.payment_reference}</span>
-                        <span className="text-gray-500 text-sm font-normal">Formula: <span className="font-mono text-toneek-brown font-bold">{order.formula_code || 'TBD'}</span> | Plan: {order.routine_tier}</span>
+                      <div className="font-bold text-gray-900 mb-2 pb-2 border-b border-gray-100 flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <span>Order {order.payment_reference}</span>
+                          {order.is_mismatched && (
+                            <span className="bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded animate-pulse shadow-sm">
+                              ⚠️ CLINICAL CHANGE DETECTED
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-gray-500 text-sm font-normal">
+                          Batched: <span className="font-mono text-toneek-brown font-bold">{order.formula_code || 'TBD'}</span>
+                          {order.is_mismatched && (
+                            <>
+                              <span className="mx-2">→</span>
+                              <span className="text-red-600 font-black font-mono">NEW: {order.current_clinical_formula}</span>
+                            </>
+                          )}
+                          <span className="mx-2">|</span> Plan: {order.routine_tier}
+                        </span>
                       </div>
+                      
+                      {order.is_mismatched && (
+                        <div className="bg-red-50 border border-red-200 text-red-700 text-xs p-3 mb-3 rounded-lg font-medium shadow-sm">
+                          <strong>Action Required:</strong> This customer had a clinical change after this run was generated. 
+                          Do NOT mix {order.formula_code}. Please manually adjust the batch to <strong>{order.current_clinical_formula}</strong> before dispatching.
+                        </div>
+                      )}
+
                       <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-gray-700">
                         <div className="flex items-center gap-2">
-                          <input type="checkbox" className="w-4 h-4 text-toneek-forest rounded border-gray-300" />
-                          <span>Formula (Custom: {order.formula_code})</span>
+                          <input type="checkbox" className="w-4 h-4 text-toneek-forest rounded border-gray-300" disabled={order.is_mismatched} />
+                          <span className={order.is_mismatched ? 'text-red-400 line-through' : 'font-medium'}>
+                            Formula (Custom: {order.is_mismatched ? order.current_clinical_formula : order.formula_code})
+                          </span>
                         </div>
                         
                         {(order.routine_tier === 'two_to_three' || order.routine_tier === 'whatever_it_takes') && (

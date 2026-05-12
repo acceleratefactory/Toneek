@@ -35,11 +35,71 @@ async function getCustomerData(id: string) {
     .eq('user_id', id)
     .order('check_in_week', { ascending: true })
 
+  // Fetch concern reports
+  const { data: concerns } = await adminClient
+    .from('concern_reports')
+    .select('*')
+    .eq('user_id', id)
+    .order('submitted_at', { ascending: false })
+
+  const timeline: any[] = []
+
+  assessments?.forEach((a: any) => {
+    timeline.push({
+      id: `a_${a.id}`,
+      date: new Date(a.created_at),
+      type: 'assessment',
+      title: 'Assessment & Formula Assigned',
+      description: `Formula ${a.formula_code} assigned. Risk score: ${a.risk_score}`,
+      icon: '📝',
+      iconBg: 'bg-blue-100 text-blue-600'
+    })
+  })
+
+  orders?.forEach((o: any) => {
+    timeline.push({
+      id: `o_${o.id}`,
+      date: new Date(o.created_at),
+      type: 'order',
+      title: `Order ${o.payment_reference}`,
+      description: `Status: ${o.status}. Tier: ${o.routine_tier}`,
+      icon: '📦',
+      iconBg: 'bg-toneek-sage text-toneek-forest'
+    })
+  })
+
+  outcomes?.forEach((o: any) => {
+    timeline.push({
+      id: `oc_${o.id}`,
+      date: new Date(o.recorded_at),
+      type: 'checkin',
+      title: `Week ${o.check_in_week} Check-in`,
+      description: `Score: ${o.improvement_score}/10. ${o.adverse_reactions ? 'Adverse reaction reported.' : 'No adverse reactions.'}`,
+      icon: '✅',
+      iconBg: o.adverse_reactions ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
+    })
+  })
+
+  concerns?.forEach((c: any) => {
+    timeline.push({
+      id: `c_${c.id}`,
+      date: new Date(c.submitted_at),
+      type: 'concern',
+      title: 'Emergency Concern Report',
+      description: `Day ${c.day_of_protocol ?? '?'}: ${c.suspected_product} (${c.severity}). System triggered safe-formula override.`,
+      icon: '🚨',
+      iconBg: 'bg-red-600 text-white'
+    })
+  })
+
+  timeline.sort((a, b) => b.date.getTime() - a.date.getTime())
+
   return {
     profile,
     assessments: assessments ?? [],
     orders: orders ?? [],
     outcomes: outcomes ?? [],
+    timeline
   }
 }
 
@@ -251,6 +311,33 @@ export default async function CustomerDetailPage(
                  ))}
                </ul>
              )}
+          </div>
+
+          {/* Clinical Journey Timeline */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+             <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+               <h2 className="font-bold text-gray-900">Clinical Journey Timeline</h2>
+             </div>
+             <div className="p-6">
+               {data.timeline.length === 0 ? (
+                 <div className="text-gray-500 text-sm">No clinical events recorded yet.</div>
+               ) : (
+                 <div className="relative border-l-2 border-gray-100 ml-3 space-y-8 py-2">
+                   {data.timeline.map((event: any) => (
+                     <div key={event.id} className="relative pl-6">
+                       <div className={`absolute -left-3.5 top-0 w-7 h-7 rounded-full flex items-center justify-center text-xs shadow-sm ring-4 ring-white ${event.iconBg}`}>
+                         {event.icon}
+                       </div>
+                       <div>
+                         <p className="text-[11px] font-bold text-gray-400 mb-0.5 uppercase tracking-wider">{event.date.toLocaleString()}</p>
+                         <p className="font-bold text-sm text-gray-900">{event.title}</p>
+                         <p className="text-sm text-gray-700 mt-1">{event.description}</p>
+                       </div>
+                     </div>
+                   ))}
+                 </div>
+               )}
+             </div>
           </div>
 
         </div>

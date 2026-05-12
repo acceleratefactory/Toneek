@@ -76,6 +76,53 @@ async function getSystemHealth() {
     concernReportsWithProfiles = rawConcernReports.map((r: any) => ({ ...r, profile: crProfileMap[r.user_id] ?? null }))
   }
 
+  // 1. Fetch High-Risk Reporters
+  const { count: highRiskReporters } = await adminClient
+    .from('skin_assessments')
+    .select('*', { count: 'exact', head: true })
+    .eq('is_flagged_for_review', true)
+    .like('flag_reason', '%Chemist review required%')
+
+  // 2. Fetch Stagnant Check-ins (Last 30 days, score < 4, no adverse)
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  
+  const { count: stagnantCheckins } = await adminClient
+    .from('skin_outcomes')
+    .select('*', { count: 'exact', head: true })
+    .lt('improvement_score', 4)
+    .eq('adverse_reactions', false)
+    .gte('recorded_at', thirtyDaysAgo.toISOString())
+
+  // 3. Calculate Production Mismatches
+  let productionMismatches = 0
+  if (pendingProduction && pendingProduction.length > 0) {
+    for (const run of pendingProduction) {
+      const isObject = !Array.isArray(run.batches) && run.batches !== null
+      const formulaBatches = isObject ? run.batches.formula_batches || [] : run.batches || []
+      const orderIds = formulaBatches.flatMap((b: any) => b.order_ids ?? [])
+      
+      if (orderIds.length > 0) {
+        const { data: runOrders } = await adminClient.from('orders').select('user_id, formula_code').in('id', orderIds)
+        if (runOrders) {
+           for (const order of runOrders) {
+             const { data: latestAssessment } = await adminClient
+               .from('skin_assessments')
+               .select('formula_code')
+               .eq('user_id', order.user_id)
+               .order('created_at', { ascending: false })
+               .limit(1)
+               .maybeSingle()
+             
+             if (latestAssessment && latestAssessment.formula_code !== order.formula_code) {
+               productionMismatches++
+             }
+           }
+        }
+      }
+    }
+  }
+
   return {
     totalSubscribers: totalSubscribers ?? 0,
     activeSubscribers: activeSubscribers ?? 0,
@@ -87,6 +134,9 @@ async function getSystemHealth() {
     historicalSubscriptions,
     openConcernReports: concernReportsWithProfiles,
     systemFlags: systemFlags ?? [],
+    highRiskReporters: highRiskReporters ?? 0,
+    stagnantCheckins: stagnantCheckins ?? 0,
+    productionMismatches
   }
 }
 
@@ -97,10 +147,6 @@ export default async function AdminDashboardPage() {
   // Safe math for styling widths safely to prevent NaN values if 0
   const activePct = data.totalSubscribers > 0 ? (data.activeSubscribers / data.totalSubscribers) * 100 : 0
   const inactivePct = data.totalSubscribers > 0 ? ((data.totalSubscribers - data.activeSubscribers) / data.totalSubscribers) * 100 : 0
-  
-  const payPct = totalTasks > 0 ? (data.pendingPayments.length / totalTasks) * 100 : 0
-  const flagPct = totalTasks > 0 ? (data.flaggedAssessments / totalTasks) * 100 : 0
-  const prodPct = totalTasks > 0 ? (data.pendingProduction.length / totalTasks) * 100 : 0
 
   return (
     <div className="space-y-6 text-gray-800">
@@ -156,43 +202,56 @@ export default async function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Action Pipeline Card */}
+        {/* Active Signal Center Card */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col">
           <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
-            <h2 className="text-sm font-bold text-gray-800">Action Pipeline</h2>
-            <span className="text-gray-400 text-xs font-medium cursor-pointer hover:text-gray-600">
-              This Week ▾
-            </span>
+            <h2 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+              </span>
+              Active Signal Center
+            </h2>
           </div>
-          <div className="p-6 pb-8">
-            <p className="text-xs text-gray-500 mb-1 uppercase font-medium tracking-wide">Pending Tasks</p>
-            <p className="text-4xl font-light text-gray-900 mb-8">{totalTasks}</p>
+          <div className="p-0 flex flex-col justify-center flex-1 divide-y divide-gray-100">
+            <a href="/admin/production" className="flex items-center justify-between p-4 hover:bg-red-50 transition-colors group">
+              <div className="flex items-center gap-3">
+                <div className="bg-red-100 text-red-600 p-2 rounded-lg text-lg">🚨</div>
+                <div>
+                  <p className="font-bold text-sm text-gray-900 group-hover:text-red-700">Production Mismatches</p>
+                  <p className="text-xs text-gray-500">Formula changes pending in active run</p>
+                </div>
+              </div>
+              <span className={`font-black text-lg ${data.productionMismatches > 0 ? 'text-red-600' : 'text-gray-400'}`}>
+                {data.productionMismatches}
+              </span>
+            </a>
             
-            <div className="h-3 w-full flex rounded-full overflow-hidden mb-4 bg-gray-100">
-               {totalTasks === 0 && <div className="bg-gray-200 w-full h-full"></div>}
-                {totalTasks > 0 && (
-                 <>
-                   <div className="bg-toneek-brown h-full" style={{ width: `${payPct}%` }}></div>
-                   <div className="bg-toneek-error h-full" style={{ width: `${flagPct}%` }}></div>
-                   <div className="bg-toneek-amber h-full" style={{ width: `${prodPct}%` }}></div>
-                 </>
-               )}
-            </div>
+            <a href="/admin" className="flex items-center justify-between p-4 hover:bg-amber-50 transition-colors group">
+              <div className="flex items-center gap-3">
+                <div className="bg-amber-100 text-amber-600 p-2 rounded-lg text-lg">⚠️</div>
+                <div>
+                  <p className="font-bold text-sm text-gray-900 group-hover:text-amber-700">Stagnant Check-ins</p>
+                  <p className="text-xs text-gray-500">Recent check-in scores &lt; 4</p>
+                </div>
+              </div>
+              <span className={`font-black text-lg ${data.stagnantCheckins > 0 ? 'text-amber-600' : 'text-gray-400'}`}>
+                {data.stagnantCheckins}
+              </span>
+            </a>
             
-            <div className="flex gap-6 items-center mt-2 flex-wrap">
-              <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-sm bg-toneek-brown"></div>
-                <span className="text-sm text-gray-500">Payments : <b className="text-gray-800 ml-1">{data.pendingPayments.length}</b></span>
+            <a href="/admin/concern-reports" className="flex items-center justify-between p-4 hover:bg-toneek-cream transition-colors group">
+              <div className="flex items-center gap-3">
+                <div className="bg-toneek-brown/10 text-toneek-brown p-2 rounded-lg text-lg">🔁</div>
+                <div>
+                  <p className="font-bold text-sm text-gray-900 group-hover:text-toneek-brown">High-Risk Reporters</p>
+                  <p className="text-xs text-gray-500">Repeat adverse reports received</p>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-sm bg-toneek-error"></div>
-                <span className="text-sm text-gray-500">Flagged : <b className="text-gray-800 ml-1">{data.flaggedAssessments}</b></span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-sm bg-toneek-amber"></div>
-                <span className="text-sm text-gray-500">Production : <b className="text-gray-800 ml-1">{data.pendingProduction.length}</b></span>
-              </div>
-            </div>
+              <span className={`font-black text-lg ${data.highRiskReporters > 0 ? 'text-toneek-brown' : 'text-gray-400'}`}>
+                {data.highRiskReporters}
+              </span>
+            </a>
           </div>
         </div>
 
