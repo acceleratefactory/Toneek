@@ -1,6 +1,7 @@
 import { adminClient } from '@/lib/supabase/admin'
 import { notFound } from 'next/navigation'
 import ChemistReviewForm from '@/components/admin/ChemistReviewForm'
+import ConcernReviewPanel from '@/components/admin/ConcernReviewPanel'
 
 export const dynamic = 'force-dynamic'
 
@@ -35,7 +36,7 @@ async function getCustomerData(id: string) {
     .eq('user_id', id)
     .order('check_in_week', { ascending: true })
 
-  // Fetch concern reports
+  // Fetch concern reports (includes review_status, admin_clinical_note, reviewed_by, reviewed_at from Task A)
   const { data: concerns } = await adminClient
     .from('concern_reports')
     .select('*')
@@ -80,15 +81,25 @@ async function getCustomerData(id: string) {
     })
   })
 
+  // Phase I: Concern events are review_status-aware
   concerns?.forEach((c: any) => {
+    const isPending   = c.review_status === 'pending_review'
+    const isReleased  = c.review_status === 'released_protocol_failure'
+    const isConfirmed = c.review_status === 'confirmed_incompatibility'
+
+    let outcomeText = ''
+    if (isReleased)  outcomeText = `✅ Released by admin — Protocol Failure. Note: ${c.admin_clinical_note ?? '—'}`
+    if (isConfirmed) outcomeText = '🚫 Confirmed incompatibility — Formula permanently blacklisted.'
+
     timeline.push({
       id: `c_${c.id}`,
       date: new Date(c.submitted_at),
       type: 'concern',
-      title: 'Emergency Concern Report',
-      description: `Day ${c.day_of_protocol ?? '?'}: ${c.suspected_product} (${c.severity}). System triggered safe-formula override.`,
-      icon: '🚨',
-      iconBg: 'bg-red-600 text-white'
+      title: isPending ? '🚨 Emergency Concern — Pending Clinical Review' : 'Emergency Concern Report',
+      description: `Day ${c.day_of_protocol ?? '?'}: ${c.suspected_product} (${c.severity}). ${outcomeText || 'System triggered safe-formula override.'}`,
+      icon: isPending ? '⏳' : '🚨',
+      iconBg: isPending ? 'bg-amber-100 text-amber-700' : isReleased ? 'bg-green-100 text-green-700' : 'bg-red-600 text-white',
+      raw: c, // pass full concern object so ConcernReviewPanel can render
     })
   })
 
@@ -332,6 +343,14 @@ export default async function CustomerDetailPage(
                          <p className="text-[11px] font-bold text-gray-400 mb-0.5 uppercase tracking-wider">{event.date.toLocaleString()}</p>
                          <p className="font-bold text-sm text-gray-900">{event.title}</p>
                          <p className="text-sm text-gray-700 mt-1">{event.description}</p>
+                         {/* Phase I: Admin review panel — only shows for pending concerns */}
+                         {event.type === 'concern' && event.raw?.review_status === 'pending_review' && (
+                           <ConcernReviewPanel
+                             concernId={event.raw.id}
+                             formulaCode={event.raw.formula_code ?? 'Unknown'}
+                             customerName={data.profile.full_name ?? 'Customer'}
+                           />
+                         )}
                        </div>
                      </div>
                    ))}

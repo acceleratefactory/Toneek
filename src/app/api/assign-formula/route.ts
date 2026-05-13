@@ -93,7 +93,10 @@ export async function POST(request: NextRequest) {
     // Step 4: Assign formula
     let formula_code = assignFormula(assessment, routing, confidence_score)
 
-    // Phase E: Fetch permanent adverse formula history from DB
+    // Phase E + Phase I: Fetch adverse formula history AND check concern review_status
+    // A formula is blocked if:
+    //   1. It's in adverse_formula_history AND has a pending_review or confirmed_incompatibility concern
+    //   2. It is NOT blocked if the concern was released as a protocol failure (user error)
     let isBlacklisted = false
     let fallbackReason = ''
 
@@ -109,8 +112,24 @@ export async function POST(request: NextRequest) {
 
         if (pastAssessment?.adverse_formula_history && Array.isArray(pastAssessment.adverse_formula_history)) {
             if (pastAssessment.adverse_formula_history.includes(formula_code)) {
-                isBlacklisted = true
-                fallbackReason = `[Phase E] Formula ${formula_code} excluded — adverse history.`
+                // Phase I: Check if the concern was released as user error — if so, allow the formula
+                const { data: releasedConcern } = await adminClient
+                    .from('concern_reports')
+                    .select('review_status')
+                    .eq('user_id', assessment.user_id)
+                    .eq('formula_code', formula_code)
+                    .eq('review_status', 'released_protocol_failure')
+                    .limit(1)
+                    .maybeSingle()
+
+                if (releasedConcern) {
+                    // Admin reviewed and confirmed this was user error — formula is allowed
+                    console.log(`[Phase I] Formula ${formula_code} was released by admin as protocol failure — allowing assignment.`)
+                } else {
+                    // Still pending review or confirmed incompatibility — block the formula
+                    isBlacklisted = true
+                    fallbackReason = `[Phase E/I] Formula ${formula_code} excluded — adverse history under clinical review.`
+                }
             }
         }
     }

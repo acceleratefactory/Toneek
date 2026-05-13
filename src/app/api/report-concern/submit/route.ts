@@ -77,6 +77,7 @@ export async function POST(request: NextRequest) {
         day_of_protocol:   day_of_protocol || null,
         photo_url:         photo_url || null,
         status:            'open',
+        review_status:     'pending_review',   // Phase I: provisional hold — not a permanent blacklist
         submitted_at:      new Date().toISOString(),
       })
       .select()
