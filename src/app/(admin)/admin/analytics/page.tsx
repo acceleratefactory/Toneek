@@ -7,12 +7,14 @@ async function getAnalyticsData() {
     { data: assessments },
     { data: concernReports },  // Phase I Task E: now includes review_status
     { data: outcomes },
-    { data: rulePerformance }
+    { data: rulePerformance },
+    { data: highRiskMirrorData }
   ] = await Promise.all([
     adminClient.from('skin_assessments').select('user_id, formula_code'),
     adminClient.from('concern_reports').select('formula_code, severity, review_status'),
     adminClient.from('skin_outcomes').select('user_id, improvement_score, adverse_reactions'),
-    adminClient.from('rule_performance').select('*')
+    adminClient.from('rule_performance').select('*'),
+    adminClient.from('clinical_lookalike_risk').select('*')
   ])
 
   // Build a map of user_id -> latest formula_code from assessments
@@ -124,7 +126,12 @@ async function getAnalyticsData() {
     totalConfirmedAdverse,
     totalProtocolFailures,
     totalPendingReviews,
-    totalOutcomes: outcomes?.length || 0
+    totalOutcomes: outcomes?.length || 0,
+    highRiskMirror: highRiskMirrorData || [],
+    coldStartConfig: {
+      active: process.env.COLD_START_MODE === 'true',
+      threshold: parseInt(process.env.COLD_START_THRESHOLD || '200')
+    }
   }
 }
 
@@ -290,6 +297,98 @@ export default async function AnalyticsPage() {
           </div>
         </div>
 
+      </div>
+
+      {/* ── Phase C: High-Risk Mirror Status ── */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mt-6">
+        <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <h2 className="font-bold text-gray-900 flex items-center gap-2">
+            <span>🪞</span> High-Risk Mirror Status
+          </h2>
+          {data.coldStartConfig.active ? (
+            <span className="text-xs font-bold bg-blue-100 text-blue-700 px-3 py-1 rounded-full uppercase tracking-wider">
+              Cold Start Mode
+            </span>
+          ) : (
+            <span className="text-xs font-bold bg-toneek-sage text-toneek-forest px-3 py-1 rounded-full uppercase tracking-wider">
+              Active Mode
+            </span>
+          )}
+        </div>
+        
+        <div className="p-6">
+          {data.coldStartConfig.active && (
+            <div className="mb-8">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="font-bold text-gray-700">Cold Start Progress</span>
+                <span className="text-gray-500">{data.totalAssessments} / {data.coldStartConfig.threshold} Prescriptions</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2.5">
+                <div 
+                  className="bg-blue-600 h-2.5 rounded-full" 
+                  style={{ width: `${Math.min((data.totalAssessments / data.coldStartConfig.threshold) * 100, 100)}%` }}
+                ></div>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">The High-Risk Mirror algorithm requires {data.coldStartConfig.threshold} prescriptions before autonomous vetting begins.</p>
+            </div>
+          )}
+
+          {data.highRiskMirror.length === 0 ? (
+            <div className="text-center text-gray-500 text-sm py-8 border border-dashed border-gray-200 rounded">
+              No aggregated profile segments available yet.
+            </div>
+          ) : (
+            <div className="overflow-auto max-h-[400px]">
+              <table className="min-w-full divide-y divide-gray-100 border">
+                <thead className="bg-gray-50 sticky top-0 shadow-sm">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Profile Segment</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Formula</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Prescriptions</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-red-500 uppercase">Adverse</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Risk Level</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {data.highRiskMirror
+                    .sort((a: any, b: any) => b.adverse_reaction_count - a.adverse_reaction_count)
+                    .map((row: any) => {
+                      const segmentStr = [
+                        row.profile_segment.skin_type,
+                        row.profile_segment.primary_concern,
+                        row.profile_segment.fitzpatrick_estimate
+                      ].filter(Boolean).join(' · ') || 'Unknown'
+
+                      const isHighRisk = row.risk_level === 'high_risk'
+
+                      return (
+                        <tr key={row.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 text-sm text-gray-900 font-medium capitalize">{segmentStr.replace(/_/g, ' ')}</td>
+                          <td className="px-4 py-3 text-sm font-mono font-bold text-toneek-brown">{row.formula_code}</td>
+                          <td className="px-4 py-3 text-sm text-center font-bold text-gray-600">{row.total_prescriptions}</td>
+                          <td className="px-4 py-3 text-sm text-center">
+                            <span className={row.adverse_reaction_count > 0 ? 'text-red-600 font-bold' : 'text-gray-400'}>
+                              {row.adverse_reaction_count}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-center">
+                            <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${
+                              isHighRisk ? 'bg-red-100 text-red-700 border border-red-200' :
+                              row.risk_level === 'moderate_risk' ? 'bg-amber-100 text-amber-700' :
+                              row.risk_level === 'insufficient_data' ? 'bg-gray-100 text-gray-500' :
+                              'bg-green-100 text-green-700'
+                            }`}>
+                              {row.risk_level.replace('_', ' ')}
+                            </span>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

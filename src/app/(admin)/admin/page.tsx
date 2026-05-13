@@ -16,6 +16,7 @@ async function getSystemHealth() {
     { data: allSubscriptions },
     { data: openConcernReports },
     { data: systemFlags },
+    { data: earlyReactionAlerts },
   ] = await Promise.all([
     adminClient.from('subscriptions').select('*', { count: 'exact', head: true }),
     adminClient.from('subscriptions').select('*', { count: 'exact', head: true })
@@ -49,6 +50,11 @@ async function getSystemHealth() {
       .select('*')
       .eq('flag', 'concentration_review_required')
       .order('updated_at', { ascending: false }),
+    adminClient.from('dark_period_responses')
+      .select('id, user_id, day_number, response_channel, responded_at')
+      .eq('admin_alerted', true)
+      .eq('admin_alert_dismissed', false)
+      .order('responded_at', { ascending: false }),
   ])
 
   // Process historical data for interactive charts
@@ -71,9 +77,19 @@ async function getSystemHealth() {
   let concernReportsWithProfiles: any[] = []
   if (rawConcernReports.length > 0) {
     const userIds = [...new Set(rawConcernReports.map((r: any) => r.user_id).filter(Boolean))]
-    const { data: crProfiles } = await adminClient.from('profiles').select('id, full_name').in('id', userIds)
+    const { data: crProfiles } = await adminClient.from('profiles').select('id, full_name, email').in('id', userIds)
     const crProfileMap = Object.fromEntries((crProfiles ?? []).map((p: any) => [p.id, p]))
     concernReportsWithProfiles = rawConcernReports.map((r: any) => ({ ...r, profile: crProfileMap[r.user_id] ?? null }))
+  }
+
+  // Fetch profiles for early reaction alerts
+  const rawEarlyAlerts = earlyReactionAlerts ?? []
+  let earlyAlertsWithProfiles: any[] = []
+  if (rawEarlyAlerts.length > 0) {
+    const userIds = [...new Set(rawEarlyAlerts.map((r: any) => r.user_id).filter(Boolean))]
+    const { data: eaProfiles } = await adminClient.from('profiles').select('id, full_name, email').in('id', userIds)
+    const eaProfileMap = Object.fromEntries((eaProfiles ?? []).map((p: any) => [p.id, p]))
+    earlyAlertsWithProfiles = rawEarlyAlerts.map((r: any) => ({ ...r, profile: eaProfileMap[r.user_id] ?? null }))
   }
 
   // 1. Fetch Confirmed High-Risk Reporters (Phase I: only confirmed_incompatibility, excludes released holds)
@@ -145,7 +161,8 @@ async function getSystemHealth() {
     highRiskReporters: highRiskReporters ?? 0,
     pendingClinicalReviews: pendingClinicalReviews ?? 0,
     stagnantCheckins: stagnantCheckins ?? 0,
-    productionMismatches
+    productionMismatches,
+    earlyReactionAlerts: earlyAlertsWithProfiles
   }
 }
 
@@ -262,6 +279,42 @@ export default async function AdminDashboardPage() {
                 {data.stagnantCheckins}
               </span>
             </a>
+
+            {/* Phase II: Early Reaction Alerts from Dark Period check-ins */}
+            {data.earlyReactionAlerts.length > 0 ? (
+              <details className="p-4 hover:bg-red-50 transition-colors group border-b border-gray-100 last:border-0 cursor-pointer open:bg-red-50/50">
+                <summary className="flex items-center gap-3 outline-none list-none [&::-webkit-details-marker]:hidden relative">
+                  <div className="bg-red-100 text-red-600 p-2 rounded-lg text-lg">{'\u26A0\uFE0F'}</div>
+                  <div className="flex-1">
+                    <p className="font-bold text-sm text-gray-900 group-hover:text-red-700">Early Reaction Alerts</p>
+                    <p className="text-xs text-gray-500">Customers reporting concern on Days 1-5</p>
+                  </div>
+                  <div className="text-red-600 font-bold bg-red-100 px-2 py-1 rounded text-xs">{data.earlyReactionAlerts.length}</div>
+                </summary>
+                <div className="space-y-2 ml-11 mt-4 cursor-default">
+                  {data.earlyReactionAlerts.map((alert: any) => (
+                    <a key={alert.id} href={`/admin/customers/${alert.user_id}`} className="flex justify-between items-center bg-white border border-red-100 rounded p-2 hover:border-red-300 transition-colors">
+                      <div>
+                        <p className="text-xs font-bold text-gray-900">{(alert.profile as any)?.full_name ?? 'Unknown Customer'}</p>
+                        <p className="text-[10px] text-gray-500">Day {alert.day_number} check-in via {alert.response_channel}</p>
+                      </div>
+                      <span className="text-[10px] bg-red-100 text-red-700 px-2 py-1 rounded font-bold uppercase">Review</span>
+                    </a>
+                  ))}
+                </div>
+              </details>
+            ) : (
+              <a href="/admin/customers?filter=dark_period" className="flex items-center justify-between p-4 hover:bg-red-50 transition-colors group">
+                <div className="flex items-center gap-3">
+                  <div className="bg-red-100 text-gray-400 p-2 rounded-lg text-lg grayscale group-hover:grayscale-0">{'\u26A0\uFE0F'}</div>
+                  <div>
+                    <p className="font-bold text-sm text-gray-500 group-hover:text-red-700">Early Reaction Alerts</p>
+                    <p className="text-xs text-gray-400 group-hover:text-gray-500">No active alerts</p>
+                  </div>
+                </div>
+                <span className="font-black text-lg text-gray-300">0</span>
+              </a>
+            )}
 
             {/* Phase I: Only confirmed_incompatibility — excludes released protocol failures */}
             <a href="/admin/concern-reports" className="flex items-center justify-between p-4 hover:bg-toneek-cream transition-colors group">

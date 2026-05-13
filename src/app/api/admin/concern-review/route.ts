@@ -6,6 +6,7 @@
 import { adminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { incrementAdverseCount } from '@/lib/intelligence/updateAdversePatterns'
 
 export async function POST(request: NextRequest) {
   try {
@@ -57,6 +58,38 @@ export async function POST(request: NextRequest) {
     if (updateError) {
       console.error('concern-review update error:', updateError)
       return NextResponse.json({ error: updateError.message }, { status: 500 })
+    }
+
+    // Phase C: If confirmed incompatibility, increment the High-Risk Mirror adverse count
+    if (action === 'confirm') {
+      try {
+        const { data: concern } = await adminClient
+          .from('concern_reports')
+          .select('user_id, formula_code')
+          .eq('id', concern_id)
+          .single()
+
+        if (concern?.user_id && concern?.formula_code) {
+          const { data: latestAssessment } = await adminClient
+            .from('skin_assessments')
+            .select('skin_type, fitzpatrick_estimate, primary_concern')
+            .eq('user_id', concern.user_id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+
+          if (latestAssessment) {
+            const profileObj = {
+              skin_type: latestAssessment.skin_type || 'unknown',
+              fitzpatrick_estimate: latestAssessment.fitzpatrick_estimate || 'unknown',
+              primary_concern: latestAssessment.primary_concern || 'unknown'
+            }
+            await incrementAdverseCount(concern.formula_code, profileObj)
+          }
+        }
+      } catch (err) {
+        console.error('Failed to increment adverse count for High-Risk Mirror:', err)
+      }
     }
 
     // Task C: Auto-clear the assessment flag now that a governance decision has been made.

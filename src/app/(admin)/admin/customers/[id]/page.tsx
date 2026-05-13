@@ -2,6 +2,8 @@ import { adminClient } from '@/lib/supabase/admin'
 import { notFound } from 'next/navigation'
 import ChemistReviewForm from '@/components/admin/ChemistReviewForm'
 import ConcernReviewPanel from '@/components/admin/ConcernReviewPanel'
+import ChemistCopilotPanel from '@/components/admin/ChemistCopilotPanel'
+import DarkPeriodPanel from '@/components/admin/DarkPeriodPanel'
 
 export const dynamic = 'force-dynamic'
 
@@ -42,6 +44,20 @@ async function getCustomerData(id: string) {
     .select('*')
     .eq('user_id', id)
     .order('submitted_at', { ascending: false })
+
+  // Fetch clinical notes
+  const { data: notes } = await adminClient
+    .from('clinical_notes')
+    .select('*')
+    .eq('user_id', id)
+    .order('created_at', { ascending: false })
+
+  // Fetch dark period responses
+  const { data: darkPeriod } = await adminClient
+    .from('dark_period_responses')
+    .select('*')
+    .eq('user_id', id)
+    .order('day_number', { ascending: true })
 
   const timeline: any[] = []
 
@@ -120,7 +136,9 @@ async function getCustomerData(id: string) {
     orders: orders ?? [],
     outcomes: outcomes ?? [],
     timeline,
-    formulaStatusMap
+    formulaStatusMap,
+    notes: notes ?? [],
+    darkPeriod: darkPeriod ?? []
   }
 }
 
@@ -300,6 +318,9 @@ export default async function CustomerDetailPage(
             </div>
           )}
 
+          {/* Dark Period Check-ins */}
+          <DarkPeriodPanel responses={data.darkPeriod} />
+
         </div>
 
         {/* ── RIGHT COLUMN ── */}
@@ -401,6 +422,9 @@ export default async function CustomerDetailPage(
                )}
              </div>
           </div>
+
+          {/* Chemist Copilot Panel */}
+          <ChemistCopilotPanel customerId={id} initialNotes={data.notes} />
 
         </div>
       </div>

@@ -1,5 +1,7 @@
 import { adminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
+import { assessFormulaRisk } from '@/lib/intelligence/highRiskMirror'
+import { incrementPrescriptionCount } from '@/lib/intelligence/updateAdversePatterns'
 
 // System config — cold start mode
 const SYSTEM_CONFIG = {
@@ -156,11 +158,27 @@ export async function POST(request: NextRequest) {
         
         const safeCode = ADVERSE_SAFE_MAP[formula_code] ?? 'GN-SN-01'
         
+        
         if (isBlacklisted) {
             console.log(`${fallbackReason} Assigned ${safeCode} instead.`)
         }
         
         formula_code = safeCode
+    }
+
+    // Step 4c: Phase C High-Risk Mirror Veto Logic
+    const profileObj = {
+        skin_type: assessment.skin_type || 'unknown',
+        fitzpatrick_estimate: assessment.fitzpatrick_estimate || 'unknown',
+        primary_concern: assessment.primary_concern || 'unknown'
+    }
+
+    const riskAssessment = await assessFormulaRisk(formula_code, profileObj)
+
+    if (!SYSTEM_CONFIG.cold_start_mode && riskAssessment.risk_level === 'high_risk' && riskAssessment.confidence === 'high' && riskAssessment.safe_alternative) {
+        console.log(`[High-Risk Mirror] Vetoing ${formula_code} for ${JSON.stringify(profileObj)}. Swapping to safer alternative: ${riskAssessment.safe_alternative}`)
+        formula_code = riskAssessment.safe_alternative
+        fallbackReason += ` [Phase C] High-Risk Mirror Override applied.`
     }
 
     // Step 5: Isotretinoin SA exclusion — swap formula if SA-containing
@@ -190,6 +208,9 @@ export async function POST(request: NextRequest) {
 
     // Step 10: Log to rule_performance
     await logRulePerformance(formula_code)
+
+    // Step 11: Phase C High-Risk Mirror Pattern Aggregation
+    await incrementPrescriptionCount(formula_code, profileObj)
 
     return NextResponse.json({
         formula_code,

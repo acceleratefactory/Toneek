@@ -4,7 +4,7 @@
 // Admin view for customer concern/reaction reports.
 // Resolve action fires email + WhatsApp back to the customer.
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 
 const SEVERITY_CONFIG: Record<string, { label: string; bg: string; text: string; border: string }> = {
   severe:   { label: 'Severe',   bg: 'bg-red-100',    text: 'text-red-800',    border: 'border-red-300' },
@@ -61,6 +61,17 @@ export default function AdminConcernReportsPage() {
     }
     setResolving(null)
   }
+
+  // Group reports by customer
+  const groupedReports = useMemo(() => {
+    const groups: Record<string, any[]> = {}
+    reports.forEach(report => {
+      const userId = report.user_id || 'unknown'
+      if (!groups[userId]) groups[userId] = []
+      groups[userId].push(report)
+    })
+    return Object.values(groups)
+  }, [reports])
 
   return (
     <div className="space-y-6 text-gray-800">
@@ -148,235 +159,265 @@ export default function AdminConcernReportsPage() {
         </div>
       ) : (
         <div className="flex flex-col gap-6">
-          {reports.map((report: any) => {
-            const profile  = report.profile ?? {}
-            const severity = SEVERITY_CONFIG[report.severity] ?? SEVERITY_CONFIG.mild
-            const isOpen   = report.status === 'open'
-
+          {groupedReports.map((customerReports: any[]) => {
+            const firstReport = customerReports[0]
+            const profile = firstReport.profile ?? {}
+            
             return (
-              <div
-                key={report.id}
-                className={`bg-white rounded-xl shadow-sm border-2 overflow-hidden ${
-                  isOpen ? 'border-red-200' : 'border-gray-100'
-                }`}
-              >
-                {/* Report Header */}
-                <div className={`px-6 py-4 flex flex-wrap items-center justify-between gap-4 ${isOpen ? 'bg-red-50' : 'bg-gray-50'}`}>
+              <details key={firstReport.user_id || firstReport.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden group open:bg-gray-50/50 transition-colors">
+                <summary className="px-6 py-4 flex items-center justify-between cursor-pointer list-none [&::-webkit-details-marker]:hidden border-b border-gray-100 hover:bg-gray-50 select-none">
                   <div className="flex items-center gap-3">
-                    <div className={`px-3 py-1 rounded-full text-xs font-bold border ${severity.bg} ${severity.text} ${severity.border}`}>
-                      {severity.label}
+                    <div className="h-10 w-10 bg-red-100 text-red-700 rounded-full flex items-center justify-center font-bold text-lg">
+                      {profile.full_name ? profile.full_name.charAt(0).toUpperCase() : '?'}
                     </div>
                     <div>
-                      <p className="font-bold text-gray-900 flex items-center gap-2 flex-wrap">
+                      <p className="font-bold text-gray-900 flex items-center gap-2">
                         {profile.full_name ?? 'Unknown Customer'}
-                        {report.total_reports_count > 1 && (
-                          <span className="bg-red-600 text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded flex items-center shadow-sm">
-                            🔁 Repeat Reporter ({report.total_reports_count - 1} previous)
-                          </span>
-                        )}
+                        <span className="bg-gray-200 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                          {customerReports.length} {customerReports.length === 1 ? 'Report' : 'Reports'}
+                        </span>
                       </p>
                       <p className="text-xs text-gray-500">{profile.email ?? '—'}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4 text-right">
-                    <div>
-                      <p className="text-xs text-gray-400 font-medium">Formula</p>
-                      <p className="text-sm font-bold text-gray-700">{report.formula_code && report.formula_code !== 'N/A' ? report.formula_code : '—'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-400 font-medium">Day</p>
-                      <p className="text-sm font-bold text-gray-700">{report.day_of_protocol ?? '—'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-400 font-medium">Submitted</p>
-                      <p className="text-sm font-bold text-gray-700">
-                        {new Date(report.submitted_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${isOpen ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                      {isOpen ? 'OPEN' : 'RESOLVED'}
-                    </span>
+                  <div className="text-gray-400 group-open:rotate-180 transition-transform">
+                    ▼
                   </div>
-                </div>
+                </summary>
+                
+                <div className="p-6 flex flex-col gap-6">
+                  {customerReports.map((report: any) => {
+                    const severity = SEVERITY_CONFIG[report.severity] ?? SEVERITY_CONFIG.mild
+                    const isOpen   = report.status === 'open'
 
-                {/* Report Body */}
-                <div className="px-6 py-5 grid md:grid-cols-2 gap-6">
-                  <div className="flex flex-col gap-4">
-                    <div>
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Suspected Product</p>
-                      <p className="text-sm text-gray-800 font-medium">{PRODUCT_LABELS[report.suspected_product] ?? report.suspected_product}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Customer's Report</p>
-                      <div className="bg-gray-50 border border-gray-100 rounded-lg p-4">
-                        <p className="text-sm text-gray-700 leading-relaxed">"{report.description}"</p>
-                      </div>
-                    </div>
-
-                    {/* Blacklisted Formulas (Phase D UI) */}
-                    {report.adverse_formula_history && report.adverse_formula_history.length > 0 && (
-                      <div>
-                        <p className="text-xs font-bold text-red-600 uppercase tracking-wider mb-2 flex items-center gap-1">
-                          <span className="text-sm">🚫</span> Blacklisted Formulas
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {[...new Set(report.adverse_formula_history as string[])].map((code, i) => (
-                            <span key={i} className="px-2.5 py-1 bg-red-50 text-red-700 text-xs font-bold rounded-md border border-red-200">
-                              {code}
+                    return (
+                      <div
+                        key={report.id}
+                        className={`bg-white rounded-xl shadow-sm border-2 overflow-hidden ${
+                          isOpen ? 'border-red-200' : 'border-gray-100'
+                        }`}
+                      >
+                        {/* Report Header */}
+                        <div className={`px-6 py-4 flex flex-wrap items-center justify-between gap-4 ${isOpen ? 'bg-red-50' : 'bg-gray-50'}`}>
+                          <div className="flex items-center gap-3">
+                            <div className={`px-3 py-1 rounded-full text-xs font-bold border ${severity.bg} ${severity.text} ${severity.border}`}>
+                              {severity.label}
+                            </div>
+                            <div>
+                              <p className="font-bold text-gray-900 flex items-center gap-2 flex-wrap">
+                                {profile.full_name ?? 'Unknown Customer'}
+                                {report.total_reports_count > 1 && (
+                                  <span className="bg-red-600 text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded flex items-center shadow-sm">
+                                    🔁 Repeat Reporter ({report.total_reports_count - 1} previous)
+                                  </span>
+                                )}
+                              </p>
+                              <p className="text-xs text-gray-500">{profile.email ?? '—'}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4 text-right">
+                            <div>
+                              <p className="text-xs text-gray-400 font-medium">Formula</p>
+                              <p className="text-sm font-bold text-gray-700">{report.formula_code && report.formula_code !== 'N/A' ? report.formula_code : '—'}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-400 font-medium">Day</p>
+                              <p className="text-sm font-bold text-gray-700">{report.day_of_protocol ?? '—'}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-400 font-medium">Submitted</p>
+                              <p className="text-sm font-bold text-gray-700">
+                                {new Date(report.submitted_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                            </div>
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${isOpen ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                              {isOpen ? 'OPEN' : 'RESOLVED'}
                             </span>
-                          ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
 
-                    {/* Contact buttons */}
-                    <div>
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Contact Customer</p>
-                      <div className="flex flex-wrap gap-2">
-                        {profile.phone && (
-                          <a
-                            href={`https://wa.me/${profile.phone.replace(/\D/g, '')}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-colors"
-                          >
-                            📱 WhatsApp
-                          </a>
-                        )}
-                        {profile.email && (
-                          <a
-                            href={`https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(profile.email)}&su=${encodeURIComponent(`Re: Your Toneek Concern Report`)}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 text-white text-xs font-bold rounded-lg hover:bg-gray-900 transition-colors"
-                          >
-                            ✉ Email
-                          </a>
-                        )}
-                        {profile.email && (
-                          <button
-                            onClick={() => navigator.clipboard.writeText(profile.email)}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-200 transition-colors"
-                          >
-                            📋 Copy Email
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                        {/* Report Body */}
+                        <div className="px-6 py-5 grid md:grid-cols-2 gap-6">
+                          <div className="flex flex-col gap-4">
+                            <div>
+                              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Suspected Product</p>
+                              <p className="text-sm text-gray-800 font-medium">{PRODUCT_LABELS[report.suspected_product] ?? report.suspected_product}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Customer's Report</p>
+                              <div className="bg-gray-50 border border-gray-100 rounded-lg p-4">
+                                <p className="text-sm text-gray-700 leading-relaxed">"{report.description}"</p>
+                              </div>
+                            </div>
 
-                  {/* Photo + Resolve */}
-                  <div className="flex flex-col gap-4">
-                    {report.photo_url && (
-                      <div>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Photo</p>
-                        <a href={report.photo_url} target="_blank" rel="noreferrer">
-                          <img
-                            src={report.photo_url}
-                            alt="Reaction photo"
-                            className="w-full max-h-52 object-cover rounded-lg border border-gray-200 hover:opacity-90 transition-opacity cursor-zoom-in"
-                          />
-                        </a>
-                      </div>
-                    )}
+                            {/* Blacklisted Formulas (Phase D UI) */}
+                            {report.adverse_formula_history && report.adverse_formula_history.length > 0 && (
+                              <div>
+                                <p className="text-xs font-bold text-red-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                                  <span className="text-sm">🚫</span> Blacklisted Formulas
+                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                  {[...new Set(report.adverse_formula_history as string[])].map((code, i) => (
+                                    <span key={i} className="px-2.5 py-1 bg-red-50 text-red-700 text-xs font-bold rounded-md border border-red-200">
+                                      {code}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
 
-                    {isOpen ? (
-                      <div className="flex flex-col gap-3">
+                            {/* Contact buttons */}
+                            <div>
+                              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Contact Customer</p>
+                              <div className="flex flex-wrap gap-2">
+                                {profile.phone && (
+                                  <a
+                                    href={`https://wa.me/${profile.phone.replace(/\D/g, '')}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-colors"
+                                  >
+                                    📱 WhatsApp
+                                  </a>
+                                )}
+                                {profile.email && (
+                                  <a
+                                    href={`https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(profile.email)}&su=${encodeURIComponent(`Re: Your Toneek Concern Report`)}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 text-white text-xs font-bold rounded-lg hover:bg-gray-900 transition-colors"
+                                  >
+                                    ✉ Email
+                                  </a>
+                                )}
+                                {profile.email && (
+                                  <button
+                                    onClick={() => navigator.clipboard.writeText(profile.email)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-200 transition-colors"
+                                  >
+                                    📋 Copy Email
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
 
-                        {/* ── Formula Decision ── */}
-                        <div>
-                          <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">
-                            Formula Decision After Resolution
-                          </label>
-                          <div className="flex flex-col gap-2">
-                            {[
-                              {
-                                value: 'keep_conservative',
-                                label: 'Keep conservative formula',
-                                desc:  'Customer stays on the barrier-safe formula. Recommended if reaction was moderate or severe.',
-                                color: 'border-amber-300 bg-amber-50',
-                                active: 'border-amber-500 bg-amber-100',
-                              },
-                              {
-                                value: 'restore_original',
-                                label: 'Restore original formula',
-                                desc:  'Reverts to the formula the customer had before the concern was reported. Use only when reaction was mild and resolved.',
-                                color: 'border-blue-200 bg-blue-50',
-                                active: 'border-blue-500 bg-blue-100',
-                              },
-                              {
-                                value: 'flag_for_chemist',
-                                label: 'Flag for chemist review',
-                                desc:  'Keeps conservative formula and flags this customer for a concentration adjustment review by your chemist.',
-                                color: 'border-purple-200 bg-purple-50',
-                                active: 'border-purple-500 bg-purple-100',
-                              },
-                            ].map(opt => {
-                              const selected = (formulaDecision[report.id] ?? 'keep_conservative') === opt.value
-                              return (
-                                <label
-                                  key={opt.value}
-                                  className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${selected ? opt.active : opt.color}`}
-                                >
-                                  <input
-                                    type="radio"
-                                    name={`formula_decision_${report.id}`}
-                                    value={opt.value}
-                                    checked={selected}
-                                    onChange={() => setFormulaDecision(prev => ({ ...prev, [report.id]: opt.value }))}
-                                    className="mt-0.5 flex-shrink-0"
+                          {/* Photo + Resolve */}
+                          <div className="flex flex-col gap-4">
+                            {report.photo_url && (
+                              <div>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Photo</p>
+                                <a href={report.photo_url} target="_blank" rel="noreferrer">
+                                  <img
+                                    src={report.photo_url}
+                                    alt="Reaction photo"
+                                    className="w-full max-h-52 object-cover rounded-lg border border-gray-200 hover:opacity-90 transition-opacity cursor-zoom-in"
                                   />
-                                  <div>
-                                    <p className="text-xs font-bold text-gray-800">{opt.label}</p>
-                                    <p className="text-xs text-gray-500 mt-0.5">{opt.desc}</p>
-                                  </div>
-                                </label>
-                              )
-                            })}
-                          </div>
-                        </div>
+                                </a>
+                              </div>
+                            )}
 
-                        {/* ── Clinical Response / Admin Notes ── */}
-                        <div>
-                          <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 block">
-                            Clinical Response / Admin Notes
-                          </label>
-                          <p className="text-xs text-gray-400 mb-2">This note will be sent to the customer automatically when you resolve.</p>
-                          <textarea
-                            value={adminNotes[report.id] ?? ''}
-                            onChange={e => setAdminNotes(prev => ({ ...prev, [report.id]: e.target.value }))}
-                            rows={4}
-                            placeholder="e.g. We recommend pausing the formula for 48 hours. The tingling you experienced is consistent with an initial adjustment reaction. Resume on Day 6 with a patch test first..."
-                            className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-800 outline-none focus:border-green-400 transition-colors resize-y"
-                          />
-                        </div>
-                        <button
-                          onClick={() => handleResolve(report.id)}
-                          disabled={resolving === report.id}
-                          className={`w-full py-2.5 text-white text-sm font-bold rounded-lg transition-colors ${
-                            resolving === report.id ? 'bg-green-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
-                          }`}
-                        >
-                          {resolving === report.id ? 'Resolving & Notifying Customer…' : '✓ Mark as Resolved — Customer Will Be Notified'}
-                        </button>
-                      </div>
-                    ) : (
-                      <div>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Resolved</p>
-                        <p className="text-xs text-gray-500 mb-2">
-                          {report.resolved_at ? new Date(report.resolved_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}
-                        </p>
-                        {report.admin_notes && (
-                          <div className="bg-green-50 border border-green-100 rounded-lg p-3">
-                            <p className="text-xs font-bold text-green-700 mb-1">Response sent to customer:</p>
-                            <p className="text-xs text-green-800 leading-relaxed">{report.admin_notes}</p>
+                            {isOpen ? (
+                              <div className="flex flex-col gap-3">
+
+                                {/* ── Formula Decision ── */}
+                                <div>
+                                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">
+                                    Formula Decision After Resolution
+                                  </label>
+                                  <div className="flex flex-col gap-2">
+                                    {[
+                                      {
+                                        value: 'keep_conservative',
+                                        label: 'Keep conservative formula',
+                                        desc:  'Customer stays on the barrier-safe formula. Recommended if reaction was moderate or severe.',
+                                        color: 'border-amber-300 bg-amber-50',
+                                        active: 'border-amber-500 bg-amber-100',
+                                      },
+                                      {
+                                        value: 'restore_original',
+                                        label: 'Restore original formula',
+                                        desc:  'Reverts to the formula the customer had before the concern was reported. Use only when reaction was mild and resolved.',
+                                        color: 'border-blue-200 bg-blue-50',
+                                        active: 'border-blue-500 bg-blue-100',
+                                      },
+                                      {
+                                        value: 'flag_for_chemist',
+                                        label: 'Flag for chemist review',
+                                        desc:  'Keeps conservative formula and flags this customer for a concentration adjustment review by your chemist.',
+                                        color: 'border-purple-200 bg-purple-50',
+                                        active: 'border-purple-500 bg-purple-100',
+                                      },
+                                    ].map(opt => {
+                                      const selected = (formulaDecision[report.id] ?? 'keep_conservative') === opt.value
+                                      return (
+                                        <label
+                                          key={opt.value}
+                                          className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${selected ? opt.active : opt.color}`}
+                                        >
+                                          <input
+                                            type="radio"
+                                            name={`formula_decision_${report.id}`}
+                                            value={opt.value}
+                                            checked={selected}
+                                            onChange={() => setFormulaDecision(prev => ({ ...prev, [report.id]: opt.value }))}
+                                            className="mt-0.5 flex-shrink-0"
+                                          />
+                                          <div>
+                                            <p className="text-xs font-bold text-gray-800">{opt.label}</p>
+                                            <p className="text-xs text-gray-500 mt-0.5">{opt.desc}</p>
+                                          </div>
+                                        </label>
+                                      )
+                                    })}
+                                  </div>
+                                </div>
+
+                                {/* ── Clinical Response / Admin Notes ── */}
+                                <div>
+                                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 block">
+                                    Clinical Response / Admin Notes
+                                  </label>
+                                  <p className="text-xs text-gray-400 mb-2">This note will be sent to the customer automatically when you resolve.</p>
+                                  <textarea
+                                    value={adminNotes[report.id] ?? ''}
+                                    onChange={e => setAdminNotes(prev => ({ ...prev, [report.id]: e.target.value }))}
+                                    rows={4}
+                                    placeholder="e.g. We recommend pausing the formula for 48 hours. The tingling you experienced is consistent with an initial adjustment reaction. Resume on Day 6 with a patch test first..."
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-800 outline-none focus:border-green-400 transition-colors resize-y"
+                                  />
+                                </div>
+                                <button
+                                  onClick={() => handleResolve(report.id)}
+                                  disabled={resolving === report.id}
+                                  className={`w-full py-2.5 text-white text-sm font-bold rounded-lg transition-colors ${
+                                    resolving === report.id ? 'bg-green-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
+                                  }`}
+                                >
+                                  {resolving === report.id ? 'Resolving & Notifying Customer…' : '✓ Mark as Resolved — Customer Will Be Notified'}
+                                </button>
+                              </div>
+                            ) : (
+                              <div>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Resolved</p>
+                                <p className="text-xs text-gray-500 mb-2">
+                                  {report.resolved_at ? new Date(report.resolved_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}
+                                </p>
+                                {report.admin_notes && (
+                                  <div className="bg-green-50 border border-green-100 rounded-lg p-3">
+                                    <p className="text-xs font-bold text-green-700 mb-1">Response sent to customer:</p>
+                                    <p className="text-xs text-green-800 leading-relaxed">{report.admin_notes}</p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
-                        )}
+                        </div>
                       </div>
-                    )}
-                  </div>
+                    )
+                  })}
                 </div>
-              </div>
+              </details>
             )
           })}
         </div>

@@ -5,6 +5,7 @@
 
 import { adminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
+import { Resend } from 'resend'
 
 export async function POST(request: NextRequest) {
     try {
@@ -16,9 +17,22 @@ export async function POST(request: NextRequest) {
 
         if (!phone) return NextResponse.json({ received: true })
 
-        // Validate score: must be 1–5
+        // Check if this is a Dark Period Response (emoji or text)
+        const textLower = message_text.toLowerCase()
+        let darkResponse: 'happy' | 'neutral' | 'concerned' | null = null
+
+        if (textLower.includes('😊') || textLower.includes('happy')) {
+            darkResponse = 'happy'
+        } else if (textLower.includes('😐') || textLower.includes('neutral')) {
+            darkResponse = 'neutral'
+        } else if (textLower.includes('😟') || textLower.includes('concerned')) {
+            darkResponse = 'concerned'
+        }
+
+        // Validate score: must be 1–5 if it's not a dark response
         const score = parseInt(message_text)
-        if (isNaN(score) || score < 1 || score > 5) {
+        
+        if (!darkResponse && (isNaN(score) || score < 1 || score > 5)) {
             return NextResponse.json({ received: true })
         }
 
@@ -44,6 +58,70 @@ export async function POST(request: NextRequest) {
         const daysActive = Math.floor(
             (Date.now() - new Date(subscription.started_at).getTime()) / (1000 * 60 * 60 * 24)
         )
+
+        // --- DARK PERIOD LOGIC ---
+        if (darkResponse) {
+            // Determine the nearest day number (1, 3, or 5)
+            let dayNumber = 1
+            if (daysActive >= 4) dayNumber = 5
+            else if (daysActive >= 2) dayNumber = 3
+
+            // Idempotency for dark period
+            const { data: existingDark } = await adminClient
+                .from('dark_period_responses')
+                .select('id')
+                .eq('user_id', profile.id)
+                .eq('day_number', dayNumber)
+                .maybeSingle()
+
+            if (!existingDark) {
+                await adminClient.from('dark_period_responses').insert({
+                    user_id: profile.id,
+                    day_number: dayNumber,
+                    response: darkResponse,
+                    response_channel: 'whatsapp',
+                    admin_alerted: darkResponse === 'concerned'
+                })
+
+                // Acknowledge the user
+                if (darkResponse === 'concerned') {
+                    await sendWhatsApp(phone, `Thank you for letting us know, ${profile.full_name?.split(' ')[0] ?? 'there'}. A clinical chemist will review your profile and reach out shortly.`)
+                    
+                    // Alert Admin via WhatsApp
+                    if (process.env.ADMIN_WHATSAPP_NUMBER) {
+                        await sendWhatsApp(process.env.ADMIN_WHATSAPP_NUMBER, `🚨 Dark Period Alert (Day ${dayNumber})\nCustomer: ${profile.full_name}\nPhone: ${phone}\nStatus: Concerned (WhatsApp)`)
+                    }
+                    
+                    // Alert Admin via Email
+                    if (process.env.ADMIN_EMAIL && process.env.RESEND_API_KEY) {
+                        try {
+                            const resend = new Resend(process.env.RESEND_API_KEY)
+                            await resend.emails.send({
+                                from: process.env.FROM_EMAIL || 'alerts@toneek.com',
+                                to: process.env.ADMIN_EMAIL,
+                                subject: `🚨 Dark Period Alert (Day ${dayNumber}) - ${profile.full_name}`,
+                                html: `
+                                    <h2>Early Reaction Alert</h2>
+                                    <p><strong>Customer:</strong> ${profile.full_name}</p>
+                                    <p><strong>Phone:</strong> ${phone}</p>
+                                    <p><strong>Day:</strong> ${dayNumber}</p>
+                                    <p><strong>Status:</strong> Concerned (Submitted via WhatsApp reply)</p>
+                                    <p>Please review their profile in the admin dashboard and reach out immediately.</p>
+                                `
+                            })
+                        } catch (e) {
+                            console.error('Failed to send admin email alert:', e)
+                        }
+                    }
+                } else if (darkResponse === 'happy') {
+                    await sendWhatsApp(phone, `Great to hear! Keep following the protocol.`)
+                } else {
+                    await sendWhatsApp(phone, `Got it. It's early days, keep following the protocol and let us know if anything changes.`)
+                }
+            }
+            return NextResponse.json({ received: true })
+        }
+        // --- END DARK PERIOD LOGIC ---
 
         // Map days to check-in week
         let week: number
