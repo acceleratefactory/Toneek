@@ -226,7 +226,7 @@ export default async function AdminDashboardPage() {
             {/* Phase I: Pending Clinical Review — highest priority, needs action first */}
             <a href="/admin/customers" className="flex items-center justify-between p-4 hover:bg-amber-50 transition-colors group">
               <div className="flex items-center gap-3">
-                <div className="bg-amber-100 text-amber-700 p-2 rounded-lg text-lg">â³</div>
+                <div className="bg-amber-100 text-amber-700 p-2 rounded-lg text-lg">{'\u23F3'}</div>
                 <div>
                   <p className="font-bold text-sm text-gray-900 group-hover:text-amber-700">Pending Clinical Review</p>
                   <p className="text-xs text-gray-500">Concern holds awaiting admin decision</p>
@@ -239,7 +239,7 @@ export default async function AdminDashboardPage() {
 
             <a href="/admin/production" className="flex items-center justify-between p-4 hover:bg-red-50 transition-colors group">
               <div className="flex items-center gap-3">
-                <div className="bg-red-100 text-red-600 p-2 rounded-lg text-lg">🚨</div>
+                <div className="bg-red-100 text-red-600 p-2 rounded-lg text-lg">{'\uD83D\uDEA8'}</div>
                 <div>
                   <p className="font-bold text-sm text-gray-900 group-hover:text-red-700">Production Mismatches</p>
                   <p className="text-xs text-gray-500">Formula changes pending in active run</p>
@@ -252,7 +252,7 @@ export default async function AdminDashboardPage() {
 
             <a href="/admin" className="flex items-center justify-between p-4 hover:bg-amber-50 transition-colors group">
               <div className="flex items-center gap-3">
-                <div className="bg-amber-100 text-amber-600 p-2 rounded-lg text-lg">⚠ï¸</div>
+                <div className="bg-amber-100 text-amber-600 p-2 rounded-lg text-lg">{'\u26A0\uFE0F'}</div>
                 <div>
                   <p className="font-bold text-sm text-gray-900 group-hover:text-amber-700">Stagnant Check-ins</p>
                   <p className="text-xs text-gray-500">Recent check-in scores &lt; 4</p>
@@ -266,7 +266,7 @@ export default async function AdminDashboardPage() {
             {/* Phase I: Only confirmed_incompatibility — excludes released protocol failures */}
             <a href="/admin/concern-reports" className="flex items-center justify-between p-4 hover:bg-toneek-cream transition-colors group">
               <div className="flex items-center gap-3">
-                <div className="bg-toneek-brown/10 text-toneek-brown p-2 rounded-lg text-lg">🔁</div>
+                <div className="bg-toneek-brown/10 text-toneek-brown p-2 rounded-lg text-lg">{'\uD83D\uDD01'}</div>
                 <div>
                   <p className="font-bold text-sm text-gray-900 group-hover:text-toneek-brown">Confirmed High-Risk</p>
                   <p className="text-xs text-gray-500">Verified formula incompatibilities</p>
@@ -278,17 +278,16 @@ export default async function AdminDashboardPage() {
             </a>
           </div>
         </div>
-
       </div>
 
-      {/* â”€â”€ Interactive Historical Charts Canvas â”€â”€ */}
+      {/* ── Interactive Historical Charts Canvas ── */}
       <DashboardCharts 
          historicalOrders={data.historicalOrders} 
          historicalSubscriptions={data.historicalSubscriptions}
          totalSubscribers={data.totalSubscribers}
       />
 
-      {/* â”€â”€ Row 2: Data Grids (Zoho Lists Style) â”€â”€ */}
+      {/* ── Row 2: Data Grids (Zoho Lists Style) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         
         {/* Payments Grid */}
