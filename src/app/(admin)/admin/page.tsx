@@ -1,4 +1,4 @@
-﻿import { adminClient } from '@/lib/supabase/admin'
+import { adminClient } from '@/lib/supabase/admin'
 import DashboardCharts from '@/components/admin/DashboardCharts'
 
 // Force the page to dynamically render
@@ -220,7 +220,7 @@ export default async function AdminDashboardPage() {
             </h2>
           </div>
           <div className="p-0 flex flex-col justify-center flex-1 divide-y divide-gray-100">
-            {/* Phase I: Pending Clinical Review â€” highest priority, needs action first */}
+            {/* Phase I: Pending Clinical Review — highest priority, needs action first */}
             <a href="/admin/customers" className="flex items-center justify-between p-4 hover:bg-amber-50 transition-colors group">
               <div className="flex items-center gap-3">
                 <div className="bg-amber-100 text-amber-700 p-2 rounded-lg text-lg">â³</div>
@@ -236,7 +236,7 @@ export default async function AdminDashboardPage() {
 
             <a href="/admin/production" className="flex items-center justify-between p-4 hover:bg-red-50 transition-colors group">
               <div className="flex items-center gap-3">
-                <div className="bg-red-100 text-red-600 p-2 rounded-lg text-lg">ðŸš¨</div>
+                <div className="bg-red-100 text-red-600 p-2 rounded-lg text-lg">🚨</div>
                 <div>
                   <p className="font-bold text-sm text-gray-900 group-hover:text-red-700">Production Mismatches</p>
                   <p className="text-xs text-gray-500">Formula changes pending in active run</p>
@@ -249,7 +249,7 @@ export default async function AdminDashboardPage() {
 
             <a href="/admin" className="flex items-center justify-between p-4 hover:bg-amber-50 transition-colors group">
               <div className="flex items-center gap-3">
-                <div className="bg-amber-100 text-amber-600 p-2 rounded-lg text-lg">âš ï¸</div>
+                <div className="bg-amber-100 text-amber-600 p-2 rounded-lg text-lg">⚠ï¸</div>
                 <div>
                   <p className="font-bold text-sm text-gray-900 group-hover:text-amber-700">Stagnant Check-ins</p>
                   <p className="text-xs text-gray-500">Recent check-in scores &lt; 4</p>
@@ -260,10 +260,10 @@ export default async function AdminDashboardPage() {
               </span>
             </a>
 
-            {/* Phase I: Only confirmed_incompatibility â€” excludes released protocol failures */}
+            {/* Phase I: Only confirmed_incompatibility — excludes released protocol failures */}
             <a href="/admin/concern-reports" className="flex items-center justify-between p-4 hover:bg-toneek-cream transition-colors group">
               <div className="flex items-center gap-3">
-                <div className="bg-toneek-brown/10 text-toneek-brown p-2 rounded-lg text-lg">ðŸ”</div>
+                <div className="bg-toneek-brown/10 text-toneek-brown p-2 rounded-lg text-lg">🔁</div>
                 <div>
                   <p className="font-bold text-sm text-gray-900 group-hover:text-toneek-brown">Confirmed High-Risk</p>
                   <p className="text-xs text-gray-500">Verified formula incompatibilities</p>
@@ -357,7 +357,7 @@ export default async function AdminDashboardPage() {
                         <p className="text-xs text-gray-500">Units: <span className="font-bold text-gray-700">{run.total_orders_covered}</span></p>
                       </div>
                     </div>
-                    <a href="/admin/production" className="text-toneek-brown text-sm hover:underline font-medium">Manage â†’</a>
+                    <a href="/admin/production" className="text-toneek-brown text-sm hover:underline font-medium">Manage →</a>
                   </li>
                 ))}
               </ul>
@@ -380,7 +380,7 @@ export default async function AdminDashboardPage() {
           data.openConcernReports.length > 0 ? 'border-red-100' : 'border-gray-100'
         }`}>
           <div className="flex items-center gap-3">
-            <span className="text-xl">âš </span>
+            <span className="text-xl">⚠</span>
             <h2 className="text-sm font-bold text-gray-800">Concern Reports</h2>
             {data.openConcernReports.length > 0 && (
               <span className="bg-red-600 text-white text-xs font-bold px-2.5 py-0.5 rounded-full animate-pulse">
@@ -389,13 +389,13 @@ export default async function AdminDashboardPage() {
             )}
           </div>
           <span className="text-xs text-red-600 font-semibold hover:underline">
-            View all â†’
+            View all →
           </span>
         </div>
         <div className="divide-y divide-gray-50">
           {data.openConcernReports.length === 0 ? (
             <div className="p-8 text-center">
-              <p className="text-gray-400 text-sm">âœ… No open concern reports</p>
+              <p className="text-gray-400 text-sm">✅ No open concern reports</p>
             </div>
           ) : (
             data.openConcernReports.map((report: any) => {
@@ -419,7 +419,7 @@ export default async function AdminDashboardPage() {
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="text-xs text-gray-400">
-                      {report.day_of_protocol ? `Day ${report.day_of_protocol}` : 'â€”'}
+                      {report.day_of_protocol ? `Day ${report.day_of_protocol}` : '—'}
                     </p>
                     <p className="text-xs text-gray-400 mt-0.5">
                       {new Date(report.submitted_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
@@ -458,10 +458,10 @@ export default async function AdminDashboardPage() {
                      <div key={idx} className={`p-4 rounded-lg border shadow-sm ${borderColor}`}>
                        <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Week {outcome.check_in_week}</p>
                        <div className="mt-2 flex items-baseline gap-2">
-                         <span className="text-2xl font-bold text-gray-900">{outcome.improvement_score ? outcome.improvement_score : 'â€”'}</span>
+                         <span className="text-2xl font-bold text-gray-900">{outcome.improvement_score ? outcome.improvement_score : '—'}</span>
                          <span className="text-sm font-medium text-gray-400">/ 10</span>
                        </div>
-                       {hasAdverse && <p className="text-xs font-semibold text-toneek-error mt-2 flex items-center bg-white w-max px-2 py-0.5 rounded shadow-sm border border-toneek-errorbg">âš ï¸ Adverse Reaction</p>}
+                       {hasAdverse && <p className="text-xs font-semibold text-toneek-error mt-2 flex items-center bg-white w-max px-2 py-0.5 rounded shadow-sm border border-toneek-errorbg">⚠ï¸ Adverse Reaction</p>}
                        <p className="text-xs text-gray-400 mt-3">{new Date(outcome.recorded_at).toLocaleDateString()}</p>
                      </div>
                    )
@@ -482,7 +482,7 @@ export default async function AdminDashboardPage() {
             {data.systemFlags.length > 0 && (
                <div className="bg-red-900 border-l-4 border-red-500 p-4 rounded text-white shadow-sm">
                  <div className="flex">
-                    <span className="font-bold mr-2 text-lg">ðŸš¨</span>
+                    <span className="font-bold mr-2 text-lg">🚨</span>
                     <div>
                        <h3 className="font-bold border-b border-red-500/30 pb-1">Global Chemist Review</h3>
                        {data.systemFlags.map((flag: any) => (
@@ -500,7 +500,7 @@ export default async function AdminDashboardPage() {
             {data.flaggedAssessments > 0 && (
                <div className="bg-toneek-errorbg border-l-4 border-toneek-error p-4 rounded text-toneek-error">
                  <div className="flex">
-                    <span className="font-bold mr-2 text-lg">âš ï¸</span>
+                    <span className="font-bold mr-2 text-lg">⚠ï¸</span>
                     <div>
                       <h3 className="font-bold border-b border-toneek-error/10 pb-1">Customer Review Required</h3>
                        <p className="text-sm mt-1">{data.flaggedAssessments} assessments are automatically flagged for potential medical contraindications or individual chemist review.</p>
@@ -514,7 +514,7 @@ export default async function AdminDashboardPage() {
             {data.flaggedAssessments === 0 && data.systemFlags.length === 0 && (
                <div className="h-full flex items-center justify-center">
                  <div className="text-center text-gray-400">
-                    <p className="mb-2 text-3xl">âœ“</p>
+                    <p className="mb-2 text-3xl">✓</p>
                     <p className="text-sm font-medium">All systems nominally operating.</p>
                  </div>
                </div>
