@@ -77,14 +77,11 @@ async function getSystemHealth() {
   }
 
   // 1. Fetch Confirmed High-Risk Reporters (Phase I: only confirmed_incompatibility, excludes released holds)
-  // Task D fix: count DISTINCT customers (not total rows) and only records reviewed by an admin
-  // (reviewed_at IS NOT NULL). This excludes test data set before Phase I was built
-  // and avoids inflating the count when a single customer has multiple confirmed concerns.
+  // Count DISTINCT customers — one customer with multiple confirmed concerns counts as 1.
   const { data: confirmedReporters } = await adminClient
     .from('concern_reports')
     .select('user_id')
     .eq('review_status', 'confirmed_incompatibility')
-    .not('reviewed_at', 'is', null)
 
   const highRiskReporters = new Set(confirmedReporters?.map((r: any) => r.user_id) ?? []).size
 

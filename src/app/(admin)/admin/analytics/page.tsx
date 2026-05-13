@@ -47,16 +47,26 @@ async function getAnalyticsData() {
   // True Adverse = confirmed_incompatibility only
   // Protocol Failure = released_protocol_failure (user error, not formula fault)
   // Pending = pending_review (awaiting admin decision)
+  // Fix: if a concern's formula_code is valid but not yet in formulaStats,
+  // initialise it so the KPI and table are always consistent.
   concernReports?.forEach((c: any) => {
     const code = c.formula_code
-    if (!code || !formulaStats[code]) return
-
+    if (!code || code === 'N/A') return   // skip blank / fallback codes
+    if (!formulaStats[code]) {
+      formulaStats[code] = {
+        assigned: 0,
+        confirmedAdverse: 0,
+        protocolFailures: 0,
+        pendingReview: 0,
+        success: 0,
+        totalOutcomes: 0
+      }
+    }
     if (c.review_status === 'confirmed_incompatibility') {
       formulaStats[code].confirmedAdverse++
     } else if (c.review_status === 'released_protocol_failure') {
       formulaStats[code].protocolFailures++
     } else {
-      // pending_review or legacy (backfilled as confirmed)
       formulaStats[code].pendingReview++
     }
   })
@@ -102,9 +112,9 @@ async function getAnalyticsData() {
     }
   }).sort((a, b) => b.assigned - a.assigned)
 
-  // Global totals split by review_status
-  const totalConfirmedAdverse = concernReports?.filter((c: any) => c.review_status === 'confirmed_incompatibility').length ?? 0
-  const totalProtocolFailures = concernReports?.filter((c: any) => c.review_status === 'released_protocol_failure').length ?? 0
+  // Global totals — use formulaStats sums so KPI matches table exactly
+  const totalConfirmedAdverse = Object.values(formulaStats).reduce((sum: number, s: any) => sum + s.confirmedAdverse, 0)
+  const totalProtocolFailures = Object.values(formulaStats).reduce((sum: number, s: any) => sum + s.protocolFailures, 0)
   const totalPendingReviews   = concernReports?.filter((c: any) => c.review_status === 'pending_review').length ?? 0
 
   return {
