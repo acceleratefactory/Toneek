@@ -105,12 +105,22 @@ async function getCustomerData(id: string) {
 
   timeline.sort((a, b) => b.date.getTime() - a.date.getTime())
 
+  // Task B: Build a map of formula_code → most recent review_status from this user's concerns.
+  // Concerns are already ordered newest-first so the first entry per formula wins.
+  const formulaStatusMap: Record<string, string> = {}
+  concerns?.forEach((c: any) => {
+    if (c.formula_code && !formulaStatusMap[c.formula_code]) {
+      formulaStatusMap[c.formula_code] = c.review_status ?? 'pending_review'
+    }
+  })
+
   return {
     profile,
     assessments: assessments ?? [],
     orders: orders ?? [],
     outcomes: outcomes ?? [],
-    timeline
+    timeline,
+    formulaStatusMap
   }
 }
 
@@ -237,22 +247,55 @@ export default async function CustomerDetailPage(
                     </div>
                   </div>
 
-                  {/* Blacklisted Formulas */}
-                  {latestAssessment.adverse_formula_history && latestAssessment.adverse_formula_history.length > 0 && (
-                    <div className="pt-4 border-t border-gray-100">
-                      <p className="text-xs font-bold text-red-600 uppercase tracking-wider mb-2 flex items-center gap-1">
-                        <span className="text-sm">🚫</span> Clinical Blacklist
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {[...new Set(latestAssessment.adverse_formula_history as string[])].map((code, i) => (
-                          <span key={i} className="px-2.5 py-1 bg-red-50 text-red-700 text-xs font-bold rounded border border-red-200 shadow-sm">
-                            {code}
-                          </span>
-                        ))}
-                      </div>
-                      <p className="text-xs text-gray-400 mt-2">These formulas will never be automatically assigned to this customer again.</p>
-                    </div>
-                  )}
+                  {/* Blacklisted Formulas â€” Task B: badge-aware rendering */}
+                   {latestAssessment.adverse_formula_history && latestAssessment.adverse_formula_history.length > 0 && (
+                     <div className="pt-4 border-t border-gray-100">
+                       <p className="text-xs font-bold text-red-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                         <span className="text-sm">&#x1F6AB;</span> Clinical Blacklist
+                       </p>
+                       <div className="flex flex-wrap gap-2">
+                         {[...new Set(latestAssessment.adverse_formula_history as string[])].map((code: string, i: number) => {
+                           const status      = data.formulaStatusMap[code]
+                           const isReleased  = status === 'released_protocol_failure'
+                           const isConfirmed = status === 'confirmed_incompatibility'
+                           const isPending   = !isReleased && !isConfirmed
+                           return (
+                             <div key={i} className="flex items-center gap-1.5">
+                               <span className={`px-2.5 py-1 text-xs font-bold rounded border shadow-sm font-mono ${
+                                 isReleased  ? 'bg-green-50 text-green-800 border-green-200' :
+                                 isPending   ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                                               'bg-red-50 text-red-700 border-red-200'
+                               }`}>
+                                 {code}
+                               </span>
+                               {isReleased && (
+                                 <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full border border-green-200">
+                                   Released
+                                 </span>
+                               )}
+                               {isPending && (
+                                 <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-full border border-amber-200">
+                                   Under Review
+                                 </span>
+                               )}
+                               {isConfirmed && (
+                                 <span className="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-bold rounded-full border border-red-200">
+                                   Confirmed
+                                 </span>
+                               )}
+                             </div>
+                           )
+                         })}
+                       </div>
+                       <p className="text-xs text-gray-400 mt-3">
+                         {[...new Set(latestAssessment.adverse_formula_history as string[])].every(
+                           (code: string) => data.formulaStatusMap[code] === 'released_protocol_failure'
+                         )
+                           ? 'All holds lifted â€” formulas are cleared for re-assignment by the engine.'
+                           : 'Confirmed formulas will not be automatically re-assigned to this customer.'}
+                       </p>
+                     </div>
+                   )}
                </div>
             </div>
           )}

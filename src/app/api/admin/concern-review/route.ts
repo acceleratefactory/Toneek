@@ -59,6 +59,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: updateError.message }, { status: 500 })
     }
 
+    // Task C: Auto-clear the assessment flag now that a governance decision has been made.
+    // Both 'confirm' and 'release' mean the admin has reviewed this — the flag's job is done.
+    // Chemist-level flags (2+ adverse reports) are preserved — they require a separate manual sign-off.
+    try {
+      const { data: concern } = await adminClient
+        .from('concern_reports')
+        .select('user_id')
+        .eq('id', concern_id)
+        .single()
+
+      if (concern?.user_id) {
+        const { data: latestAssessment } = await adminClient
+          .from('skin_assessments')
+          .select('id, flag_reason')
+          .eq('user_id', concern.user_id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        const requiresChemist = latestAssessment?.flag_reason?.includes('Chemist review required') ?? false
+        if (!requiresChemist && latestAssessment?.id) {
+          await adminClient
+            .from('skin_assessments')
+            .update({ is_flagged_for_review: false })
+            .eq('id', latestAssessment.id)
+        }
+      }
+    } catch (flagErr) {
+      // Non-fatal — governance decision is already saved above
+      console.error('Task C: auto-clear flag error (non-fatal):', flagErr)
+    }
+
     return NextResponse.json({ success: true, review_status })
 
   } catch (err: any) {

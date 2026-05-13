@@ -69,10 +69,11 @@ async function getAnalyticsData() {
     if ((o.improvement_score ?? 0) >= 7) {
       formulaStats[code].success++
     }
-    // Check-in adverse reactions count toward confirmed adverse (they are clinical, not user error)
-    if (o.adverse_reactions) {
-      formulaStats[code].confirmedAdverse++
-    }
+    // Task A fix: adverse_reactions from skin_outcomes are NOT added to confirmedAdverse.
+    // concern_reports (with review_status='confirmed_incompatibility') is the single source
+    // of truth for confirmed adverse counts. Adding skin_outcomes here caused a double-count
+    // because every concern submission auto-creates a skin_outcomes row with adverse_reactions=true,
+    // regardless of whether the concern was confirmed, released, or still pending.
   })
 
   const analytics = Object.entries(formulaStats).map(([code, stats]) => {
