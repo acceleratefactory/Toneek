@@ -753,7 +753,7 @@ export default async function FormulaPage() {
 
                 {/* ── SUBSCRIPTION BANNER ── */}
                 {needsSubscription && (
-                    <div className="bg-[#FEF3E2] border border-[#D4700A] p-8 rounded-xl mt-4 text-center shadow-[0_2px_10px_rgba(42,15,6,0.04)]">
+                    <div id="dashboard-bottom-cta" className="bg-[#FEF3E2] border border-[#D4700A] p-8 rounded-xl mt-4 text-center shadow-[0_2px_10px_rgba(42,15,6,0.04)]">
                         <p className="font-bold text-[#2A0F06] text-xl mb-4">Formula synthesized. Proceed to checkout.</p>
                         <a href={`/subscribe?assessment_id=${latest.id}`} className="inline-block px-10 py-3.5 bg-[#382218] hover:bg-[#2A0F06] text-white rounded-lg font-bold transition-all shadow-md">
                             Subscribe to commence protocol
@@ -772,6 +772,7 @@ export default async function FormulaPage() {
             <StickyCTA
                 formulaCode={latest.formula_code || ''}
                 subscribeHref={`/subscribe?assessment_id=${latest.id}`}
+                bottomCtaId="dashboard-bottom-cta"
             />
         )}
         </>
