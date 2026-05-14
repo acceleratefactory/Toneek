@@ -1,11 +1,24 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createBrowserClient } from '@supabase/ssr'
 
 export default function CustomerLoginPage() {
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
+
+  useEffect(() => {
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        window.location.href = '/dashboard/formula'
+      }
+    })
+  }, [])
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -39,7 +52,7 @@ export default function CustomerLoginPage() {
       {/* Premium Header matching the dashboard style */}
       <header className="h-20 border-b border-toneek-brown/10 flex items-center px-6 md:px-12 bg-white">
         <a href="/">
-          <img src="/logo-dark.svg" alt="Toneek" className="h-8 w-auto object-contain cursor-pointer" />
+          <img src="/logo.svg" alt="Toneek" className="h-12 w-auto object-contain cursor-pointer" />
         </a>
       </header>
 
