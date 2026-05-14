@@ -10,7 +10,7 @@ async function getAnalyticsData() {
     { data: rulePerformance },
     { data: highRiskMirrorData }
   ] = await Promise.all([
-    adminClient.from('skin_assessments').select('user_id, formula_code'),
+    adminClient.from('skin_assessments').select('user_id, formula_code, how_did_you_hear'),
     adminClient.from('concern_reports').select('formula_code, severity, review_status'),
     adminClient.from('skin_outcomes').select('user_id, improvement_score, adverse_reactions'),
     adminClient.from('rule_performance').select('*'),
@@ -119,6 +119,28 @@ async function getAnalyticsData() {
   const totalProtocolFailures = Object.values(formulaStats).reduce((sum: number, s: any) => sum + s.protocolFailures, 0)
   const totalPendingReviews   = concernReports?.filter((c: any) => c.review_status === 'pending_review').length ?? 0
 
+  // Process Acquisition Channels
+  const acquisitionCounts: Record<string, number> = {}
+  let totalWithSource = 0
+
+  assessments?.forEach((a: any) => {
+    if (a.how_did_you_hear) {
+      const source = a.how_did_you_hear.trim()
+      if (source) {
+        acquisitionCounts[source] = (acquisitionCounts[source] || 0) + 1
+        totalWithSource++
+      }
+    }
+  })
+
+  const acquisitionChannels = Object.entries(acquisitionCounts)
+    .map(([source, count]) => ({
+      source,
+      count,
+      percentage: totalWithSource > 0 ? ((count / totalWithSource) * 100).toFixed(1) : '0.0'
+    }))
+    .sort((a, b) => b.count - a.count)
+
   return {
     analytics,
     rulePerformance: rulePerformance || [],
@@ -128,6 +150,7 @@ async function getAnalyticsData() {
     totalPendingReviews,
     totalOutcomes: outcomes?.length || 0,
     highRiskMirror: highRiskMirrorData || [],
+    acquisitionChannels,
     coldStartConfig: {
       active: process.env.COLD_START_MODE === 'true',
       threshold: parseInt(process.env.COLD_START_THRESHOLD || '200')
@@ -387,6 +410,48 @@ export default async function AnalyticsPage() {
                 </tbody>
               </table>
             </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Phase C: Acquisition Channels ── */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mt-6">
+        <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <h2 className="font-bold text-gray-900 flex items-center gap-2">
+            <span>📣</span> Acquisition Channels
+          </h2>
+          <span className="text-xs font-bold text-toneek-brown bg-toneek-cream px-2 py-1 rounded">
+            How did you hear about Toneek?
+          </span>
+        </div>
+        
+        <div className="p-0">
+          {data.acquisitionChannels.length === 0 ? (
+            <div className="p-6 text-center text-sm text-gray-500">
+              No acquisition data available yet.
+            </div>
+          ) : (
+            <ul className="divide-y divide-gray-100">
+              {data.acquisitionChannels.map((channel: any) => (
+                <li key={channel.source} className="p-6 hover:bg-gray-50 transition-colors flex items-center justify-between">
+                  <div className="flex flex-col">
+                    <span className="font-bold text-gray-900 capitalize">{channel.source}</span>
+                    <span className="text-xs text-gray-500 mt-1">{channel.count} {channel.count === 1 ? 'Customer' : 'Customers'}</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="w-32 bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-toneek-brown h-2 rounded-full" 
+                        style={{ width: `${channel.percentage}%` }}
+                      ></div>
+                    </div>
+                    <span className="font-mono text-sm font-bold text-gray-700 w-12 text-right">
+                      {channel.percentage}%
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       </div>

@@ -77,7 +77,7 @@ export default function DashboardShell({ children, userProfile }: { children: Re
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
-    window.location.href = '/assessment'
+    window.location.href = '/login'
   }
 
   return (

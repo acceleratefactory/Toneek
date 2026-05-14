@@ -92,7 +92,7 @@ export default async function DashboardLayout({
 
     // Not authenticated — send to assessment
     if (!session) {
-        redirect('/assessment')
+        redirect('/login')
     }
 
     // Subscription checks are removed as per request to allow access to dashboard regardless.

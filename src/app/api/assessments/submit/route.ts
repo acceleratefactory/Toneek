@@ -177,7 +177,24 @@ export async function POST(request: NextRequest) {
 
     // Send magic link email via Resend
     if (linkData?.properties?.action_link) {
-        await sendMagicLinkEmail(assessment.email, linkData.properties.action_link)
+        let robustLink = linkData.properties.action_link
+        try {
+            const urlObj = new URL(robustLink)
+            const token_hash = urlObj.searchParams.get('token_hash')
+            const type = urlObj.searchParams.get('type') || 'magiclink'
+            
+            if (token_hash) {
+                // PKCE Flow
+                robustLink = `${BASE_URL}/auth/confirm?token_hash=${token_hash}&type=${type}&next=/dashboard`
+            } else if (urlObj.hash && urlObj.hash.includes('access_token')) {
+                // Implicit Hash Flow
+                robustLink = `${BASE_URL}/auth/confirm${urlObj.hash}`
+            }
+        } catch (e) {
+            console.error('Failed to parse action_link:', e)
+        }
+
+        await sendMagicLinkEmail(assessment.email, robustLink)
     }
 
     // Step 5: Send formula email via Resend
@@ -205,7 +222,8 @@ export async function POST(request: NextRequest) {
 // ─── Magic link email ─────────────────────────────────────────────────────────
 
 async function sendMagicLinkEmail(email: string, action_link: string) {
-    const from = process.env.FROM_EMAIL ?? 'onboarding@resend.dev'
+    const envFrom = process.env.FROM_EMAIL ?? 'onboarding@resend.dev'
+    const from = envFrom.includes('<') ? envFrom : `Toneek <${envFrom}>`
     try {
         const { Resend } = await import('resend')
         const resend = new Resend(process.env.RESEND_API_KEY)

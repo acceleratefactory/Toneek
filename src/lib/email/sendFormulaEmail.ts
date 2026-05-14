@@ -33,8 +33,11 @@ export async function sendFormulaEmail(params: SendFormulaEmailParams) {
     } = params
 
     try {
+        const envFrom = process.env.FROM_EMAIL ?? 'onboarding@resend.dev'
+        const fromEmail = envFrom.includes('<') ? envFrom : `Toneek <${envFrom}>`
+
         const { data, error } = await resend.emails.send({
-            from: 'Toneek <onboarding@resend.dev>',
+            from: fromEmail,
             to: [email],
             subject: `Your Toneek formula: ${formula_code}`,
             react: FormulaEmail({

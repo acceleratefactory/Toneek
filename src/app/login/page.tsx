@@ -1,103 +1,107 @@
 'use client'
 
 import { useState } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
 
-export default function LoginPage() {
+export default function CustomerLoginPage() {
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [status, setStatus] = useState<'idle'|'loading'|'success'|'error'>('idle')
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
-
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setStatus('loading')
     setErrorMessage('')
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.toLowerCase().trim(),
-      password: password
-    })
+    try {
+      const res = await fetch('/api/auth/magic-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.toLowerCase().trim() }),
+      })
 
-    if (error) {
-      console.error(error)
+      const data = await res.json()
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to send login link.')
+      }
+
+      setStatus('success')
+    } catch (err: any) {
+      console.error(err)
       setStatus('error')
-      setErrorMessage(error.message)
-    } else if (data.session) {
-       // Save to server-side cookies so Next.js middleware knows we are logged in
-       const res = await fetch('/api/auth/session', {
-           method: 'POST',
-           headers: { 'Content-Type': 'application/json' },
-           body: JSON.stringify({ 
-               access_token: data.session.access_token, 
-               refresh_token: data.session.refresh_token 
-           }),
-       })
-
-       if (res.ok) {
-           setStatus('success')
-           window.location.href = '/admin'
-       } else {
-           setStatus('error')
-           setErrorMessage('Authentication succeeded but failed to set secure cookies.')
-       }
+      setErrorMessage(err.message || 'Something went wrong.')
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4" style={{ color: '#0f0f0f' }}>
-      <div className="max-w-md w-full bg-white p-8 rounded-xl shadow-md border border-gray-100">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2 text-center">Admin Access</h1>
-        <p className="text-gray-500 mb-6 text-center text-sm">Secure password authentication.</p>
+    <div className="min-h-screen flex flex-col bg-toneek-cream font-sans">
+      
+      {/* Premium Header matching the dashboard style */}
+      <header className="h-20 border-b border-toneek-brown/10 flex items-center px-6 md:px-12 bg-white">
+        <a href="/">
+          <img src="/logo-dark.svg" alt="Toneek" className="h-8 w-auto object-contain cursor-pointer" />
+        </a>
+      </header>
 
-        {status === 'success' ? (
-          <div className="bg-green-50 text-green-800 p-4 rounded-md border border-green-200 text-sm text-center">
-             ✅ Login successful! Redirecting to dashboard...
+      <main className="flex-1 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white p-8 md:p-10 rounded-2xl shadow-xl shadow-toneek-brown/5 border border-toneek-brown/10">
+          <div className="text-center mb-8">
+            <div className="h-14 w-14 bg-toneek-amber/10 text-toneek-amber rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+              ✨
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back</h1>
+            <p className="text-gray-500 text-sm">Enter your email to access your Toneek dashboard.</p>
           </div>
-        ) : (
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-              <input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 outline-none"
-                placeholder="admin@example.com"
-              />
+
+          {status === 'success' ? (
+            <div className="bg-toneek-sage/20 border border-toneek-forest/30 rounded-xl p-6 text-center">
+              <div className="text-3xl mb-3">📬</div>
+              <h3 className="font-bold text-gray-900 mb-1">Check your inbox</h3>
+              <p className="text-sm text-gray-600">
+                We've sent a secure login link to <br/>
+                <span className="font-medium text-gray-900">{email}</span>
+              </p>
+              <p className="text-xs text-gray-400 mt-4">
+                The link expires in 24 hours. You can close this tab.
+              </p>
             </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-              <input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 outline-none"
-                placeholder="••••••••"
-              />
-            </div>
-            {status === 'error' && (
-              <p className="text-red-500 text-sm font-medium bg-red-50 p-3 rounded">{errorMessage}</p>
-            )}
-            <button
-              type="submit"
-              disabled={status === 'loading'}
-              className="w-full bg-gray-900 hover:bg-black text-white font-bold py-2 px-4 rounded-md transition-colors disabled:opacity-50 mt-4"
-            >
-              {status === 'loading' ? 'Authenticating...' : 'Log In'}
-            </button>
-          </form>
-        )}
-      </div>
+          ) : (
+            <form onSubmit={handleLogin} className="space-y-5">
+              <div>
+                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-1.5">Email Address</label>
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-toneek-brown focus:border-toneek-brown outline-none transition-all placeholder-gray-400 text-gray-900"
+                  placeholder="name@example.com"
+                />
+              </div>
+
+              {status === 'error' && (
+                <div className="bg-red-50 text-red-600 text-sm p-4 rounded-xl border border-red-100 flex items-start gap-2">
+                  <span>⚠️</span>
+                  <span>{errorMessage}</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={status === 'loading'}
+                className="w-full bg-toneek-brown hover:bg-[#2C130A] text-white font-bold py-3.5 px-4 rounded-xl transition-colors disabled:opacity-70 disabled:cursor-not-allowed mt-2 shadow-md shadow-toneek-brown/20"
+              >
+                {status === 'loading' ? 'Sending Link...' : 'Send Login Link'}
+              </button>
+            </form>
+          )}
+        </div>
+      </main>
+
+      <footer className="py-6 text-center text-xs text-gray-400">
+        <p>&copy; {new Date().getFullYear()} Toneek. All rights reserved.</p>
+      </footer>
     </div>
   )
 }
