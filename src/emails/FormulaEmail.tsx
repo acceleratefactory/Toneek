@@ -39,6 +39,7 @@ interface FormulaEmailProps {
     routine_expectation: string
     isotretinoin_flag?: boolean
     assessment_id?: string
+    magic_link?: string
 }
 
 const CLIMATE_LABELS: Record<string, string> = {
@@ -67,11 +68,14 @@ export default function FormulaEmail({
     routine_expectation,
     isotretinoin_flag,
     assessment_id,
+    magic_link,
 }: FormulaEmailProps) {
     const actives: Active[] = formula?.active_modules ?? []
     const climateLabel = CLIMATE_LABELS[climate_zone] ?? climate_zone
     const routineMessage = ROUTINE_MESSAGES[routine_expectation] ?? ROUTINE_MESSAGES.two_to_three
-    const resultsUrl = assessment_id
+    const resultsUrl = magic_link
+        ? magic_link
+        : assessment_id
         ? `${BASE_URL}/results?assessment_id=${assessment_id}`
         : `${BASE_URL}/results`
 

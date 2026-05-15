@@ -175,7 +175,8 @@ export async function POST(request: NextRequest) {
             .eq('id', linkData.user.id)
     }
 
-    // Send magic link email via Resend
+    // Construct magic link if available
+    let finalMagicLink: string | undefined = undefined
     if (linkData?.properties?.action_link) {
         let robustLink = linkData.properties.action_link
         try {
@@ -193,11 +194,10 @@ export async function POST(request: NextRequest) {
         } catch (e) {
             console.error('Failed to parse action_link:', e)
         }
-
-        await sendMagicLinkEmail(assessment.email, robustLink)
+        finalMagicLink = robustLink
     }
 
-    // Step 5: Send formula email via Resend
+    // Step 5: Send unified formula + magic link email via Resend
     await sendFormulaEmail({
         email: assessment.email,
         formula_code: formulaResult.formula_code,
@@ -208,6 +208,7 @@ export async function POST(request: NextRequest) {
         routine_expectation: assessment.routine_expectation,
         isotretinoin_flag: assessment.medications?.includes('isotretinoin') ?? false,
         assessment_id: assessmentRecord?.id,
+        magic_link: finalMagicLink,
     })
 
     return NextResponse.json({
@@ -219,39 +220,4 @@ export async function POST(request: NextRequest) {
     })
 }
 
-// ─── Magic link email ─────────────────────────────────────────────────────────
-
-async function sendMagicLinkEmail(email: string, action_link: string) {
-    const envFrom = process.env.FROM_EMAIL ?? 'onboarding@resend.dev'
-    const from = envFrom.includes('<') ? envFrom : `Toneek <${envFrom}>`
-    try {
-        const { Resend } = await import('resend')
-        const resend = new Resend(process.env.RESEND_API_KEY)
-        await resend.emails.send({
-            from,
-            to: email,
-            subject: 'Your Toneek dashboard access link',
-            html: `
-                <div style="font-family:system-ui;max-width:560px;margin:0 auto;padding:32px 0;">
-                    <h2 style="margin:0 0 8px;color:#1a1a1a;">Access your Toneek dashboard</h2>
-                    <p style="color:#374151;margin-bottom:24px;">
-                        Click the link below to access your personalised formula and dashboard.
-                        This link expires in 24 hours and can only be used once.
-                    </p>
-                    <a href="${action_link}"
-                       style="display:inline-block;background:#1a1a1a;color:#d4a574;
-                              padding:14px 28px;border-radius:8px;text-decoration:none;
-                              font-weight:700;font-size:15px;letter-spacing:0.02em;">
-                        Open my dashboard &rarr;
-                    </a>
-                    <p style="color:#9ca3af;font-size:12px;margin-top:24px;">
-                        If you didn't request this, you can safely ignore this email.
-                    </p>
-                </div>
-            `,
-        })
-    } catch (err) {
-        console.error('Magic link email failed (non-fatal):', err)
-    }
-}
 

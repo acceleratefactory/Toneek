@@ -17,6 +17,7 @@ interface SendFormulaEmailParams {
     routine_expectation: string
     isotretinoin_flag?: boolean
     assessment_id?: string
+    magic_link?: string
 }
 
 export async function sendFormulaEmail(params: SendFormulaEmailParams) {
@@ -30,6 +31,7 @@ export async function sendFormulaEmail(params: SendFormulaEmailParams) {
         routine_expectation,
         isotretinoin_flag,
         assessment_id,
+        magic_link,
     } = params
 
     try {
@@ -50,6 +52,7 @@ export async function sendFormulaEmail(params: SendFormulaEmailParams) {
                 routine_expectation,
                 isotretinoin_flag,
                 assessment_id,
+                magic_link,
             }),
         })
 
