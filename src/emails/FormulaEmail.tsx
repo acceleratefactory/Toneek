@@ -82,7 +82,7 @@ export default function FormulaEmail({
     return (
         <Html>
             <Head />
-            <Preview>Your Toneek formula: {formula_code} — built for your skin</Preview>
+            <Preview>Welcome to Toneek. Your custom formula is ready.</Preview>
             <Body style={body}>
                 <Container style={container}>
 
@@ -97,6 +97,12 @@ export default function FormulaEmail({
                     {/* Intro */}
                     <Section style={section}>
                         <Heading as="h2" style={h2}>Welcome to Toneek</Heading>
+                        <Text style={body_text}>
+                            Welcome to a new standard of skin intelligence. We don't believe in guesswork, marketing hype, or generic routines. We believe in clinical-grade formulations engineered specifically for melanin-rich skin and your exact environment.
+                        </Text>
+                        <Text style={body_text}>
+                            Your assessment data has been successfully processed by our clinical engine. Below is the blueprint for your active treatment step.
+                        </Text>
                         <Text style={body_text}>
                             Based on your assessment, we have assigned you a personalised formula designed for {' '}
                             {primary_concern === 'PIH' ? 'dark spots (PIH)' : primary_concern} in a {climateLabel} climate.

@@ -41,7 +41,7 @@ export async function sendFormulaEmail(params: SendFormulaEmailParams) {
         const { data, error } = await resend.emails.send({
             from: fromEmail,
             to: [email],
-            subject: `Your Toneek formula: ${formula_code}`,
+            subject: `Welcome to Toneek. Your custom formula is ready.`,
             react: FormulaEmail({
                 email,
                 formula_code,
