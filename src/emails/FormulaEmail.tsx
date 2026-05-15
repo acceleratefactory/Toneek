@@ -15,6 +15,8 @@ import {
     Text,
 } from '@react-email/components'
 
+import { getClimateDescription, getPrimaryConcernLabel, getWeekExpectations } from '@/lib/email/emailHelpers'
+
 interface Active {
     name: string
     concentration: number
@@ -42,14 +44,7 @@ interface FormulaEmailProps {
     magic_link?: string
 }
 
-const CLIMATE_LABELS: Record<string, string> = {
-    humid_tropical: 'hot and humid (tropical)',
-    semi_arid: 'hot and dry (semi-arid)',
-    temperate_maritime: 'mild and damp (temperate maritime)',
-    cold_continental: 'cold winters, humid summers (continental)',
-    mediterranean: 'hot dry summers, mild wet winters',
-    equatorial: 'extremely hot and humid (equatorial)',
-}
+
 
 const ROUTINE_MESSAGES: Record<string, string> = {
     just_one: 'Your Toneek formula is your treatment. Pair it with a gentle cleanser and a plain moisturiser. Nothing else needed.',
@@ -71,7 +66,9 @@ export default function FormulaEmail({
     magic_link,
 }: FormulaEmailProps) {
     const actives: Active[] = formula?.active_modules ?? []
-    const climateLabel = CLIMATE_LABELS[climate_zone] ?? climate_zone
+    const climate_description = getClimateDescription(climate_zone)
+    const primary_concern_label = getPrimaryConcernLabel(primary_concern)
+    const expectations = getWeekExpectations(primary_concern)
     const routineMessage = ROUTINE_MESSAGES[routine_expectation] ?? ROUTINE_MESSAGES.two_to_three
     const resultsUrl = magic_link
         ? magic_link
@@ -104,8 +101,7 @@ export default function FormulaEmail({
                             Your assessment data has been successfully processed by our clinical engine. Below is the blueprint for your active treatment step.
                         </Text>
                         <Text style={body_text}>
-                            Based on your assessment, we have assigned you a personalised formula designed for {' '}
-                            {primary_concern === 'PIH' ? 'dark spots (PIH)' : primary_concern} in a {climateLabel} climate.
+                            Based on your assessment, we have assigned you a personalised formula designed for {primary_concern_label} in a {climate_description}.
                         </Text>
                     </Section>
 
@@ -145,22 +141,21 @@ export default function FormulaEmail({
                     <Hr style={divider} />
 
                     {/* Timeline */}
-                    {formula?.outcome_timeline_weeks && (
-                        <Section style={section}>
-                            <Heading as="h3" style={h3}>What to expect</Heading>
-                            {formula.week_2_expectation && (
-                                <Text style={timelineItem}><strong>Week 2:</strong> {formula.week_2_expectation}</Text>
-                            )}
-                            {formula.week_4_expectation && (
-                                <Text style={timelineItem}><strong>Week 4:</strong> {formula.week_4_expectation}</Text>
-                            )}
-                            {formula.week_8_expectation && (
-                                <Text style={timelineItem}>
-                                    <strong>Week {formula.outcome_timeline_weeks}:</strong> {formula.week_8_expectation}
-                                </Text>
-                            )}
+                    <Section style={section}>
+                        <Heading as="h3" style={h3}>What to expect</Heading>
+                        <Section style={activeCard}>
+                            <Text style={activeName}>WEEK 2</Text>
+                            <Text style={activeRationale}>{expectations.week2}</Text>
                         </Section>
-                    )}
+                        <Section style={activeCard}>
+                            <Text style={activeName}>WEEK 4</Text>
+                            <Text style={activeRationale}>{expectations.week4}</Text>
+                        </Section>
+                        <Section style={activeCard}>
+                            <Text style={activeName}>WEEK 8</Text>
+                            <Text style={activeRationale}>{expectations.week8}</Text>
+                        </Section>
+                    </Section>
 
                     {/* Routine instruction */}
                     <Section style={section}>
