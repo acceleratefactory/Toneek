@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import AnimatedScoreRing from './AnimatedScoreRing'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts'
@@ -267,6 +267,21 @@ export default function MetricGrid({ assessment, delayMs = 0, comparativeData }:
     }
   })
 
+  // Responsive radar radius to fix mobile cutoff without shrinking desktop
+  const [chartRadius, setChartRadius] = useState("70%")
+  useEffect(() => {
+    const updateRadius = () => {
+      if (window.innerWidth < 640) {
+        setChartRadius("55%")
+      } else {
+        setChartRadius("70%")
+      }
+    }
+    updateRadius() // Initial check
+    window.addEventListener("resize", updateRadius)
+    return () => window.removeEventListener("resize", updateRadius)
+  }, [])
+
   return (
     <div className="flex flex-col gap-6">
       {/* Visual Level 1: Radar Chart */}
@@ -276,7 +291,7 @@ export default function MetricGrid({ assessment, delayMs = 0, comparativeData }:
       >
         <div className="w-full h-[320px] max-w-[400px]">
           <ResponsiveContainer width="100%" height="100%">
-            <RadarChart cx="50%" cy="50%" outerRadius="55%" data={radarData}>
+            <RadarChart cx="50%" cy="50%" outerRadius={chartRadius} data={radarData}>
               <PolarGrid stroke="#d4a574" strokeOpacity={0.2} />
               <PolarAngleAxis dataKey="subject" tick={{ fill: '#d4a574', fontSize: 11, fontWeight: 600 }} />
               <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
