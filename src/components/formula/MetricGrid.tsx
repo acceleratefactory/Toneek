@@ -1,7 +1,9 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import AnimatedScoreRing from './AnimatedScoreRing'
+import { ChevronDown, ChevronUp } from 'lucide-react'
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts'
 import {
   getPigmentationLabel,
   getBarrierLabel,
@@ -239,52 +241,120 @@ export default function MetricGrid({ assessment, delayMs = 0, comparativeData }:
 
   const allMetrics = [...row1, ...row2]
 
+  const [isExpanded, setIsExpanded] = useState(false)
+
+  // Map metrics for RadarChart
+  const radarData = allMetrics.map(m => {
+    let label = m.title
+    if (label === 'BARRIER INTEGRITY') label = 'Barrier'
+    else if (label === 'TREATMENT TOLERANCE') label = 'Tolerance'
+    else if (label === 'CLIMATE STRESS') label = 'Climate'
+    else if (label === 'MELANIN SENSITIVITY') label = 'Melanin'
+    else if (label === 'PIGMENTATION LOAD') label = 'Pigmentation'
+    else if (label === 'OIL BALANCE') label = 'Oil Balance'
+    else if (label === 'INFLAMMATION LEVEL') label = 'Inflammation'
+    else if (label === 'HYDRATION STATUS') label = 'Hydration'
+
+    // Capitalize first letter, lowercase rest for elegant display
+    label = label.charAt(0).toUpperCase() + label.slice(1).toLowerCase()
+
+    return {
+      subject: label,
+      score: m.displayScore,
+      fullMark: 100,
+      fullTitle: m.title,
+      statusLabel: m.label,
+    }
+  })
+
   return (
-    <div
-      className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up opacity-0"
-      style={{ animationDelay: `${delayMs}ms`, animationFillMode: 'forwards' }}
-    >
-      {allMetrics.map((metric, i) => (
-        <div
-          key={metric.title}
-          className="bg-white dark:bg-[#261B18] border border-gray-100 dark:border-[#3A2820] shadow-sm rounded-xl p-4 flex flex-col items-center gap-3 hover:border-toneek-amber/30 transition-colors text-center"
-        >
-          <AnimatedScoreRing
-            score={metric.displayScore}
-            size={56}
-            strokeWidth={5}
-            showLabel={false}
-            delay={delayMs + (i * 80)}
-          />
-          <div className="flex flex-col gap-0.5">
-            <h5 className="text-[10px] font-bold text-gray-400 dark:text-[#A3938C] uppercase tracking-widest font-sans leading-tight">
-              {metric.title}
-            </h5>
-            <p className="text-[13px] font-semibold text-toneek-brown dark:text-[#F0E6DF] font-sans">
-              {metric.label}
-            </p>
-            <p className="text-[11px] text-gray-400 dark:text-[#7A6A62] font-sans leading-snug mt-0.5">
-              {metric.description}
-            </p>
-
-            {/* Comparative Insight — 10px italic warm grey per spec */}
-            <p className="text-[10px] italic text-[#8C7B72] dark:text-[#6A5A52] font-sans mt-1">
-              {comparativeData === null || comparativeData === undefined
-                ? 'Benchmark updating — check back after your Week 2 check-in'
-                : comparativeData[metric.title] !== undefined
-                  ? `${comparativeData[metric.title] >= 50 ? 'Better' : 'Lower'} than ${comparativeData[metric.title]}% of similar profiles`
-                  : 'Benchmark updating — check back after your Week 2 check-in'}
-            </p>
-
-            {/* Clinical Context Statement — static, always shown */}
-            {getMetricContext(metric.title, metric.score) && (
-              <p className="text-[11px] italic text-[#8C7B72] dark:text-[#6A5A52] font-sans mt-1 leading-snug">
-                {getMetricContext(metric.title, metric.score)}
-              </p>
-            )}
-          </div>
+    <div className="flex flex-col gap-6">
+      {/* Visual Level 1: Radar Chart */}
+      <div 
+        className="bg-white dark:bg-[#261B18] border border-gray-100 dark:border-[#3A2820] shadow-sm rounded-xl p-6 flex flex-col items-center animate-slide-up opacity-0"
+        style={{ animationDelay: `${delayMs}ms`, animationFillMode: 'forwards' }}
+      >
+        <div className="w-full h-[320px] max-w-[400px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+              <PolarGrid stroke="#d4a574" strokeOpacity={0.2} />
+              <PolarAngleAxis dataKey="subject" tick={{ fill: '#d4a574', fontSize: 11, fontWeight: 600 }} />
+              <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+              <Radar
+                name="Skin Profile"
+                dataKey="score"
+                stroke="#d4a574"
+                strokeWidth={2}
+                fill="#d4a574"
+                fillOpacity={0.3}
+              />
+            </RadarChart>
+          </ResponsiveContainer>
         </div>
-      ))}
+
+        {/* Status Chips Row */}
+        <div className="flex flex-wrap justify-center gap-2 mt-4">
+          {radarData.map(m => (
+            <div key={m.subject} className="px-3 py-1 bg-[#F5EFEA] dark:bg-[#3A2820] rounded-md border border-[#d4a574]/20">
+              <span className="text-[10px] font-bold text-[#8C7B72] uppercase tracking-wider">{m.subject}: </span>
+              <span className="text-[11px] font-semibold text-toneek-brown dark:text-[#F0E6DF]">{m.statusLabel}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Visual Level 3: Detailed Grid (Expandable) */}
+      <div className="flex flex-col items-center w-full">
+        <button 
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center gap-2 text-[12px] font-semibold text-[#8C7B72] hover:text-[#d4a574] transition-colors mb-4"
+        >
+          {isExpanded ? 'Hide detailed analysis' : 'View detailed analysis'}
+          {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </button>
+
+        {isExpanded && (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+            {allMetrics.map((metric, i) => (
+              <div
+                key={metric.title}
+                className="bg-white dark:bg-[#261B18] border border-gray-100 dark:border-[#3A2820] shadow-sm rounded-xl p-4 flex flex-col items-center gap-3 hover:border-toneek-amber/30 transition-colors text-center"
+              >
+                <AnimatedScoreRing
+                  score={metric.displayScore}
+                  size={56}
+                  strokeWidth={5}
+                  showLabel={false}
+                  delay={0}
+                />
+                <div className="flex flex-col gap-0.5">
+                  <h5 className="text-[10px] font-bold text-gray-400 dark:text-[#A3938C] uppercase tracking-widest font-sans leading-tight">
+                    {metric.title}
+                  </h5>
+                  <p className="text-[13px] font-semibold text-toneek-brown dark:text-[#F0E6DF] font-sans">
+                    {metric.label}
+                  </p>
+                  <p className="text-[11px] text-gray-400 dark:text-[#7A6A62] font-sans leading-snug mt-0.5">
+                    {metric.description}
+                  </p>
+                  <p className="text-[10px] italic text-[#8C7B72] dark:text-[#6A5A52] font-sans mt-1">
+                    {comparativeData === null || comparativeData === undefined
+                      ? 'Benchmark updating — check back after your Week 2 check-in'
+                      : comparativeData[metric.title] !== undefined
+                        ? `${comparativeData[metric.title] >= 50 ? 'Better' : 'Lower'} than ${comparativeData[metric.title]}% of similar profiles`
+                        : 'Benchmark updating — check back after your Week 2 check-in'}
+                  </p>
+                  {getMetricContext(metric.title, metric.score) && (
+                    <p className="text-[11px] italic text-[#8C7B72] dark:text-[#6A5A52] font-sans mt-1 leading-snug">
+                      {getMetricContext(metric.title, metric.score)}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

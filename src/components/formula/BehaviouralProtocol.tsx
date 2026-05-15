@@ -1,5 +1,7 @@
 'use client'
 
+import React from 'react'
+import { Sun, Droplets, CloudRain, Hexagon, Sparkles, X } from 'lucide-react'
 // src/components/formula/BehaviouralProtocol.tsx
 // Displays the customer's personalised usage protocol.
 // Supports both single-product lists and multi-product step sequences.
@@ -79,29 +81,44 @@ function ProtocolBlock({
   )
 }
 
+function getProductIcon(productName: string) {
+  const name = productName.toLowerCase()
+  if (name.includes('cleanser') || name.includes('wash')) return <Droplets size={16} className="text-toneek-amber" />
+  if (name.includes('moisturiser') || name.includes('cream')) return <CloudRain size={16} className="text-toneek-amber" />
+  if (name.includes('spf') || name.includes('sunscreen') || name.includes('sunblock')) return <Sun size={16} className="text-toneek-amber" />
+  if (name.includes('formula') || name.includes('treatment') || name.includes('active')) return <Hexagon size={16} className="text-toneek-amber fill-toneek-amber/20" />
+  return <Sparkles size={16} className="text-toneek-amber" />
+}
+
 function SequenceBlock({ sequence }: { sequence: RoutineSequence }) {
   if (!sequence) return null;
 
   return (
-    <div className="flex flex-col gap-3">
-      <h6 className="text-[11px] font-bold text-toneek-amber uppercase tracking-widest font-sans border-b border-toneek-amber/20 pb-1 inline-block">
+    <div className="flex flex-col w-full">
+      <h6 className="text-[11px] font-bold text-gray-400 dark:text-[#A3938C] uppercase tracking-widest font-sans mb-4">
         {sequence.title}
       </h6>
-      <div className="flex flex-col gap-3">
-        {sequence.steps.map((step) => (
-          <div key={step.step} className="flex items-start gap-3 bg-gray-50/50 dark:bg-black/20 p-3 rounded-lg border border-gray-100 dark:border-gray-800">
-            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-toneek-amber/10 dark:bg-toneek-amber/20 text-toneek-amber flex items-center justify-center text-[10px] font-bold">
+      <div className="flex flex-col relative pl-3">
+        {/* Continuous connecting line */}
+        <div className="absolute left-[11px] top-4 bottom-8 w-[1px] bg-toneek-amber/40"></div>
+
+        {sequence.steps.map((step, index) => (
+          <div key={step.step} className="flex items-start gap-4 mb-6 relative">
+            <div className="flex-shrink-0 w-[24px] h-[24px] rounded-full bg-[#2A0F06] dark:bg-[#E8DDD8] text-white dark:text-[#2A0F06] flex items-center justify-center text-[11px] font-bold z-10 shadow-sm border border-[#2A0F06]/10">
               {step.step}
             </div>
-            <div className="flex flex-col">
-              <span className="text-[13px] font-bold text-gray-900 dark:text-white leading-tight mb-0.5">
-                {step.product}
-              </span>
-              <span className="text-[13px] text-gray-600 dark:text-gray-400 leading-snug">
-                {step.instruction}
+            <div className="flex flex-col pt-0.5">
+              <div className="flex items-center gap-2 mb-1">
+                {getProductIcon(step.product)}
+                <span className="text-[13px] font-semibold text-toneek-brown dark:text-[#F0E6DF] leading-tight font-sans">
+                  {step.product}
+                </span>
+              </div>
+              <span className="text-[11px] text-[#8C7B72] dark:text-[#A3938C] leading-snug font-sans">
+                {step.instruction} {step.timing}
               </span>
               {step.note && (
-                <span className="text-[11px] text-gray-400 dark:text-gray-500 mt-1 italic">
+                <span className="text-[10px] text-toneek-amber/90 dark:text-toneek-amber/80 mt-1 italic font-sans">
                   * {step.note}
                 </span>
               )}
@@ -171,11 +188,23 @@ export default function BehaviouralProtocol({
 
         {/* Right column: Avoid, Notes, First Week */}
         <div className="flex flex-col gap-6">
-          <ProtocolBlock
-            title="What to Avoid"
-            items={avoidList}
-            type="cross"
-          />
+          {avoidList && avoidList.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <h6 className="text-[10px] font-bold text-gray-400 dark:text-[#A3938C] uppercase tracking-widest font-sans">
+                What to Avoid
+              </h6>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {avoidList.map((item: string, i: number) => (
+                  <div key={i} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#FAF8F5] dark:bg-[#261B18] rounded border border-gray-100 dark:border-[#3A2820]">
+                    <X size={12} className="text-[#C13B2E] dark:text-[#E07070] flex-shrink-0" strokeWidth={3} />
+                    <span className="text-[11px] font-semibold text-gray-600 dark:text-[#D4C5BE] leading-none whitespace-nowrap">
+                      {item}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {isMultiProduct && protocol.general_notes && protocol.general_notes.length > 0 && (
             <ProtocolBlock

@@ -1,5 +1,5 @@
-import React from 'react'
-import { MapPin, Droplets, Sun, Wind, ThermometerSun } from 'lucide-react'
+import React, { useState } from 'react'
+import { MapPin, Droplets, Sun, Wind, ThermometerSun, ShieldAlert, Target, Hexagon, ChevronDown, ChevronUp } from 'lucide-react'
 import type { FormulaLogicParagraph } from '@/lib/formula/generateFormulaLogic'
 
 interface FormulaCardProps {
@@ -25,6 +25,8 @@ export default function FormulaCard({
   children,
 }: FormulaCardProps & { children?: React.ReactNode }) {
   
+  const [logicExpanded, setLogicExpanded] = useState(false)
+
   // Choose an icon based on climate zone keywords
   let ClimateIcon = ThermometerSun
   if (climateZone.toLowerCase().includes('humid')) ClimateIcon = Droplets
@@ -64,11 +66,6 @@ export default function FormulaCard({
                 <ClimateIcon size={16} className="text-toneek-amber" />
                 <span className="font-semibold">Formulated for {climateZone}</span>
               </div>
-              {formulaRationale && (
-                <p className="text-[13px] text-gray-500 dark:text-[#A3938C] leading-relaxed mt-2">
-                  {formulaRationale}
-                </p>
-              )}
             </div>
           </div>
         </div>
@@ -96,39 +93,76 @@ export default function FormulaCard({
             Formula Logic
           </h5>
 
-          {hasLogic ? (
-            <div className="flex flex-col gap-5">
-              {logicParagraphs!.map((p, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <span className="flex-shrink-0 text-toneek-amber font-bold text-[14px] mt-0.5">→</span>
-                  <div>
-                    <p className="text-[13px] font-semibold text-gray-800 dark:text-[#E8DDD8] font-sans leading-snug">
-                      {p.arrow}
-                    </p>
-                    {p.body && (
-                      <p className="text-[12px] text-gray-500 dark:text-[#A3938C] font-sans leading-relaxed mt-1.5">
-                        {p.body}
+          {/* New Visual Logic Chain */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-3 md:gap-2 w-full">
+            {/* Node 1 */}
+            <div className="flex flex-col items-center bg-white dark:bg-[#261B18] border border-toneek-amber/30 rounded-xl p-3 w-full md:flex-1 text-center shadow-sm">
+              <ClimateIcon size={20} className="text-toneek-amber mb-2" />
+              <span className="text-[10px] font-bold text-gray-800 dark:text-[#E8DDD8] uppercase leading-tight line-clamp-1 break-all px-1">{climateZone.replace(/_/g, ' ')}</span>
+              <span className="text-[10px] text-gray-500 dark:text-[#A3938C] mt-1 truncate max-w-full">{pathPills[0] || 'Location'}</span>
+            </div>
+
+            <span className="text-toneek-amber font-bold hidden md:block">→</span>
+            <span className="text-toneek-amber font-bold md:hidden">↓</span>
+
+            {/* Node 2 */}
+            <div className="flex flex-col items-center bg-white dark:bg-[#261B18] border border-toneek-amber/30 rounded-xl p-3 w-full md:flex-1 text-center shadow-sm">
+              <ShieldAlert size={20} className="text-toneek-amber mb-2" />
+              <span className="text-[10px] font-bold text-gray-800 dark:text-[#E8DDD8] uppercase leading-tight line-clamp-1 break-all px-1">{pathPills[1] || 'Skin Type'}</span>
+              <span className="text-[10px] text-gray-500 dark:text-[#A3938C] mt-1 truncate max-w-full">Presentation</span>
+            </div>
+
+            <span className="text-toneek-amber font-bold hidden md:block">→</span>
+            <span className="text-toneek-amber font-bold md:hidden">↓</span>
+
+            {/* Node 3 */}
+            <div className="flex flex-col items-center bg-white dark:bg-[#261B18] border border-toneek-amber/30 rounded-xl p-3 w-full md:flex-1 text-center shadow-sm">
+              <Target size={20} className="text-toneek-amber mb-2" />
+              <span className="text-[10px] font-bold text-gray-800 dark:text-[#E8DDD8] uppercase leading-tight line-clamp-1 break-all px-1">{pathPills[2] || 'Concern'}</span>
+              <span className="text-[10px] text-gray-500 dark:text-[#A3938C] mt-1 truncate max-w-full">Primary Focus</span>
+            </div>
+
+            <span className="text-toneek-amber font-bold hidden md:block">→</span>
+            <span className="text-toneek-amber font-bold md:hidden">↓</span>
+
+            {/* Node 4 */}
+            <div className="flex flex-col items-center bg-[#FAF8F5] dark:bg-toneek-amber/10 border border-toneek-amber rounded-xl p-3 w-full md:flex-[1.2] text-center shadow-sm">
+              <Hexagon size={20} className="text-toneek-amber mb-2 fill-toneek-amber/20" />
+              <span className="text-[11px] font-bold text-toneek-brown dark:text-[#F0E6DF] uppercase leading-tight">{formulaCode}</span>
+              <span className="text-[9px] text-toneek-brown/80 dark:text-[#E8DDD8]/80 mt-1 max-w-[80px] md:max-w-full truncate">{formulaName.split('/')[0] || formulaName}</span>
+            </div>
+          </div>
+
+          {/* Expandable Old Paragraphs */}
+          <div className="mt-6">
+            <button 
+              onClick={() => setLogicExpanded(!logicExpanded)}
+              className="flex items-center gap-2 text-[12px] font-semibold text-[#8C7B72] hover:text-[#d4a574] transition-colors"
+            >
+              {logicExpanded ? 'Hide formula logic' : 'Why this formula?'}
+              {logicExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+
+            {logicExpanded && hasLogic && (
+              <div className="flex flex-col gap-5 mt-5 pt-5 border-t border-gray-100 dark:border-[#3A2820] animate-in fade-in slide-in-from-top-2 duration-300">
+                {logicParagraphs!.map((p, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <span className="flex-shrink-0 text-toneek-amber font-bold text-[14px] mt-0.5">→</span>
+                    <div>
+                      <p className="text-[13px] font-semibold text-gray-800 dark:text-[#E8DDD8] font-sans leading-snug">
+                        {p.arrow}
                       </p>
-                    )}
+                      {p.body && (
+                        <p className="text-[12px] text-gray-500 dark:text-[#A3938C] font-sans leading-relaxed mt-1.5">
+                          {p.body}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            /* Fallback: original pills layout if no logic paragraphs generated */
-            <div className="flex flex-row items-center flex-wrap">
-              {pathPills.map((pill, index) => (
-                <React.Fragment key={pill}>
-                  <div className="bg-toneek-amber text-white text-[13px] font-semibold px-3 py-1.5 rounded-full whitespace-nowrap shadow-sm">
-                    {pill}
-                  </div>
-                  {index < pathPills.length - 1 && (
-                    <div className="w-4 sm:w-6 h-[2px] bg-toneek-amber/30 shrink-0"></div>
-                  )}
-                </React.Fragment>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Bottom Card: Children (Formula Review Schedule) */}

@@ -12,6 +12,8 @@ import MetricGrid from '@/components/formula/MetricGrid'
 import FormulaCard from '@/components/formula/FormulaCard'
 import IngredientCard from '@/components/formula/IngredientCard'
 import ProgressChart from '@/components/formula/ProgressChart'
+import GrowthTrajectory from '@/components/formula/GrowthTrajectory'
+import ClinicalSynthesis from '@/components/formula/ClinicalSynthesis'
 import CheckinTimeline, { TimelineNode, CheckinState } from '@/components/formula/CheckinTimeline'
 import HeldOrderBanner from '@/components/formula/HeldOrderBanner'
 import DecisionConfidence from '@/components/formula/DecisionConfidence'
@@ -453,6 +455,9 @@ export default async function FormulaPage() {
             {/* ── SYSTEM UPDATED BANNER (client-side, sessionStorage) ── */}
             <SystemUpdatedBanner />
 
+            {/* ── CLINICAL SYNTHESIS CARD ── */}
+            <ClinicalSynthesis rationale={latest.formula_rationale} delayMs={50} />
+
             {hasDueCheckin && (
                 <HeldOrderBanner checkinWeekRequired={dueCheckinWeek} />
             )}
@@ -697,11 +702,10 @@ export default async function FormulaPage() {
                         </div>
                         <div className="mt-4">
                             <ProgressChart data={chartData} currentScore={currentScore} />
-                            {outcomes && outcomes.length > 1 && (
-                                <p className="text-toneek-forest text-[13px] font-semibold mt-4 flex items-center justify-center gap-1 w-full text-center">
-                                    ↑ Your skin is responding positively to the formula
-                                </p>
-                            )}
+                            <GrowthTrajectory 
+                                currentScore={currentScore} 
+                                latestWeek={outcomes && outcomes.length > 0 ? outcomes[outcomes.length - 1].check_in_week : 0} 
+                            />
                         </div>
                     </div>
 
@@ -734,7 +738,7 @@ export default async function FormulaPage() {
                 </div>
 
                 {/* ── ESCALATION PATH ── */}
-                <EscalationPath delayMs={850} />
+                <EscalationPath formulaTier={latest.formula_tier} delayMs={850} />
 
                 {/* Active constituents were moved up */}
 
