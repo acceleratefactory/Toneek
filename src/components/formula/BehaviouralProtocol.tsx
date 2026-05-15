@@ -38,6 +38,41 @@ interface BehaviouralProtocolProps {
 
 // ─── Sub-section layout ───────────────────────────────────────────────────────
 
+function VerticalListBlock({
+  title,
+  items,
+}: {
+  title: string
+  items: string[]
+}) {
+  if (!items || items.length === 0) return null;
+
+  return (
+    <div className="flex flex-col w-full">
+      <h6 className="text-[11px] font-bold text-gray-400 dark:text-[#A3938C] uppercase tracking-widest font-sans mb-4">
+        {title}
+      </h6>
+      <div className="flex flex-col relative pl-3">
+        {/* Continuous connecting line */}
+        <div className="absolute left-[11px] top-4 bottom-8 w-[1px] bg-toneek-amber/40"></div>
+
+        {items.map((item, index) => (
+          <div key={index} className="flex items-start gap-4 mb-6 relative">
+            <div className="flex-shrink-0 w-[24px] h-[24px] rounded-full bg-[#2A0F06] dark:bg-[#E8DDD8] text-white dark:text-[#2A0F06] flex items-center justify-center text-[11px] font-bold z-10 shadow-sm border border-[#2A0F06]/10">
+              {index + 1}
+            </div>
+            <div className="flex flex-col pt-0.5 min-w-0 flex-1 pr-2">
+              <span className="text-[13px] text-gray-700 dark:text-[#D4C5BE] font-sans leading-snug break-words">
+                {item}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function ProtocolBlock({
   title,
   items,
@@ -71,7 +106,7 @@ function ProtocolBlock({
             <span className={`flex-shrink-0 font-bold text-[13px] mt-0.5 ${colours[type]}`}>
               {icons[type]}
             </span>
-            <span className="text-[13px] text-gray-700 dark:text-[#D4C5BE] font-sans leading-snug">
+            <span className="text-[13px] text-gray-700 dark:text-[#D4C5BE] font-sans leading-snug min-w-0 flex-1 pr-2">
               {item}
             </span>
           </li>
@@ -107,7 +142,7 @@ function SequenceBlock({ sequence }: { sequence: RoutineSequence }) {
             <div className="flex-shrink-0 w-[24px] h-[24px] rounded-full bg-[#2A0F06] dark:bg-[#E8DDD8] text-white dark:text-[#2A0F06] flex items-center justify-center text-[11px] font-bold z-10 shadow-sm border border-[#2A0F06]/10">
               {step.step}
             </div>
-            <div className="flex flex-col pt-0.5">
+            <div className="flex flex-col pt-0.5 min-w-0 flex-1 pr-2">
               <div className="flex items-center gap-2 mb-1">
                 {getProductIcon(step.product)}
                 <span className="text-[13px] font-semibold text-toneek-brown dark:text-[#F0E6DF] leading-tight font-sans">
@@ -172,15 +207,13 @@ export default function BehaviouralProtocol({
             </>
           ) : (
             <>
-              <ProtocolBlock
+              <VerticalListBlock
                 title="Application"
                 items={appInstructions}
-                type="bullet"
               />
-              <ProtocolBlock
+              <VerticalListBlock
                 title="Use Alongside"
                 items={useAlongsideList}
-                type="check"
               />
             </>
           )}
@@ -195,9 +228,9 @@ export default function BehaviouralProtocol({
               </h6>
               <div className="flex flex-wrap gap-2 mt-1">
                 {avoidList.map((item: string, i: number) => (
-                  <div key={i} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#FAF8F5] dark:bg-[#261B18] rounded border border-gray-100 dark:border-[#3A2820]">
-                    <X size={12} className="text-[#C13B2E] dark:text-[#E07070] flex-shrink-0" strokeWidth={3} />
-                    <span className="text-[11px] font-semibold text-gray-600 dark:text-[#D4C5BE] leading-none whitespace-nowrap">
+                  <div key={i} className="flex items-start gap-1.5 px-2.5 py-1.5 bg-[#FAF8F5] dark:bg-[#261B18] rounded border border-gray-100 dark:border-[#3A2820]">
+                    <X size={12} className="text-[#C13B2E] dark:text-[#E07070] flex-shrink-0 mt-0.5" strokeWidth={3} />
+                    <span className="text-[11px] font-semibold text-gray-600 dark:text-[#D4C5BE] leading-tight break-words min-w-0">
                       {item}
                     </span>
                   </div>

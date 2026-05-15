@@ -276,7 +276,7 @@ export default function MetricGrid({ assessment, delayMs = 0, comparativeData }:
       >
         <div className="w-full h-[320px] max-w-[400px]">
           <ResponsiveContainer width="100%" height="100%">
-            <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+            <RadarChart cx="50%" cy="50%" outerRadius="55%" data={radarData}>
               <PolarGrid stroke="#d4a574" strokeOpacity={0.2} />
               <PolarAngleAxis dataKey="subject" tick={{ fill: '#d4a574', fontSize: 11, fontWeight: 600 }} />
               <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
