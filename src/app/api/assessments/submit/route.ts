@@ -177,28 +177,23 @@ export async function POST(request: NextRequest) {
 
     // Construct magic link if available
     let finalMagicLink: string | undefined = undefined
-    if (linkData?.properties) {
+    if (linkData?.properties?.action_link) {
         let robustLink = linkData.properties.action_link
-        
-        // Prefer hashed_token for a direct, PKCE-safe client verification
-        if (linkData.properties.hashed_token) {
-            robustLink = `${BASE_URL}/auth/confirm?token_hash=${linkData.properties.hashed_token}&type=magiclink&next=/dashboard`
-        } else {
-            try {
-                const urlObj = new URL(robustLink)
-                const token_hash = urlObj.searchParams.get('token_hash')
-                const type = urlObj.searchParams.get('type') || 'magiclink'
-                
-                if (token_hash) {
-                    // PKCE Flow
-                    robustLink = `${BASE_URL}/auth/confirm?token_hash=${token_hash}&type=${type}&next=/dashboard`
-                } else if (urlObj.hash && urlObj.hash.includes('access_token')) {
-                    // Implicit Hash Flow
-                    robustLink = `${BASE_URL}/auth/confirm${urlObj.hash}`
-                }
-            } catch (e) {
-                console.error('Failed to parse action_link:', e)
+        try {
+            const urlObj = new URL(robustLink)
+            // The raw token is either in ?token= or ?token_hash= depending on PKCE settings
+            const rawToken = urlObj.searchParams.get('token') || urlObj.searchParams.get('token_hash')
+            const type = urlObj.searchParams.get('type') || 'magiclink'
+            
+            if (rawToken) {
+                // Client-side OTP verification requires the RAW token to be passed as token_hash
+                robustLink = `${BASE_URL}/auth/confirm?token_hash=${rawToken}&type=${type}&next=/dashboard`
+            } else if (urlObj.hash && urlObj.hash.includes('access_token')) {
+                // Implicit Hash Flow fallback
+                robustLink = `${BASE_URL}/auth/confirm${urlObj.hash}`
             }
+        } catch (e) {
+            console.error('Failed to parse action_link:', e)
         }
         finalMagicLink = robustLink
     }
