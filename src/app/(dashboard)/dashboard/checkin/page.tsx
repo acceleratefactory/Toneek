@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { adminClient } from '@/lib/supabase/admin'
 import { calculateClinicalDates, ClinicalDates } from '@/lib/dates/clinicalDates'
 import CheckinContent from './CheckinContent'
+import CheckinCountdownTimer from '@/components/checkin/CheckinCountdownTimer'
 
 function getCurrentCheckinWeek(dates: ClinicalDates, outcomes: any[]): number | null {
   if (!dates.has_received) return null
@@ -17,6 +18,20 @@ function getCurrentCheckinWeek(dates: ClinicalDates, outcomes: any[]): number | 
   if (!w2_done && dates.week2_date && now >= dates.week2_date) return 2
   if (w2_done && !w4_done && dates.week4_date && now >= dates.week4_date) return 4
   if (w4_done && !w8_done && dates.week8_date && now >= dates.week8_date) return 8
+  
+  return null
+}
+
+function getNextCheckinInfo(dates: ClinicalDates, outcomes: any[]): { week: number, date: Date } | null {
+  if (!dates.has_received) return null
+  
+  const w2_done = outcomes.some(o => o.check_in_week === 2)
+  const w4_done = outcomes.some(o => o.check_in_week === 4)
+  const w8_done = outcomes.some(o => o.check_in_week === 8)
+
+  if (!w2_done && dates.week2_date) return { week: 2, date: dates.week2_date }
+  if (w2_done && !w4_done && dates.week4_date) return { week: 4, date: dates.week4_date }
+  if (w4_done && !w8_done && dates.week8_date) return { week: 8, date: dates.week8_date }
   
   return null
 }
@@ -82,19 +97,14 @@ export default async function CheckinPage({
 
     // ── Standard schedule: no check-in due ───────────────────────────
     if (!currentCheckinWeek) {
+        const nextInfo = getNextCheckinInfo(clinical_dates, outcomes || [])
         return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '2rem' }}>
-                <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#3A2820] rounded-xl p-8 text-center shadow-sm">
-                    <h2 className="text-toneek-brown dark:text-[#F0E6DF] text-xl font-bold mb-2">
-                        No Check-in Due
-                    </h2>
-                    <p className="text-gray-600 dark:text-[#A3938C] text-sm mb-6">
-                        You do not currently have an active check-in. Check-ins open at Week 2, 4, and 8 of your protocol.
-                    </p>
-                    <a href="/dashboard/formula" className="inline-block px-6 py-3 bg-[#E8E0DA] dark:bg-[#3A2820] text-toneek-brown dark:text-[#F0E6DF] rounded-lg font-bold text-sm hover:opacity-90 transition-opacity">
-                        Return to Dashboard
-                    </a>
-                </div>
+                <CheckinCountdownTimer 
+                    hasReceived={clinical_dates.has_received}
+                    nextCheckinWeek={nextInfo?.week || null}
+                    nextCheckinDate={nextInfo?.date || null}
+                />
             </div>
         )
     }
