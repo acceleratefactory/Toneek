@@ -1,3 +1,5 @@
+'use client'
+
 import React, { useState } from 'react'
 import { MapPin, Droplets, Sun, Wind, ThermometerSun, ShieldAlert, Target, Hexagon, ChevronDown, ChevronUp } from 'lucide-react'
 import type { FormulaLogicParagraph } from '@/lib/formula/generateFormulaLogic'
