@@ -177,22 +177,28 @@ export async function POST(request: NextRequest) {
 
     // Construct magic link if available
     let finalMagicLink: string | undefined = undefined
-    if (linkData?.properties?.action_link) {
+    if (linkData?.properties) {
         let robustLink = linkData.properties.action_link
-        try {
-            const urlObj = new URL(robustLink)
-            const token_hash = urlObj.searchParams.get('token_hash')
-            const type = urlObj.searchParams.get('type') || 'magiclink'
-            
-            if (token_hash) {
-                // PKCE Flow
-                robustLink = `${BASE_URL}/auth/confirm?token_hash=${token_hash}&type=${type}&next=/dashboard`
-            } else if (urlObj.hash && urlObj.hash.includes('access_token')) {
-                // Implicit Hash Flow
-                robustLink = `${BASE_URL}/auth/confirm${urlObj.hash}`
+        
+        // Prefer hashed_token for a direct, PKCE-safe client verification
+        if (linkData.properties.hashed_token) {
+            robustLink = `${BASE_URL}/auth/confirm?token_hash=${linkData.properties.hashed_token}&type=magiclink&next=/dashboard`
+        } else {
+            try {
+                const urlObj = new URL(robustLink)
+                const token_hash = urlObj.searchParams.get('token_hash')
+                const type = urlObj.searchParams.get('type') || 'magiclink'
+                
+                if (token_hash) {
+                    // PKCE Flow
+                    robustLink = `${BASE_URL}/auth/confirm?token_hash=${token_hash}&type=${type}&next=/dashboard`
+                } else if (urlObj.hash && urlObj.hash.includes('access_token')) {
+                    // Implicit Hash Flow
+                    robustLink = `${BASE_URL}/auth/confirm${urlObj.hash}`
+                }
+            } catch (e) {
+                console.error('Failed to parse action_link:', e)
             }
-        } catch (e) {
-            console.error('Failed to parse action_link:', e)
         }
         finalMagicLink = robustLink
     }

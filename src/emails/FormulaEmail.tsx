@@ -96,7 +96,7 @@ export default function FormulaEmail({
 
                     {/* Intro */}
                     <Section style={section}>
-                        <Heading as="h2" style={h2}>Your formula is ready</Heading>
+                        <Heading as="h2" style={h2}>Welcome to Toneek</Heading>
                         <Text style={body_text}>
                             Based on your assessment, we have assigned you a personalised formula designed for {' '}
                             {primary_concern === 'PIH' ? 'dark spots (PIH)' : primary_concern} in a {climateLabel} climate.
