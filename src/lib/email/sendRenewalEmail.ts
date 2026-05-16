@@ -16,7 +16,7 @@ export async function sendRenewalEmail({
     NGN: '₦', GBP: '£', USD: '$', EUR: '€', GHS: 'GH₵'
   }
   const symbol = currency_symbols[currency] ?? ''
-  const amount_display = amount ? \`\${symbol}\${amount.toLocaleString()}\` : 'your plan amount'
+  const amount_display = amount ? `${symbol}${amount.toLocaleString()}` : 'your plan amount'
 
   const billing_date_display = new Date(billing_date).toLocaleDateString('en-GB', {
     day: 'numeric', month: 'long', year: 'numeric'
@@ -25,8 +25,8 @@ export async function sendRenewalEmail({
   await resend.emails.send({
     from: process.env.FROM_EMAIL || 'billing@toneek.com',
     to: email,
-    subject: \`Your Toneek formula renews in 7 days — action required\`,
-    html: \`
+    subject: `Your Toneek formula renews in 7 days — action required`,
+    html: `
       <div style="font-family:system-ui;max-width:560px;margin:0 auto;
                   background:#2A0F06;padding:0;">
         
@@ -39,7 +39,7 @@ export async function sendRenewalEmail({
 
         <div style="padding:32px;">
           <h2 style="color:#F7F1EB;font-size:20px;margin:0 0 16px;">
-            Hi \${name}, your formula renewal is due.
+            Hi ${name}, your formula renewal is due.
           </h2>
           
           <div style="background:rgba(255,255,255,0.05);border-radius:8px;
@@ -47,15 +47,15 @@ export async function sendRenewalEmail({
             <p style="color:#8C7B72;font-size:11px;margin:0 0 4px;
                       text-transform:uppercase;letter-spacing:2px;">Renewal date</p>
             <p style="color:#F7F1EB;font-size:18px;font-weight:600;margin:0;">
-              \${billing_date_display}
+              ${billing_date_display}
             </p>
             <p style="color:#8C7B72;font-size:11px;margin:8px 0 0;
                       text-transform:uppercase;letter-spacing:2px;">Plan</p>
-            <p style="color:#F7F1EB;font-size:16px;margin:4px 0 0;">\${plan}</p>
+            <p style="color:#F7F1EB;font-size:16px;margin:4px 0 0;">${plan}</p>
             <p style="color:#8C7B72;font-size:11px;margin:8px 0 0;
                       text-transform:uppercase;letter-spacing:2px;">Amount</p>
             <p style="color:#C87D3E;font-size:20px;font-weight:700;margin:4px 0 0;">
-              \${amount_display}
+              ${amount_display}
             </p>
           </div>
 
@@ -65,7 +65,7 @@ export async function sendRenewalEmail({
           </p>
 
           <div style="text-align:center;margin:32px 0;">
-            <a href="\${renewal_url}"
+            <a href="${renewal_url}"
                style="display:inline-block;background:#C87D3E;color:#2A0F06;
                       padding:16px 40px;border-radius:8px;text-decoration:none;
                       font-weight:700;font-size:16px;letter-spacing:0.5px;">
@@ -83,11 +83,11 @@ export async function sendRenewalEmail({
                     text-align:center;">
           <p style="color:#8C7B72;font-size:11px;margin:0;">
             Toneek · Skin intelligence for melanin-rich skin<br>
-            <a href="\${process.env.NEXT_PUBLIC_BASE_URL}/dashboard" 
+            <a href="${process.env.NEXT_PUBLIC_BASE_URL}/dashboard" 
                style="color:#C87D3E;">View your dashboard</a>
           </p>
         </div>
       </div>
-    \`,
+    `,
   })
 }
