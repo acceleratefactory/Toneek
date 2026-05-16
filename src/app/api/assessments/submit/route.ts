@@ -8,10 +8,22 @@ import { applyTriggerModifiers } from '@/lib/formula/triggerModifiers'
 import { resolveCurrency } from '@/lib/currency'
 import { sendFormulaEmail } from '@/lib/email/sendFormulaEmail'
 import { calculateSkinScores } from '@/lib/analysis/calculateSkinScores'
+import { resolveClimateZone } from '@/lib/climate'
 
 export async function POST(request: NextRequest) {
     const assessment = await request.json()
     const BASE_URL = request.nextUrl.origin
+
+    // Step 0: Recalculate climate zone using logic-first architecture
+    assessment.climate_zone = resolveClimateZone(
+        assessment.country_of_residence,
+        assessment.continent ?? null,
+        {
+            climate_transition_effects: assessment.climate_transition_effects,
+            years_in_current_location: assessment.years_in_current_location,
+            skin_type: assessment.skin_type,
+        }
+    )
 
     // Step 1: Apply trigger modifiers before calling rule engine
     const modified = applyTriggerModifiers(assessment)
