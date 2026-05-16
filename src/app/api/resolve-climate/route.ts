@@ -4,7 +4,7 @@
 
 import { adminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
-import { getCountryDefaultClimate } from '@/lib/climate'
+import { resolveClimateZone } from '@/lib/climate'
 
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
@@ -27,6 +27,6 @@ export async function GET(request: NextRequest) {
     }
 
     // Country-level fallback
-    const fallback = getCountryDefaultClimate(country)
+    const fallback = resolveClimateZone(country)
     return NextResponse.json({ climate_zone: fallback, source: 'country_fallback' })
 }
