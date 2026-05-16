@@ -23,6 +23,7 @@ interface BankTransferModalProps {
     paymentReference: string
     bankDetails: BankDetails
     onClose: () => void
+    isRenewal?: boolean
 }
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -36,7 +37,7 @@ function formatTime(secs: number) {
 }
 
 export default function BankTransferModal({
-    orderId, amount, currency, paymentReference, bankDetails, onClose,
+    orderId, amount, currency, paymentReference, bankDetails, onClose, isRenewal,
 }: BankTransferModalProps) {
     const router = useRouter()
     const [timeLeft, setTimeLeft] = useState(1800) // 30 minutes
@@ -157,7 +158,7 @@ export default function BankTransferModal({
                 <div className="p-6 border-b border-gray-100 dark:border-[#333] flex justify-between items-start">
                     <div>
                         <p className="text-gray-500 dark:text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1.5">
-                            Transfer exactly
+                            {isRenewal ? 'Renew your formula — transfer exactly' : 'Transfer exactly'}
                         </p>
                         <p className="font-black text-3xl text-toneek-amber tracking-tighter">
                             {symbol}{amount.toLocaleString()}
