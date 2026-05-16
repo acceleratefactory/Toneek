@@ -68,11 +68,11 @@ export default async function RenewPage({ searchParams }: RenewPageProps) {
   if (!order_id) {
     // Create new order using same logic as /api/orders/create
     const random = Math.floor(1000 + Math.random() * 9000)
-    payment_reference = \`TNOK-\${Date.now()}-\${random}\`
+    payment_reference = `TNOK-${Date.now()}-${random}`
 
     amount = await getPlanPrice(renewalToken.plan_tier, currency)
 
-    const confirm_token = \`\${crypto.randomUUID()}-\${crypto.randomUUID()}\`
+    const confirm_token = `${crypto.randomUUID()}-${crypto.randomUUID()}`
 
     const { data: newOrder } = await adminClient
       .from('orders')

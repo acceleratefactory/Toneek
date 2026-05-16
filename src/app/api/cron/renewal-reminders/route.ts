@@ -5,14 +5,14 @@ import { sendRenewalEmail } from '@/lib/email/sendRenewalEmail'
 
 // Dummy WhatsApp sender placeholder
 async function sendWhatsApp(phone: string, message: string) {
-  console.log(\`[WhatsApp -> \${phone}]: \${message}\`)
+  console.log(`[WhatsApp -> ${phone}]: ${message}`)
 }
 
 export async function GET(request: Request) {
   // Verify Vercel Cron Secret
   if (process.env.CRON_SECRET) {
     const authHeader = request.headers.get('authorization');
-    if (authHeader !== \`Bearer \${process.env.CRON_SECRET}\`) {
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
   }
@@ -24,13 +24,13 @@ export async function GET(request: Request) {
 
   const { data: subscriptions } = await adminClient
     .from('subscriptions')
-    .select(\`
+    .select(`
       id, user_id, plan_tier, status, next_billing_date,
       profiles!inner(email, full_name, phone)
-    \`)
+    `)
     .eq('status', 'active')
-    .gte('next_billing_date', \`\${dateStr}T00:00:00\`)
-    .lt('next_billing_date', \`\${dateStr}T23:59:59\`)
+    .gte('next_billing_date', `${dateStr}T00:00:00`)
+    .lt('next_billing_date', `${dateStr}T23:59:59`)
 
   if (!subscriptions || subscriptions.length === 0) {
     return NextResponse.json({ sent: 0 })
@@ -70,7 +70,7 @@ export async function GET(request: Request) {
     })
 
     // Build renewal URL
-    const renewal_url = \`\${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/renew?token=\${token}\`
+    const renewal_url = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/renew?token=${token}`
 
     const customer_name = profile?.full_name?.split(' ')[0] ?? 'there'
     const plan_display = sub.plan_tier
@@ -94,9 +94,9 @@ export async function GET(request: Request) {
     if (profile?.phone) {
       await sendWhatsApp(
         profile.phone,
-        \`Hi \${customer_name} — your Toneek \${plan_display} renews in 7 days.\\n\\n\` +
-        \`Click to generate your payment details instantly:\\n\${renewal_url}\\n\\n\` +
-        \`One click. No login required.\`
+        `Hi ${customer_name} — your Toneek ${plan_display} renews in 7 days.\n\n` +
+        `Click to generate your payment details instantly:\n${renewal_url}\n\n` +
+        `One click. No login required.`
       )
     }
 
