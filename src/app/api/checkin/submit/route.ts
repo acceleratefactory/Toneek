@@ -7,6 +7,7 @@ import { adminClient } from '@/lib/supabase/admin'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { calculateSkinScores } from '@/lib/analysis/calculateSkinScores'
+import { sendAdminCheckinAlert } from '@/lib/email/sendAdminCheckinAlert'
 
 export async function POST(request: NextRequest) {
     try {
@@ -127,6 +128,25 @@ export async function POST(request: NextRequest) {
         } catch (scoreErr) {
             // Non-fatal — scores will update on the next check-in if this fails
             console.error('Analysis score recalculation failed (non-fatal):', scoreErr)
+        }
+
+        // Fire admin check-in alert email
+        try {
+            const { data: profile } = await adminClient
+                .from('profiles')
+                .select('full_name')
+                .eq('id', session.user.id)
+                .single()
+
+            await sendAdminCheckinAlert({
+                customerName: profile?.full_name || 'Unknown Customer',
+                week,
+                improvementScore: improvement_score,
+                adverseReactions: adverse_reactions ?? false,
+                userId: session.user.id,
+            })
+        } catch (emailErr) {
+            console.error('Failed to send admin checkin alert:', emailErr)
         }
 
         return NextResponse.json({

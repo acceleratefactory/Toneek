@@ -5,6 +5,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { sendAdminSubscriptionAlert } from '@/lib/email/sendAdminSubscriptionAlert'
 
 export async function PATCH(
     _request: NextRequest,
@@ -37,6 +38,24 @@ export async function PATCH(
             .eq('user_id', session.user.id) // RLS enforced at query level too
 
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+        // Fire Admin Alert
+        try {
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('full_name')
+                .eq('id', session.user.id)
+                .maybeSingle()
+
+            await sendAdminSubscriptionAlert({
+                customerName: profile?.full_name || 'Customer',
+                subscriptionId: id,
+                action: 'paused',
+                userId: session.user.id,
+            });
+        } catch (adminEmailErr) {
+            console.error('Failed to send admin pause alert:', adminEmailErr)
+        }
 
         return NextResponse.json({ success: true, pause_until: pauseUntil })
 

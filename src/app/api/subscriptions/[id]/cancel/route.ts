@@ -5,6 +5,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { sendAdminSubscriptionAlert } from '@/lib/email/sendAdminSubscriptionAlert'
 
 export async function PATCH(
     request: NextRequest,
@@ -73,6 +74,19 @@ export async function PATCH(
                 next_billing_date: subscription.next_billing_date,
                 reason,
             })
+        }
+
+        // Also fire Admin Alert
+        try {
+            await sendAdminSubscriptionAlert({
+                customerName: profile?.full_name || 'Customer',
+                subscriptionId: id,
+                action: 'cancelled',
+                reason: reason,
+                userId: session.user.id,
+            });
+        } catch (adminEmailErr) {
+            console.error('Failed to send admin cancel alert:', adminEmailErr)
         }
 
         return NextResponse.json({

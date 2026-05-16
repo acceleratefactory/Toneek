@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { adminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
+import { sendProtocolStartEmail } from '@/lib/email/sendProtocolStartEmail'
 
 export async function POST(request: NextRequest) {
   // Validate the caller is an authenticated user
@@ -55,6 +56,25 @@ export async function POST(request: NextRequest) {
     .update({ treatment_start_date: received_at })
     .eq('user_id', order.user_id)
     .eq('status', 'active')
+
+  // ── Fire Protocol Start Email ──
+  try {
+    const { data: profile } = await adminClient
+      .from('profiles')
+      .select('email, full_name')
+      .eq('id', order.user_id)
+      .single()
+
+    if (profile?.email) {
+      await sendProtocolStartEmail({
+        email: profile.email,
+        customerName: profile.full_name?.split(' ')[0] || 'there',
+        baseUrl: process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+      })
+    }
+  } catch (emailErr) {
+    console.error('Failed to send protocol start email (non-fatal):', emailErr)
+  }
 
   return NextResponse.json({ success: true, received_at })
 }

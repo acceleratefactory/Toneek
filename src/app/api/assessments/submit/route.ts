@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { applyTriggerModifiers } from '@/lib/formula/triggerModifiers'
 import { resolveCurrency } from '@/lib/currency'
 import { sendFormulaEmail } from '@/lib/email/sendFormulaEmail'
+import { sendAdminAssessmentEmail } from '@/lib/email/sendAdminAssessmentEmail'
 import { calculateSkinScores } from '@/lib/analysis/calculateSkinScores'
 import { resolveClimateZone } from '@/lib/climate'
 
@@ -222,6 +223,16 @@ export async function POST(request: NextRequest) {
         isotretinoin_flag: assessment.medications?.includes('isotretinoin') ?? false,
         assessment_id: assessmentRecord?.id,
         magic_link: finalMagicLink,
+    })
+
+    // Step 6: Send admin alert email
+    await sendAdminAssessmentEmail({
+        customerName: assessment.full_name || assessment.email,
+        formulaCode: formulaResult.formula_code,
+        skinOsScore: formulaResult.skin_os_score,
+        primaryConcern: assessment.primary_concern,
+        riskScore: formulaResult.risk_score || 0,
+        assessmentId: assessmentRecord?.id || 'unknown',
     })
 
     return NextResponse.json({

@@ -7,6 +7,7 @@ import { adminClient } from '@/lib/supabase/admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { sendCustomerConcernConfirmation } from '@/lib/email/sendCustomerConcernConfirmation'
 
 export async function POST(request: NextRequest) {
   try {
@@ -230,6 +231,14 @@ export async function POST(request: NextRequest) {
       autoAdjustedFormula,
       isRepeat,
     })
+
+    // ── Fire confirmation email to customer ──────────────────────────
+    if (profile?.email) {
+      await sendCustomerConcernConfirmation({
+        customerName: profile.full_name?.split(' ')[0] || '',
+        email: profile.email,
+      })
+    }
 
     // ── Phase F: Systemic Adaptation (Population-Level Pattern Detection) ──
     try {
