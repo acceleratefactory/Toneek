@@ -428,6 +428,57 @@ export default async function FormulaPage() {
         }
     }
 
+    // ─── Last Updated Date Logic ──────────────────────────────────────────────
+    const [
+        { data: latestAssessment_event },
+        { data: latestOutcome_event },
+        { data: latestConcern },
+        { data: latestNote },
+    ] = await Promise.all([
+        adminClient.from('skin_assessments')
+            .select('created_at')
+            .eq('user_id', session.user.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+        adminClient.from('skin_outcomes')
+            .select('recorded_at')
+            .eq('user_id', session.user.id)
+            .order('recorded_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+        adminClient.from('concern_reports')
+            .select('reported_at')
+            .eq('user_id', session.user.id)
+            .order('reported_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+        adminClient.from('clinical_notes')
+            .select('sent_at')
+            .eq('user_id', session.user.id)
+            .not('sent_at', 'is', null)
+            .order('sent_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+    ])
+
+    const timestamps = [
+        latestAssessment_event?.created_at,
+        latestOutcome_event?.recorded_at,
+        latestConcern?.reported_at,
+        latestNote?.sent_at,
+    ].filter(Boolean) as string[]
+
+    const last_updated = timestamps.length > 0
+        ? new Date(Math.max(...timestamps.map(t => new Date(t).getTime())))
+        : new Date()
+
+    const last_updated_display = last_updated.toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+    })
+
     return (
         <>
         <div className="flex flex-col font-sans mb-12">
@@ -443,7 +494,7 @@ export default async function FormulaPage() {
                             </span>
                         </h1>
                         <p className="text-[#8C7B72] dark:text-gray-400 text-[13px] mt-2 font-medium tracking-wide">
-                            Last updated: {new Date(latest.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                            Last updated: {last_updated_display}
                         </p>
                         <p className="text-[12px] text-[#8C7B72] dark:text-[#7A6A62] font-normal mt-1" style={{ fontFamily: 'Jost, sans-serif' }}>
                             {getDashboardIdentityLine(latest.climate_zone, latest.skin_type)}
