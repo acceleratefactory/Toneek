@@ -11,7 +11,7 @@ async function getSystemHealth() {
     { data: pendingPayments },
     { data: pendingProduction },
     { data: recentOutcomes },
-    { count: flaggedAssessments },
+    { data: flaggedAssessmentsRaw },
     { data: allOrders },
     { data: allSubscriptions },
     { data: openConcernReports },
@@ -34,7 +34,7 @@ async function getSystemHealth() {
       .order('recorded_at', { ascending: false })
       .limit(10),
     adminClient.from('skin_assessments')
-      .select('*', { count: 'exact', head: true })
+      .select('id, profiles(subscription_tier)')
       .eq('is_flagged_for_review', true),
     adminClient.from('orders')
       .select('created_at, payment_amount, plan_tier, status')
@@ -147,13 +147,27 @@ async function getSystemHealth() {
     }
   }
 
+  // Calculate priority vs standard flagged assessments
+  const flaggedAssessmentsData = flaggedAssessmentsRaw ?? []
+  const flaggedAssessments = flaggedAssessmentsData.length
+  let priorityFlagged = 0
+  let standardFlagged = 0
+
+  flaggedAssessmentsData.forEach((a: any) => {
+    const tier = a.profiles?.subscription_tier
+    if (tier === 'full_protocol' || tier === 'restoration') priorityFlagged++
+    else standardFlagged++
+  })
+
   return {
     totalSubscribers: totalSubscribers ?? 0,
     activeSubscribers: activeSubscribers ?? 0,
     pendingPayments: paymentsWithProfiles,
     pendingProduction: pendingProduction ?? [],
     recentOutcomes: recentOutcomes ?? [],
-    flaggedAssessments: flaggedAssessments ?? 0,
+    flaggedAssessments,
+    priorityFlagged,
+    standardFlagged,
     historicalOrders,
     historicalSubscriptions,
     openConcernReports: concernReportsWithProfiles,
@@ -559,6 +573,7 @@ export default async function AdminDashboardPage() {
                     <div>
                       <h3 className="font-bold border-b border-toneek-error/10 pb-1">Customer Review Required</h3>
                        <p className="text-sm mt-1">{data.flaggedAssessments} assessments are automatically flagged for potential medical contraindications or individual chemist review.</p>
+                       <p className="text-xs font-semibold mt-1 opacity-90">{data.priorityFlagged} priority (Full Protocol) · {data.standardFlagged} standard (Essentials)</p>
                        <a href="/admin/customers" className="inline-block mt-3 bg-white px-3 py-1.5 text-xs font-bold border border-toneek-errorbg rounded shadow-sm hover:bg-gray-50 transition-colors text-toneek-error">Review Customers</a>
                     </div>
                  </div>

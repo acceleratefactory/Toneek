@@ -194,6 +194,15 @@ export default async function CustomerDetailPage(
         </div>
       </div>
 
+      {/* ── PRIORITY BANNER ── */}
+      {isFlagged && (data.profile.subscription_tier === 'full_protocol' || data.profile.subscription_tier === 'restoration') && (
+        <div className="bg-[#FEF3E2] border-l-4 border-[#C87D3E] p-4 rounded-r-xl shadow-sm mb-6">
+          <p className="text-[#C87D3E] font-bold text-sm">
+            PRIORITY REFORMULATION · Full Protocol subscriber · Target response within 48 hours
+          </p>
+        </div>
+      )}
+
       {/* ── ALERTS / FLAGS ── */}
       {isFlagged && (
         <div className={`${latestAssessment.flag_reason?.includes('Chemist') ? 'bg-red-900 border-red-950 text-white' : 'bg-toneek-errorbg border-toneek-error'} rounded-xl p-5 shadow-sm`}>

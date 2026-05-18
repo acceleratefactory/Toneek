@@ -6,11 +6,27 @@ async function getCustomers(tab: string) {
   if (tab === 'flagged') {
     const { data } = await adminClient
       .from('skin_assessments')
-      .select('id, user_id, is_flagged_for_review, flag_reason, formula_code, created_at, profiles(full_name, email)')
+      .select('id, user_id, is_flagged_for_review, flag_reason, formula_code, created_at, profiles(full_name, email, subscription_tier)')
       .eq('is_flagged_for_review', true)
-      .order('created_at', { ascending: false })
       
-    return { customers: [], flagged: data ?? [] }
+    const flagged = data ?? []
+    
+    // Sort logic: priority first, then oldest flagged first
+    flagged.sort((a: any, b: any) => {
+      const tierOrder: Record<string, number> = { restoration: 1, full_protocol: 2, essentials: 3 }
+      const aTier = a.profiles?.subscription_tier ?? 'essentials'
+      const bTier = b.profiles?.subscription_tier ?? 'essentials'
+      
+      const aOrder = tierOrder[aTier] || 3
+      const bOrder = tierOrder[bTier] || 3
+      
+      if (aOrder !== bOrder) return aOrder - bOrder
+      
+      // Secondary sort: days flagged descending (oldest created_at first)
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    })
+      
+    return { customers: [], flagged }
   } else {
     const { data } = await adminClient
       .from('profiles')
@@ -101,6 +117,7 @@ export default async function AdminCustomersPage({
                     <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-red-700 tracking-wide uppercase border-b border-red-100 border-t-0">Flag Reason</th>
                     <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-red-700 tracking-wide uppercase border-b border-red-100 border-t-0">Assigned Formula</th>
                     <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-red-700 tracking-wide uppercase border-b border-red-100 border-t-0">Days Since Flagged</th>
+                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-red-700 tracking-wide uppercase border-b border-red-100 border-t-0">Plan Tier</th>
                     <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-red-700 tracking-wide uppercase border-b border-red-100 rounded-tr-xl border-t-0">Action</th>
                   </tr>
                 </thead>
@@ -123,6 +140,17 @@ export default async function AdminCustomersPage({
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {daysSince} days
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          {(f.profiles?.subscription_tier === 'full_protocol' || f.profiles?.subscription_tier === 'restoration') ? (
+                            <span className="bg-[#FEF3E2] text-[#C87D3E] font-bold text-xs px-2.5 py-1 rounded shadow-sm border border-[#C87D3E]/30 uppercase tracking-wider">
+                              PRIORITY
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 font-bold text-xs uppercase tracking-wider">
+                              Standard
+                            </span>
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                           <div className="flex justify-end gap-2">
