@@ -25,6 +25,9 @@ export function determineOrderState(order: any): OrderState {
     'awaiting_payment',
   ]
   if (pending_payment_statuses.includes(payment_status)) {
+    if (order.order_type === 'upgrade') {
+      return 'active_protocol'
+    }
     return 'pending_payment'
   }
 

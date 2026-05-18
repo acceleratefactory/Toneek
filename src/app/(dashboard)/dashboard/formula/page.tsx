@@ -26,6 +26,7 @@ import AdherencePlaceholder from '@/components/formula/AdherencePlaceholder'
 import IntelligenceMilestones from '@/components/formula/IntelligenceMilestones'
 import SystemUpdatedBanner from '@/components/formula/SystemUpdatedBanner'
 import ClinicalCommitment from '@/components/formula/ClinicalCommitment'
+import PendingUpgradeBanner from '@/components/dashboard/PendingUpgradeBanner'
 import TodaysBrief from '@/components/dashboard/TodaysBrief'
 import AssessmentHistory from '@/components/dashboard/AssessmentHistory'
 import StickyCTA from '@/components/formula/StickyCTA'
@@ -142,6 +143,17 @@ export default async function FormulaPage() {
 
     const orderStatus         = latestOrder?.status ?? null
     const dispatchHeldReason  = latestOrder?.dispatch_held_reason ?? null
+
+    // Fetch pending upgrade order (if any)
+    const { data: pendingUpgrade } = await adminClient
+        .from('orders')
+        .select('id, plan_tier, payment_reference, payment_amount, currency')
+        .eq('user_id', session.user.id)
+        .eq('order_type', 'upgrade')
+        .eq('payment_status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
 
     // STEP 5: Centralize all clinical dates and order state
     const clinical_dates = calculateClinicalDates(latestOrder?.received_at ?? null)
@@ -451,6 +463,16 @@ export default async function FormulaPage() {
                 outcomes={outcomes || []}
                 isColdStart={isColdStart}
             />
+
+            {/* ── UPGRADE PENDING BANNER ── */}
+            {pendingUpgrade && (
+                <PendingUpgradeBanner 
+                    orderId={pendingUpgrade.id}
+                    paymentReference={pendingUpgrade.payment_reference}
+                    amount={pendingUpgrade.payment_amount}
+                    currency={pendingUpgrade.currency}
+                />
+            )}
 
             {/* ── SYSTEM UPDATED BANNER (client-side, sessionStorage) ── */}
             <SystemUpdatedBanner />
