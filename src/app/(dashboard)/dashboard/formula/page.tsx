@@ -115,7 +115,7 @@ export default async function FormulaPage() {
         .single()
     const subscriptionStartedAt = subscription?.started_at ?? null
 
-    // Fetch latest order with ALL status fields
+    // Fetch latest clinical order (exclude upgrade orders which are just billing events)
     const { data: latestOrder, error: orderError } = await adminClient
         .from('orders')
         .select(`
@@ -134,9 +134,11 @@ export default async function FormulaPage() {
             dispatch_held_reason,
             created_at,
             dispatched_at,
-            fourth_product_name
+            fourth_product_name,
+            order_type
         `)
         .eq('user_id', session.user.id)
+        .neq('order_type', 'upgrade')
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle()
