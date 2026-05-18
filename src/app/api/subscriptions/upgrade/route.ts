@@ -1,6 +1,7 @@
 // src/app/api/subscriptions/upgrade/route.ts
 
 import { createClient } from '@/lib/supabase/server'
+import { adminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { getPlanPrice, getBankDetails } from '@/lib/orders/pricing'
 import crypto from 'crypto'
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
   const payment_reference = `TNOK-${Date.now()}-${random}`
   const confirm_token = `${crypto.randomUUID()}-${crypto.randomUUID()}`
 
-  const { data: upgradeOrder, error: orderError } = await supabase
+  const { data: upgradeOrder, error: orderError } = await adminClient
     .from('orders')
     .insert({
       user_id: user.id,
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest) {
   // Create bank transfer session
   const bankDetails = getBankDetails(currency)
 
-  await supabase.from('bank_transfer_sessions').insert({
+  await adminClient.from('bank_transfer_sessions').insert({
     order_id: upgradeOrder.id,
     user_id: user.id,
     payment_reference,
