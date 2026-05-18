@@ -6,6 +6,7 @@
 import { adminClient } from '@/lib/supabase/admin'
 import { NextRequest } from 'next/server'
 import { sendWelcomeEmail } from '@/lib/email/sendWelcomeEmail'
+import { sendUpgradeEmail } from '@/lib/email/sendUpgradeEmail'
 
 const html = (content: string) =>
     new Response(
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
     // ── Look up order — token must exist and be unused ────────────────────────
     const { data: order } = await adminClient
         .from('orders')
-        .select('id, user_id, plan_tier, payment_reference, payment_amount, currency, payment_confirm_token, payment_token_used, payment_status')
+        .select('id, user_id, order_type, plan_tier, plan_tier_before, payment_reference, payment_amount, currency, payment_confirm_token, payment_token_used, payment_status')
         .eq('id', order_id)
         .eq('payment_confirm_token', token)
         .single()
@@ -91,54 +92,84 @@ export async function GET(request: NextRequest) {
         </div>`)
     }
 
-    // ── Activate subscription (only if user_id exists) ────────────────────────
+    const is_upgrade = order.order_type === 'upgrade'
+
+    // ── Handle Subscription & Profile ─────────────────────────────────────────
     if (order.user_id) {
-        const { error: subError } = await adminClient.from('subscriptions').insert({
-            user_id:           order.user_id,
-            plan_tier:         order.plan_tier,
-            status:            'active',
-            started_at:        new Date().toISOString(),
-            next_billing_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        })
+        if (is_upgrade) {
+            // Update existing subscription
+            const { error: subError } = await adminClient
+                .from('subscriptions')
+                .update({
+                    previous_plan_tier: order.plan_tier_before ?? null,
+                    plan_tier: order.plan_tier,
+                    upgraded_at: new Date().toISOString(),
+                    upgrade_order_id: order.id,
+                })
+                .eq('user_id', order.user_id)
+                .eq('status', 'active')
 
-        if (subError) {
-            console.error('Failed to insert subscription:', subError)
-            return html(`<div class="box">
-                <div class="icon">❌</div>
-                <h2 class="warn">Subscription Activation Failed</h2>
-                <p>Payment was marked confirmed, but creating the subscription failed.</p>
-                <p style="font-size:12px;color:#999;margin-top:10px">${subError.message}</p>
-            </div>`)
-        }
+            if (subError) {
+                console.error('Failed to update subscription for upgrade:', subError)
+            }
 
-        // Update profile subscription status
-        const { error: profileError } = await adminClient
-            .from('profiles')
-            .update({
-                subscription_status: 'active',
-                subscription_tier:   order.plan_tier,
-            })
-            .eq('id', order.user_id)
+            // Update profile
+            await adminClient
+                .from('profiles')
+                .update({ subscription_tier: order.plan_tier })
+                .eq('id', order.user_id)
             
-        if (profileError) {
-            console.error('Failed to update profile subscription status:', profileError)
-            return html(`<div class="box">
-                <div class="icon">❌</div>
-                <h2 class="warn">Profile Update Failed</h2>
-                <p>Subscription was created, but updating the user profile failed.</p>
-                <p style="font-size:12px;color:#999;margin-top:10px">${profileError.message}</p>
-            </div>`)
+            // Mark order as upgrade_confirmed
+            await adminClient
+                .from('orders')
+                .update({ status: 'upgrade_confirmed' })
+                .eq('id', order.id)
+
+        } else {
+            // Create NEW subscription (existing logic)
+            const { error: subError } = await adminClient.from('subscriptions').insert({
+                user_id:           order.user_id,
+                plan_tier:         order.plan_tier,
+                status:            'active',
+                started_at:        new Date().toISOString(),
+                next_billing_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            })
+
+            if (subError) {
+                console.error('Failed to insert subscription:', subError)
+                return html(`<div class="box">
+                    <div class="icon">❌</div>
+                    <h2 class="warn">Subscription Activation Failed</h2>
+                    <p>Payment was marked confirmed, but creating the subscription failed.</p>
+                    <p style="font-size:12px;color:#999;margin-top:10px">${subError.message}</p>
+                </div>`)
+            }
+
+            // Update profile subscription status
+            const { error: profileError } = await adminClient
+                .from('profiles')
+                .update({
+                    subscription_status: 'active',
+                    subscription_tier:   order.plan_tier,
+                })
+                .eq('id', order.user_id)
+                
+            if (profileError) {
+                console.error('Failed to update profile subscription status:', profileError)
+                return html(`<div class="box">
+                    <div class="icon">❌</div>
+                    <h2 class="warn">Profile Update Failed</h2>
+                    <p>Subscription was created, but updating the user profile failed.</p>
+                    <p style="font-size:12px;color:#999;margin-top:10px">${profileError.message}</p>
+                </div>`)
+            }
+
+            // Move order to pending_production
+            await adminClient
+                .from('orders')
+                .update({ status: 'pending_production' })
+                .eq('id', order.id)
         }
-    }
-
-    // ── Move order to pending_production ──────────────────────────────────────
-    const { error: moveError } = await adminClient
-        .from('orders')
-        .update({ status: 'pending_production' })
-        .eq('id', order.id)
-
-    if (moveError) {
-        console.error("Failed to move to production:", moveError)
     }
 
     // ── Resolve customer contact details ──────────────────────────────────────
@@ -152,10 +183,9 @@ export async function GET(request: NextRequest) {
             .eq('id', order.user_id)
             .single()
         customerEmail = profile?.email ?? null
-        customerName  = profile?.full_name ?? 'there'
+        customerName  = profile?.full_name?.split(' ')[0] ?? 'there'
     }
 
-    // Fallback: get email from most recent skin_assessment
     if (!customerEmail) {
         const { data: assessment } = await adminClient
             .from('skin_assessments')
@@ -168,23 +198,39 @@ export async function GET(request: NextRequest) {
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'
 
-    // ── Email customer ────────────────────────────────────────────────────────
-    if (customerEmail) {
-        await sendWelcomeEmail({
-            email: customerEmail,
-            customerName,
-            order,
-            baseUrl,
-        })
-    }
-
-    // ── WhatsApp customer ─────────────────────────────────────────────────────
-    if (order.user_id) {
-        await sendWhatsAppToCustomer(
-            order.user_id,
-            `✅ Payment confirmed! Your Toneek formula is now in production.\n` +
-            `Login to your dashboard: ${baseUrl}/dashboard`
-        )
+    // ── Send Notifications ────────────────────────────────────────────────────
+    if (is_upgrade) {
+        if (customerEmail) {
+            await sendUpgradeEmail({
+                email: customerEmail,
+                customerName,
+                planTier: order.plan_tier,
+                baseUrl,
+            })
+        }
+        if (order.user_id) {
+            await sendWhatsAppToCustomer(
+                order.user_id,
+                `✅ Upgrade confirmed!\nYour Toneek plan is now fully upgraded to ${order.plan_tier.replace('_', ' ')}.\n` +
+                `Login to your dashboard: ${baseUrl}/dashboard`
+            )
+        }
+    } else {
+        if (customerEmail) {
+            await sendWelcomeEmail({
+                email: customerEmail,
+                customerName,
+                order,
+                baseUrl,
+            })
+        }
+        if (order.user_id) {
+            await sendWhatsAppToCustomer(
+                order.user_id,
+                `✅ Payment confirmed! Your Toneek formula is now in production.\n` +
+                `Login to your dashboard: ${baseUrl}/dashboard`
+            )
+        }
     }
 
     // ── Return success HTML ───────────────────────────────────────────────────
@@ -192,8 +238,7 @@ export async function GET(request: NextRequest) {
         <div class="icon">✅</div>
         <h2>Order Confirmed</h2>
         <p>
-            Subscription activated.<br/>
-            Formula queued for production.<br/>
+            ${is_upgrade ? 'Subscription upgraded.' : 'Subscription activated.<br/>Formula queued for production.'}<br/>
             Customer notified by email${order.user_id ? ' and WhatsApp' : ''}.
         </p>
         <p style="font-size:13px;margin-top:12px;">

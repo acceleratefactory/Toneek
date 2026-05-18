@@ -3,6 +3,8 @@
 // Pause, cancel, and upgrade actions for the subscription management page.
 
 import { useState } from 'react'
+import UpgradeModal from '@/components/subscription/UpgradeModal'
+import BankTransferModal from '@/components/payment/BankTransferModal'
 
 const CANCEL_REASONS = [
     { id: 'too_expensive',           label: 'Too expensive'                         },
@@ -17,10 +19,18 @@ interface SubscriptionActionsProps {
     subscriptionId: string
     currentPlan: string
     status: string
+    currency: string
+    currentAmount: number
+    newAmount: number
+    formulaCode: string
 }
 
-export default function SubscriptionActions({ subscriptionId, currentPlan, status }: SubscriptionActionsProps) {
+export default function SubscriptionActions({ 
+    subscriptionId, currentPlan, status, currency, currentAmount, newAmount, formulaCode 
+}: SubscriptionActionsProps) {
     const [modal,         setModal]         = useState<'pause' | 'cancel' | 'upgrade' | null>(null)
+    const [upgradeState,  setUpgradeState]  = useState<'idle' | 'confirming' | 'paying'>('idle')
+    const [upgradeData,   setUpgradeData]   = useState<any>(null)
     const [cancelReason,  setCancelReason]  = useState('')
     const [loading,       setLoading]       = useState(false)
     const [success,       setSuccess]       = useState('')
@@ -67,6 +77,26 @@ export default function SubscriptionActions({ subscriptionId, currentPlan, statu
         }
     }
 
+    const handleUpgradeConfirm = async () => {
+        setLoading(true)
+        setError('')
+        try {
+            const res = await fetch('/api/subscriptions/upgrade', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ target_plan_tier: 'full_protocol' }),
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error ?? 'Upgrade failed')
+            setUpgradeData(data)
+            setUpgradeState('paying')
+        } catch (err: any) {
+            setError(err.message ?? 'Something went wrong')
+        } finally {
+            setLoading(false)
+        }
+    }
+
     // ── Modals ────────────────────────────────────────────────────────────────
 
     const overlay = (content: React.ReactNode) => (
@@ -103,13 +133,13 @@ export default function SubscriptionActions({ subscriptionId, currentPlan, statu
 
                         {/* Upgrade — only for essentials */}
                         {isActive && currentPlan === 'essentials' && (
-                            <a
-                                href="/subscribe"
+                            <button
                                 id="upgrade-plan"
-                                className="block text-center p-3 rounded-lg bg-toneek-brown/5 border-2 border-toneek-brown/20 text-toneek-brown font-bold text-sm hover:bg-toneek-brown/10 transition-colors"
+                                onClick={() => setUpgradeState('confirming')}
+                                className="block w-full text-center p-3 rounded-lg bg-toneek-brown/5 border-2 border-toneek-brown/20 text-toneek-brown font-bold text-sm cursor-pointer hover:bg-toneek-brown/10 transition-colors"
                             >
                                 ⬆ Upgrade to Full Protocol
-                            </a>
+                            </button>
                         )}
 
                         {/* Pause */}
@@ -197,6 +227,32 @@ export default function SubscriptionActions({ subscriptionId, currentPlan, statu
                         </button>
                     </div>
                 </>
+            )}
+
+            {/* ── Upgrade Modals ── */}
+            {upgradeState === 'confirming' && (
+                <UpgradeModal
+                    currentPlan={currentPlan}
+                    targetPlan="full_protocol"
+                    currency={currency}
+                    currentAmount={currentAmount}
+                    newAmount={newAmount}
+                    formulaCode={formulaCode}
+                    onClose={() => setUpgradeState('idle')}
+                    onConfirm={handleUpgradeConfirm}
+                />
+            )}
+
+            {upgradeState === 'paying' && upgradeData && (
+                <BankTransferModal
+                    orderId={upgradeData.order_id}
+                    amount={upgradeData.amount}
+                    currency={upgradeData.currency}
+                    paymentReference={upgradeData.payment_reference}
+                    bankDetails={upgradeData.bank_details}
+                    onClose={() => setUpgradeState('idle')}
+                    isRenewal={false}
+                />
             )}
         </>
     )

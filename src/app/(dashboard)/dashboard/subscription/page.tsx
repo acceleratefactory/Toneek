@@ -6,6 +6,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import SubscriptionActions from '@/components/dashboard/SubscriptionActions'
 import { adminClient } from '@/lib/supabase/admin'
+import { getPlanPrice } from '@/lib/orders/pricing'
 
 export const metadata = { title: 'My Plan — Toneek' }
 
@@ -52,7 +53,7 @@ export default async function SubscriptionPage() {
     // Fetch latest paid order for amount
     const { data: latestPaidOrder } = await supabase
         .from('orders')
-        .select('payment_amount, currency, plan_tier, created_at')
+        .select('payment_amount, currency, plan_tier, created_at, routine_tier')
         .eq('user_id', session.user.id)
         .eq('payment_status', 'confirmed')
         .order('created_at', { ascending: false })
@@ -91,6 +92,7 @@ export default async function SubscriptionPage() {
     const activeCurrency = latestPaidOrder?.currency ?? subscription.currency ?? 'NGN'
     const symbol = SYMBOLS[activeCurrency] ?? '₦'
     const monthlyAmount = latestPaidOrder?.payment_amount ?? subscription.monthly_amount
+    const fullProtocolAmount = getPlanPrice('full_protocol', activeCurrency, latestPaidOrder?.routine_tier ?? 'just_one')
 
     const weeksLabel = subscription.treatment_start_date ? 'Weeks active' : 'Subscription active'
     const weeksValue = subscription.treatment_start_date 
@@ -166,6 +168,10 @@ export default async function SubscriptionPage() {
                 subscriptionId={subscription.id}
                 currentPlan={subscription.plan_tier ?? 'essentials'}
                 status={subscription.status}
+                currency={activeCurrency}
+                currentAmount={monthlyAmount}
+                newAmount={fullProtocolAmount}
+                formulaCode={assessment?.formula_code ?? ''}
             />
         </div>
     )
