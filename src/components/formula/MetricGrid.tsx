@@ -21,11 +21,9 @@ interface MetricGridProps {
   delayMs?: number
   // Percentile comparisons per metric key (0–100). null = cold start.
   comparativeData?: Record<string, number> | null
-  week2_completed?: boolean
-  week4_completed?: boolean
 }
 
-export default function MetricGrid({ assessment, delayMs = 0, comparativeData, week2_completed = false, week4_completed = false }: MetricGridProps) {
+export default function MetricGrid({ assessment, delayMs = 0, comparativeData }: MetricGridProps) {
   const stored = assessment?.analysis_scores
 
   // ─── Read from stored analysis_scores if available (set after Phase 3 was live) ───
@@ -354,31 +352,13 @@ export default function MetricGrid({ assessment, delayMs = 0, comparativeData, w
                   <p className="text-[11px] text-gray-400 dark:text-[#7A6A62] font-sans leading-snug mt-0.5">
                     {metric.description}
                   </p>
-                  {!week2_completed ? (
-                    <p className="text-[10px] italic text-[#8C7B72] dark:text-[#6A5A52] font-sans mt-1">
-                      Benchmark updating — check back after your Week 2 check-in
-                    </p>
-                  ) : !week4_completed ? (
-                    (comparativeData !== null && comparativeData !== undefined && comparativeData[metric.title] !== undefined) ? (
-                      <p className="text-[10px] italic text-[#8C7B72] dark:text-[#6A5A52] font-sans mt-1">
-                        {comparativeData[metric.title] >= 50 ? 'Better' : 'Lower'} than {comparativeData[metric.title]}% of similar profiles
-                      </p>
-                    ) : (
-                      <p className="text-[10px] italic text-[#8C7B72] dark:text-[#6A5A52] font-sans mt-1">
-                        Population data building. Full benchmarks available at 50 profiles.
-                      </p>
-                    )
-                  ) : (
-                    (comparativeData !== null && comparativeData !== undefined && comparativeData[metric.title] !== undefined) ? (
-                      <p className="text-[10px] italic text-[#8C7B72] dark:text-[#6A5A52] font-sans mt-1">
-                        {comparativeData[metric.title] >= 50 ? 'Better' : 'Lower'} than {comparativeData[metric.title]}% of similar profiles
-                      </p>
-                    ) : (
-                      <p className="text-[10px] italic text-[#8C7B72] dark:text-[#6A5A52] font-sans mt-1">
-                        Benchmarks update with each check-in as the system learns.
-                      </p>
-                    )
-                  )}
+                  <p className="text-[10px] italic text-[#8C7B72] dark:text-[#6A5A52] font-sans mt-1">
+                    {comparativeData === null || comparativeData === undefined
+                      ? 'Benchmark updating — check back after your Week 2 check-in'
+                      : comparativeData[metric.title] !== undefined
+                        ? `${comparativeData[metric.title] >= 50 ? 'Better' : 'Lower'} than ${comparativeData[metric.title]}% of similar profiles`
+                        : 'Benchmark updating — check back after your Week 2 check-in'}
+                  </p>
                   {getMetricContext(metric.title, metric.score) && (
                     <p className="text-[11px] italic text-[#8C7B72] dark:text-[#6A5A52] font-sans mt-1 leading-snug">
                       {getMetricContext(metric.title, metric.score)}
