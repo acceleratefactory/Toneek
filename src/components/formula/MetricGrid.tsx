@@ -21,9 +21,10 @@ interface MetricGridProps {
   delayMs?: number
   // Percentile comparisons per metric key (0–100). null = cold start.
   comparativeData?: Record<string, number> | null
+  week2_completed?: boolean
 }
 
-export default function MetricGrid({ assessment, delayMs = 0, comparativeData }: MetricGridProps) {
+export default function MetricGrid({ assessment, delayMs = 0, comparativeData, week2_completed = false }: MetricGridProps) {
   const stored = assessment?.analysis_scores
 
   // ─── Read from stored analysis_scores if available (set after Phase 3 was live) ───
@@ -352,13 +353,15 @@ export default function MetricGrid({ assessment, delayMs = 0, comparativeData }:
                   <p className="text-[11px] text-gray-400 dark:text-[#7A6A62] font-sans leading-snug mt-0.5">
                     {metric.description}
                   </p>
-                  <p className="text-[10px] italic text-[#8C7B72] dark:text-[#6A5A52] font-sans mt-1">
-                    {comparativeData === null || comparativeData === undefined
-                      ? 'Benchmark updating — check back after your Week 2 check-in'
-                      : comparativeData[metric.title] !== undefined
-                        ? `${comparativeData[metric.title] >= 50 ? 'Better' : 'Lower'} than ${comparativeData[metric.title]}% of similar profiles`
-                        : 'Benchmark updating — check back after your Week 2 check-in'}
-                  </p>
+                  {!week2_completed ? (
+                    <p className="benchmark-text italic" style={{ color: '#8C7B72', fontSize: '11px', marginTop: '4px' }}>
+                      Benchmark updating — check back after your Week 2 check-in
+                    </p>
+                  ) : (
+                    <p className="benchmark-text italic" style={{ color: '#8C7B72', fontSize: '11px', marginTop: '4px' }}>
+                      Population data building. Full benchmarks available at 50 profiles.
+                    </p>
+                  )}
                   {getMetricContext(metric.title, metric.score) && (
                     <p className="text-[11px] italic text-[#8C7B72] dark:text-[#6A5A52] font-sans mt-1 leading-snug">
                       {getMetricContext(metric.title, metric.score)}

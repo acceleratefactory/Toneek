@@ -9,8 +9,9 @@ import { formatDate } from '@/lib/dates/clinicalDates'
 
 interface AdherencePlaceholderProps {
   clinical_dates: ClinicalDates
-  adherenceScore?: number   // 0.0–1.0 from skin_outcomes.adherence_score (undefined = no outcomes yet)
-  checkinWeek?: number      // most recent check_in_week from skin_outcomes
+  week2_completed?: boolean
+  week4_completed?: boolean  
+  week2_outcome?: { adherence_score_at_checkin: number | null, recorded_at: string } | null
   delayMs?: number
 }
 
@@ -27,13 +28,13 @@ function getDaysLabel(score: number): string {
 
 export default function AdherencePlaceholder({
   clinical_dates,
-  adherenceScore,
-  checkinWeek,
+  week2_completed = false,
+  week4_completed = false,
+  week2_outcome = null,
   delayMs = 0,
 }: AdherencePlaceholderProps) {
-  const hasData = adherenceScore !== undefined && adherenceScore !== null
 
-  if (!hasData) {
+  if (!week2_completed) {
     // State 1 — no outcomes yet
     return (
       <div
@@ -64,40 +65,71 @@ export default function AdherencePlaceholder({
     )
   }
 
-  // State 2 — outcomes exist, show score + bar
-  const pct = Math.round((adherenceScore as number) * 100)
-  const daysLabel = getDaysLabel(adherenceScore as number)
-
-  return (
-    <div
-      className="bg-white dark:bg-[#1A1210] border border-[#E8E0DA] dark:border-[#3A2820] rounded-xl px-6 py-5 shadow-sm animate-slide-up opacity-0"
-      style={{ animationDelay: `${delayMs}ms`, animationFillMode: 'forwards' }}
-    >
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-[11px] font-bold text-gray-400 dark:text-[#A3938C] uppercase tracking-widest font-sans">
-          Adherence
+  // NEW: when week2 IS complete
+  if (week2_completed && week2_outcome) {
+    const adherence_pct = week2_outcome.adherence_score_at_checkin 
+      ? Math.round(week2_outcome.adherence_score_at_checkin * 100)
+      : null
+      
+    return (
+      <div
+        className="bg-white dark:bg-[#1A1210] border border-[#E8E0DA] dark:border-[#3A2820] rounded-xl px-6 py-5 shadow-sm animate-slide-up opacity-0 flex flex-col justify-between"
+        style={{ animationDelay: `${delayMs}ms`, animationFillMode: 'forwards' }}
+      >
+        <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '2px', color: '#8C7B72', fontWeight: 'bold' }}>
+          ADHERENCE TRACKING
         </p>
-        <span className="text-[13px] font-bold text-toneek-brown dark:text-[#F0E6DF] font-sans">
-          {pct}%
-          {checkinWeek && (
-            <span className="font-normal text-[#8C7B72] text-[11px] ml-1">
-              (Week {checkinWeek} report)
-            </span>
-          )}
-        </span>
+        
+        {adherence_pct !== null ? (
+          <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px' }}>
+              <span style={{ fontSize: '14px', color: '#8C7B72' }}>Week 2 consistency</span>
+              <span style={{ fontSize: '16px', fontWeight: '600', color: '#C87D3E' }}>
+                {adherence_pct}%
+              </span>
+            </div>
+            <div style={{ 
+              height: '4px', background: '#E8E0DA', borderRadius: '2px', 
+              marginTop: '8px', overflow: 'hidden' 
+            }}>
+              <div style={{ 
+                height: '100%', width: `${adherence_pct}%`, 
+                background: '#C87D3E', borderRadius: '2px' 
+              }} />
+            </div>
+            <p style={{ fontSize: '12px', color: '#8C7B72', marginTop: '8px' }}>
+              Recorded {new Date(week2_outcome.recorded_at).toLocaleDateString('en-GB', {
+                day: 'numeric', month: 'long', year: 'numeric'
+              })}
+            </p>
+            {adherence_pct < 70 && (
+              <div style={{ 
+                background: '#FEF3E2', borderLeft: '3px solid #C87D3E', 
+                padding: '10px 14px', borderRadius: '4px', marginTop: '16px' 
+              }}>
+                <p style={{ fontSize: '12px', color: '#D4700A', margin: 0 }}>
+                  Consistency below 70% can affect outcome accuracy. 
+                  Aim for daily application this period.
+                </p>
+              </div>
+            )}
+          </>
+        ) : (
+          <p style={{ fontSize: '13px', color: '#8C7B72', marginTop: '16px' }}>
+            Week 2 check-in recorded. Adherence data not captured this cycle.
+          </p>
+        )}
+        
+        {!week4_completed && (
+          <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #E8E0DA' }}>
+            <p style={{ fontSize: '12px', color: '#8C7B72', fontStyle: 'italic', margin: 0 }}>
+              Week 4 adherence recorded at your next check-in.
+            </p>
+          </div>
+        )}
       </div>
+    )
+  }
 
-      {/* Amber progress bar */}
-      <div className="w-full h-1.5 bg-[#E8E0DA] dark:bg-[#3A2820] rounded-full overflow-hidden mb-2">
-        <div
-          className="h-full bg-toneek-amber rounded-full"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-
-      <p className="text-[11px] text-[#8C7B72] dark:text-[#7A6A62] font-sans italic">
-        {daysLabel} (estimated from your reported consistency)
-      </p>
-    </div>
-  )
+  return null
 }

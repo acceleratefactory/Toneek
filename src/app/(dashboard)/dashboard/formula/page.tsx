@@ -216,19 +216,23 @@ export default async function FormulaPage() {
     // Fetch skin outcomes for chart and timeline
     const { data: outcomes } = await adminClient
         .from('skin_outcomes')
-        .select('check_in_week, improvement_score, recorded_at, new_skin_os_score')
+        .select('check_in_week, improvement_score, adherence_score_at_checkin, recorded_at, new_skin_os_score')
         .eq('user_id', session.user.id)
         .order('recorded_at', { ascending: true })
+
+    const week2_completed = outcomes?.some(o => o.check_in_week === 2) ?? false
+    const week4_completed = outcomes?.some(o => o.check_in_week === 4) ?? false
+    const week2_outcome = outcomes?.find(o => o.check_in_week === 2) ?? null
 
     // Fetch latest adherence record for AdherencePlaceholder
     const { data: latestOutcome } = await adminClient
         .from('skin_outcomes')
-        .select('adherence_score, check_in_week')
+        .select('adherence_score_at_checkin, check_in_week')
         .eq('user_id', session.user.id)
         .order('recorded_at', { ascending: false })
         .limit(1)
         .single()
-    const adherenceScore  = latestOutcome?.adherence_score ?? undefined
+    const adherenceScore  = latestOutcome?.adherence_score_at_checkin ?? undefined
     const adherenceWeek   = latestOutcome?.check_in_week ?? undefined
 
     // Fetch latest concern report for this user (Phase C — dashboard status)
@@ -726,7 +730,12 @@ export default async function FormulaPage() {
 
                 {/* ── METRIC GRID ROW ── */}
                 <div className="w-full">
-                    <MetricGrid assessment={latest} delayMs={500} comparativeData={comparativeData} />
+                    <MetricGrid 
+                        assessment={latest} 
+                        delayMs={500} 
+                        comparativeData={comparativeData} 
+                        week2_completed={week2_completed}
+                    />
                 </div>
 
                 {/* ── ACTIVE CONSTITUENTS BLOCK (MOVED HERE) ── */}
@@ -806,8 +815,9 @@ export default async function FormulaPage() {
 
                     <AdherencePlaceholder
                         clinical_dates={clinical_dates}
-                        adherenceScore={adherenceScore}
-                        checkinWeek={adherenceWeek}
+                        week2_completed={week2_completed}
+                        week4_completed={week4_completed}
+                        week2_outcome={week2_outcome}
                         delayMs={850}
                     />
                 </div>
