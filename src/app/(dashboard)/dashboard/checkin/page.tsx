@@ -65,9 +65,10 @@ export default async function CheckinPage({
         .from('orders')
         .select('received_at')
         .eq('user_id', session.user.id)
+        .not('received_at', 'is', null) // Ignore pending upgrades/shipments to keep clinical loop alive
         .order('created_at', { ascending: false })
         .limit(1)
-        .single()
+        .maybeSingle()
 
     const { data: outcomes } = await adminClient
         .from('skin_outcomes')
