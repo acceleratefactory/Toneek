@@ -216,20 +216,14 @@ export default async function FormulaPage() {
     // Fetch skin outcomes for chart and timeline
     const { data: outcomes } = await adminClient
         .from('skin_outcomes')
-        .select('check_in_week, improvement_score, recorded_at, new_skin_os_score')
+        .select('check_in_week, improvement_score, adherence_score, recorded_at, new_skin_os_score, adverse_reactions')
         .eq('user_id', session.user.id)
         .order('recorded_at', { ascending: true })
 
-    // Fetch latest adherence record for AdherencePlaceholder
-    const { data: latestOutcome } = await adminClient
-        .from('skin_outcomes')
-        .select('adherence_score, check_in_week')
-        .eq('user_id', session.user.id)
-        .order('recorded_at', { ascending: false })
-        .limit(1)
-        .single()
-    const adherenceScore  = latestOutcome?.adherence_score ?? undefined
-    const adherenceWeek   = latestOutcome?.check_in_week ?? undefined
+    const outcome_by_week: Record<number, any> = {}
+    for (const o of outcomes ?? []) {
+        outcome_by_week[o.check_in_week] = o
+    }
 
     // Fetch latest concern report for this user (Phase C — dashboard status)
     const { data: latestConcernReport } = await adminClient
@@ -726,7 +720,13 @@ export default async function FormulaPage() {
 
                 {/* ── METRIC GRID ROW ── */}
                 <div className="w-full">
-                    <MetricGrid assessment={latest} delayMs={500} comparativeData={comparativeData} />
+                    <MetricGrid 
+                        assessment={latest} 
+                        delayMs={500} 
+                        comparativeData={comparativeData} 
+                        week2_completed={!!outcome_by_week[2]}
+                        week4_completed={!!outcome_by_week[4]}
+                    />
                 </div>
 
                 {/* ── ACTIVE CONSTITUENTS BLOCK (MOVED HERE) ── */}
@@ -806,8 +806,7 @@ export default async function FormulaPage() {
 
                     <AdherencePlaceholder
                         clinical_dates={clinical_dates}
-                        adherenceScore={adherenceScore}
-                        checkinWeek={adherenceWeek}
+                        outcome_by_week={outcome_by_week}
                         delayMs={850}
                     />
                 </div>
