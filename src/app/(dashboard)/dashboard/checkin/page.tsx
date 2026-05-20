@@ -70,12 +70,22 @@ export default async function CheckinPage({
         .limit(1)
         .maybeSingle()
 
+    // Fetch the clinical loop anchor
+    const { data: currentAssessment } = await adminClient
+        .from('skin_assessments')
+        .select('formula_received_at')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
     const { data: outcomes } = await adminClient
         .from('skin_outcomes')
         .select('check_in_week')
         .eq('user_id', session.user.id)
 
-    const clinical_dates = calculateClinicalDates(latestOrder?.received_at ?? null)
+    // The clinical timeline anchors to formula_received_at, not order received_at
+    const clinical_dates = calculateClinicalDates(currentAssessment?.formula_received_at ?? null)
     const currentCheckinWeek = getCurrentCheckinWeek(clinical_dates, outcomes || [])
 
     // ── Emergency mode: bypass date lock, always show form ───────────

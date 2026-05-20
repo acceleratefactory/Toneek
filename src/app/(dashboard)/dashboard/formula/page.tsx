@@ -157,8 +157,7 @@ export default async function FormulaPage() {
         .limit(1)
         .maybeSingle()
 
-    // STEP 5: Centralize all clinical dates and order state
-    const clinical_dates = calculateClinicalDates(latestOrder?.received_at ?? null)
+    // STEP 5: Centralize order state (clinical dates are calculated after fetching assessments)
     const order_state = determineOrderState(latestOrder)
 
     // Fetch all assessments for this user, newest first
@@ -183,6 +182,10 @@ export default async function FormulaPage() {
         )
     }
     const latest = assessments[0]
+    
+    // The clinical timeline anchors to formula_received_at from the assessment, not the order
+    const clinical_dates = calculateClinicalDates(latest?.formula_received_at ?? null)
+    
     const formula = (latest as any).formula_codes
 
     // active_modules may be stored as a nested array e.g. [[a, b, c]] — flatten to guarantee a flat list
