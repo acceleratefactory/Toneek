@@ -44,11 +44,28 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: orderError.message }, { status: 500 })
   }
 
-  // Update profile with formula received date
-  await adminClient
-    .from('profiles')
-    .update({ formula_received_at: received_at })
-    .eq('id', order.user_id)
+  // Find the latest assessment for this user
+  const { data: latestAssessment } = await adminClient
+    .from('skin_assessments')
+    .select('id, formula_received_at')
+    .eq('user_id', order.user_id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  // Only set formula_received_at if not already set (prevents refills from resetting the clinical loop)
+  if (latestAssessment && !latestAssessment.formula_received_at) {
+    await adminClient
+      .from('skin_assessments')
+      .update({ formula_received_at: received_at })
+      .eq('id', latestAssessment.id)
+
+    // Update profile with formula received date for quick access
+    await adminClient
+      .from('profiles')
+      .update({ formula_received_at: received_at })
+      .eq('id', order.user_id)
+  }
 
   // Update subscription treatment start date
   await adminClient
