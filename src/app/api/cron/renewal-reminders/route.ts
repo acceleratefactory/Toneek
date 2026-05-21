@@ -2,6 +2,7 @@ import { adminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { sendRenewalEmail } from '@/lib/email/sendRenewalEmail'
+import { getPlanPriceFromDB } from '@/lib/orders/pricing'
 
 // Dummy WhatsApp sender placeholder
 async function sendWhatsApp(phone: string, message: string) {
@@ -44,7 +45,7 @@ export async function GET(request: Request) {
     // Get customer's currency from their latest order
     const { data: latestOrder } = await adminClient
       .from('orders')
-      .select('currency, payment_amount')
+      .select('currency, payment_amount, routine_tier')
       .eq('user_id', sub.user_id)
       .eq('payment_status', 'confirmed')
       .order('created_at', { ascending: false })
@@ -52,7 +53,8 @@ export async function GET(request: Request) {
       .maybeSingle()
 
     const currency = latestOrder?.currency ?? 'NGN'
-    const amount = latestOrder?.payment_amount
+    const routine_tier = latestOrder?.routine_tier ?? 'just_one'
+    const amount = await getPlanPriceFromDB(sub.plan_tier, currency, routine_tier, adminClient)
 
     // Generate signed renewal token — valid for 10 days
     const token = crypto.randomBytes(32).toString('hex')

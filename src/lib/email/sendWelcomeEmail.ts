@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { getPlanDisplayName } from '@/lib/orders/pricing';
 
 export async function sendWelcomeEmail({
   email,
@@ -43,7 +44,7 @@ export async function sendWelcomeEmail({
             <p style="margin:0;color:#6b7280;font-size:14px;">
               <strong>Reference:</strong> ${order.payment_reference}<br/>
               <strong>Amount:</strong> ${symbol}${order.payment_amount?.toLocaleString()}<br/>
-              <strong>Plan:</strong> ${order.plan_tier}
+              <strong>Plan:</strong> ${getPlanDisplayName(order.plan_tier)}
             </p>
           </div>
           <a href="${baseUrl}/dashboard"

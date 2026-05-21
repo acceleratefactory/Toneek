@@ -7,6 +7,7 @@ import { adminClient } from '@/lib/supabase/admin'
 import { NextRequest } from 'next/server'
 import { sendWelcomeEmail } from '@/lib/email/sendWelcomeEmail'
 import { sendUpgradeEmail } from '@/lib/email/sendUpgradeEmail'
+import { getPlanDisplayName } from '@/lib/orders/pricing'
 
 const html = (content: string) =>
     new Response(
@@ -204,14 +205,14 @@ export async function GET(request: NextRequest) {
             await sendUpgradeEmail({
                 email: customerEmail,
                 customerName,
-                planTier: order.plan_tier,
+                planTier: getPlanDisplayName(order.plan_tier),
                 baseUrl,
             })
         }
         if (order.user_id) {
             await sendWhatsAppToCustomer(
                 order.user_id,
-                `✅ Upgrade confirmed!\nYour Toneek plan is now fully upgraded to ${order.plan_tier.replace('_', ' ')}.\n` +
+                `✅ Upgrade confirmed!\nYour Toneek plan is now fully upgraded to ${getPlanDisplayName(order.plan_tier)}.\n` +
                 `Login to your dashboard: ${baseUrl}/dashboard`
             )
         }

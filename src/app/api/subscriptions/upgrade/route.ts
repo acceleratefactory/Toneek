@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { adminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
-import { getPlanPrice, getBankDetails } from '@/lib/orders/pricing'
+import { getPlanPrice, getPlanPriceFromDB, getBankDetails } from '@/lib/orders/pricing'
 import crypto from 'crypto'
 
 export async function POST(request: NextRequest) {
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
   // Get the price for the upgraded plan
   // Use the SAME routine_tier they are already on
   // If they are a just_one customer upgrading, they get just_one full_protocol price
-  const amount = await getPlanPrice(target_plan_tier, currency, routine_tier)
+  const amount = await getPlanPriceFromDB(target_plan_tier, currency, routine_tier, adminClient)
 
   // Create the upgrade order
   const random = Math.floor(1000 + Math.random() * 9000)

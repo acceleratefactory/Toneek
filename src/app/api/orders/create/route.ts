@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 // Pricing is fetched dynamically from the subscription_tiers database table
 
-import { getBankDetails, getPlanPrice } from '@/lib/orders/pricing'
+import { getBankDetails, getPlanPrice, getPlanPriceFromDB } from '@/lib/orders/pricing'
 
 // ─── Route handler ────────────────────────────────────────────────────────────
 
@@ -33,10 +33,28 @@ export async function POST(request: NextRequest) {
             .eq('id', assessment_id)
             .single()
 
-        // Fetch dynamic pricing using shared utility
+        // Resolve UUID to canonical string (Prevents UUID leak in emails and fixes pricing fallback)
+        let canonical_plan_tier = plan_tier;
+        if (plan_tier.length === 36 && plan_tier.includes('-')) {
+            const { data: tierData } = await adminClient
+                .from('subscription_tiers')
+                .select('name')
+                .eq('id', plan_tier)
+                .single()
+            if (tierData?.name) {
+                const rawName = tierData.name.toLowerCase()
+                if (rawName.includes('full')) canonical_plan_tier = 'full_protocol'
+                else if (rawName.includes('restoration')) canonical_plan_tier = 'restoration'
+                else canonical_plan_tier = 'essentials'
+            }
+        }
+
+        const routine_tier = assessment?.routine_expectation || 'just_one'
+
+        // Fetch dynamic pricing using database matrix
         let amount;
         try {
-            amount = await getPlanPrice(plan_tier, currency);
+            amount = await getPlanPriceFromDB(canonical_plan_tier, currency, routine_tier, adminClient);
         } catch (priceErr: any) {
             return NextResponse.json({ error: priceErr.message }, { status: 400 });
         }
@@ -47,8 +65,6 @@ export async function POST(request: NextRequest) {
 
         // Generate secure single-use admin confirmation token (double UUID)
         const confirm_token = `${crypto.randomUUID()}-${crypto.randomUUID()}`
-
-        const routine_tier = assessment?.routine_expectation || 'just_one'
         
         let fourth_product_sku = null
         let fourth_product_name = null
@@ -73,7 +89,7 @@ export async function POST(request: NextRequest) {
 
         // Create order (user_id may be null until OTP confirmed)
         const orderPayload: Record<string, any> = {
-            plan_tier,
+            plan_tier: canonical_plan_tier,
             payment_amount: amount,
             currency,
             payment_method: 'bank_transfer',
