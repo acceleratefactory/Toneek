@@ -22,7 +22,7 @@ export async function sendAdminSubscriptionAlert({
 
     await resend.emails.send({
       from: process.env.FROM_EMAIL || 'notifications@toneek.com',
-      to: process.env.ADMIN_EMAIL || 'admin@toneek.com',
+      to: process.env.ADMIN_EMAIL || 'hello@toneek.com',
       subject: `Subscription ${actionLabel} — ${customerName || 'Customer'}`,
       html: `
         <div style="font-family:system-ui;max-width:600px;margin:0 auto;padding:24px;">
