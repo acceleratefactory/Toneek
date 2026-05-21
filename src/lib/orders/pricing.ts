@@ -61,3 +61,48 @@ export function getBankDetails(currency: string) {
     // Fallback to USD if currency not configured
     return MAP[currency] ?? MAP['USD']
 }
+
+export function getPlanDisplayName(plan_tier: string): string {
+  if (!plan_tier) return 'Toneek Protocol'
+
+  const PLAN_NAMES: Record<string, string> = {
+    'essentials': 'Essentials',
+    'full_protocol': 'Full Protocol',
+    'restoration': 'Restoration Protocol',
+    'restoration_protocol': 'Restoration Protocol',
+  }
+  
+  // Safe fallback for old records with UUIDs
+  if (plan_tier.length === 36 && plan_tier.includes('-')) {
+    return 'Toneek Protocol'
+  }
+  
+  return PLAN_NAMES[plan_tier.toLowerCase()] ?? plan_tier
+}
+
+export async function getPlanPriceFromDB(
+  plan_name: string,
+  currency: string,
+  routine_tier: string,
+  supabase: any
+): Promise<number> {
+  let searchName = plan_name.replace(/_/g, ' ')
+  if (searchName === 'restoration') searchName = 'restoration protocol'
+
+  const { data: tier } = await supabase
+    .from('subscription_tiers')
+    .select('prices')
+    .ilike('name', searchName)
+    .eq('routine_tier', routine_tier)
+    .maybeSingle()
+
+  if (tier?.prices) {
+    const priceObj = tier.prices[currency]
+    if (priceObj && typeof priceObj.amount === 'number') {
+      return priceObj.amount
+    }
+  }
+
+  console.warn(`[Pricing] DB lookup failed for ${plan_name}/${routine_tier}/${currency}, using fallback`)
+  return getPlanPrice(plan_name.toLowerCase().replace(/\s+/g, '_'), currency, routine_tier)
+}
