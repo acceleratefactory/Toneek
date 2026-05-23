@@ -4,18 +4,13 @@ import { NextResponse } from 'next/server'
 export async function GET() {
   const supabase = adminClient
 
-  const today = new Date()
-  const todayStr = today.toISOString().split('T')[0]
-
-  // Day 3 (received 2 days ago)
-  const twoDaysAgo = new Date()
-  twoDaysAgo.setDate(twoDaysAgo.getDate() - 2)
-  const dateStr = twoDaysAgo.toISOString().split('T')[0]
-
-  // Day 5 (received 4 days ago)
-  const fourDaysAgo = new Date()
-  fourDaysAgo.setDate(fourDaysAgo.getDate() - 4)
-  const day5Str = fourDaysAgo.toISOString().split('T')[0]
+  const now = new Date()
+  
+  const hours24Ago = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+  const hours48Ago = new Date(now.getTime() - 48 * 60 * 60 * 1000)
+  const hours72Ago = new Date(now.getTime() - 72 * 60 * 60 * 1000)
+  const hours96Ago = new Date(now.getTime() - 96 * 60 * 60 * 1000)
+  const hours120Ago = new Date(now.getTime() - 120 * 60 * 60 * 1000)
 
   const { data: day3Orders } = await supabase
     .from('orders')
@@ -23,13 +18,22 @@ export async function GET() {
       id, user_id, routine_tier,
       profiles!inner(email, full_name, phone)
     `)
-    .gte('received_at', `${dateStr}T00:00:00`)
-    .lt('received_at', `${dateStr}T23:59:59`)
-    .in('routine_tier', ['two_to_three', 'whatever_it_takes'])
+    .gte('received_at', hours72Ago.toISOString())
+    .lt('received_at', hours48Ago.toISOString())
+    .eq('status', 'delivered')
 
   let sent = 0
 
   for (const order of day3Orders ?? []) {
+    const { data: existing } = await supabase
+      .from('dark_period_responses')
+      .select('id')
+      .eq('user_id', order.user_id)
+      .eq('day_number', 3)
+      .single()
+    
+    if (existing) continue
+
     const profile = order.profiles as any
     const name = profile?.full_name?.split(' ')[0] ?? 'there'
     const is_full_routine = order.routine_tier === 'whatever_it_takes'
@@ -58,14 +62,13 @@ export async function GET() {
     sent++
   }
 
-  // --- DAY 1 (Received Today) ---
+  // --- DAY 1 (Received within last 24 hours) ---
   const { data: day1Orders } = await supabase
     .from('orders')
-    .select(`id, user_id, profiles!inner(phone, full_name)`)
-    .gte('received_at', `${todayStr}T00:00:00`)
-    .lt('received_at', `${todayStr}T23:59:59`)
+    .select(`id, user_id, profiles!inner(email, phone, full_name)`)
+    .gte('received_at', hours24Ago.toISOString())
+    .lt('received_at', now.toISOString())
     .eq('status', 'delivered')
-    .not('routine_tier', 'eq', 'just_one')
 
   for (const order of day1Orders ?? []) {
     const { data: existing } = await supabase
@@ -103,14 +106,13 @@ export async function GET() {
     }
   }
 
-  // --- DAY 5 (Received 4 days ago) ---
+  // --- DAY 5 (Received between 96 and 120 hours ago) ---
   const { data: day5Orders } = await supabase
     .from('orders')
-    .select(`id, user_id, profiles!inner(phone, full_name)`)
-    .gte('received_at', `${day5Str}T00:00:00`)
-    .lt('received_at', `${day5Str}T23:59:59`)
+    .select(`id, user_id, profiles!inner(email, phone, full_name)`)
+    .gte('received_at', hours120Ago.toISOString())
+    .lt('received_at', hours96Ago.toISOString())
     .eq('status', 'delivered')
-    .not('routine_tier', 'eq', 'just_one')
 
   for (const order of day5Orders ?? []) {
     const { data: existing } = await supabase
