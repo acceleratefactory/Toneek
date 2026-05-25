@@ -15,6 +15,8 @@ import CheckinTimeline from '@/components/formula/CheckinTimeline'
 import SystemLearningDisclosure from '@/components/formula/SystemLearningDisclosure'
 import RealOutcomes from '@/components/formula/RealOutcomes'
 import StickyCTA from '@/components/formula/StickyCTA'
+import SkinOSCard from '@/components/results/SkinOSCard'
+import WhatsAppShare from '@/components/results/WhatsAppShare'
 import { generateProtocol } from '@/lib/protocol/generateProtocol'
 import { generateFormulaLogic } from '@/lib/formula/generateFormulaLogic'
 import { getIdentityLine, getFormulaSummaryLine } from '@/lib/formula/identityLine'
@@ -111,6 +113,12 @@ export default async function ResultsPage({
         assessment.city || 'Location',
         assessment.skin_type || 'Variable',
         assessment.primary_concern?.replace(/_/g, ' ') || 'Skin health'
+    ]
+
+    const shareMetrics = [
+        'BARRIER INTEGRITY',
+        (assessment.primary_concern || 'SKIN HEALTH').replace(/_/g, ' ').toUpperCase(),
+        'HYDRATION STATUS'
     ]
 
     // Construct static timeline nodes for preview
@@ -401,6 +409,25 @@ export default async function ResultsPage({
                         </p>
                     </section>
                 )}
+
+                {/* 8. Share Action (2000ms) */}
+                <section className="pt-12 pb-8 animate-slide-up opacity-0" style={{ animationDelay: '2000ms', animationFillMode: 'forwards' }}>
+                    <div className="text-center mb-6">
+                        <p className="text-gray-900 dark:text-[#F0E6DF] font-bold text-xl mb-2 font-sans tracking-tight">Share your Skin OS</p>
+                        <p className="text-gray-500 dark:text-[#A3938C] text-[13px] font-sans max-w-sm mx-auto">Export your clinical baseline card or share your formula directly with friends.</p>
+                    </div>
+                    
+                    <SkinOSCard 
+                        score={assessment.skin_os_score ?? 50}
+                        formulaCode={assessment.formula_code || 'TNK-0X'}
+                        metrics={shareMetrics}
+                    />
+                    
+                    <WhatsAppShare 
+                        score={assessment.skin_os_score ?? 50}
+                        formulaCode={assessment.formula_code || 'TNK-0X'}
+                    />
+                </section>
             </div>
         </main>
 
