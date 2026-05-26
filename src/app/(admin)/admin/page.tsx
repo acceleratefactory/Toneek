@@ -1,5 +1,6 @@
 import { adminClient } from '@/lib/supabase/admin'
 import DashboardCharts from '@/components/admin/DashboardCharts'
+import DeliveryFeeSettings from '@/components/admin/DeliveryFeeSettings'
 
 // Force the page to dynamically render
 export const dynamic = 'force-dynamic'
@@ -592,6 +593,9 @@ export default async function AdminDashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Delivery Fees Configuration ── */}
+      <DeliveryFeeSettings />
 
     </div>
   )

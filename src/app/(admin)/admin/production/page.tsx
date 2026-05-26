@@ -51,7 +51,7 @@ async function getProductionData() {
     if (allOrderIds.length > 0) {
       const { data: orders } = await adminClient
         .from('orders')
-        .select('id, payment_reference, user_id, routine_tier, fourth_product, formula_code, plan_tier')
+        .select('id, payment_reference, user_id, routine_tier, fourth_product, formula_code, plan_tier, order_type')
         .in('id', allOrderIds)
 
       // CRITICAL LOOP CHECK: Verify if any order's formula has changed clinically since the batch was created
@@ -265,6 +265,15 @@ export default async function ProductionQueuePage() {
                       <div className="font-bold text-gray-900 mb-2 pb-2 border-b border-gray-100 flex justify-between items-center">
                         <div className="flex items-center gap-2">
                           <span>Order {order.payment_reference}</span>
+                          {order.order_type === 'free_trial' && (
+                            <span style={{
+                              background: '#1C5C3A', color: 'white',
+                              fontSize: '10px', padding: '2px 8px', borderRadius: '10px',
+                              fontWeight: '600', marginLeft: '8px'
+                            }}>
+                              FREE TRIAL
+                            </span>
+                          )}
                           {order.is_mismatched && (
                             <span className="bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded animate-pulse shadow-sm">
                               ⚠️ CLINICAL CHANGE DETECTED

@@ -26,12 +26,11 @@ export async function GET(request: Request) {
   const { data: subscriptions } = await adminClient
     .from('subscriptions')
     .select(`
-      id, user_id, plan_tier, status, next_billing_date,
+      id, user_id, plan_tier, status, next_billing_date, trial_ends_at,
       profiles!inner(email, full_name, phone)
     `)
-    .eq('status', 'active')
-    .gte('next_billing_date', `${dateStr}T00:00:00`)
-    .lt('next_billing_date', `${dateStr}T23:59:59`)
+    .in('status', ['active', 'trial'])
+    .or(`and(next_billing_date.gte.${dateStr}T00:00:00,next_billing_date.lt.${dateStr}T23:59:59),and(trial_ends_at.gte.${dateStr}T00:00:00,trial_ends_at.lt.${dateStr}T23:59:59)`)
 
   if (!subscriptions || subscriptions.length === 0) {
     return NextResponse.json({ sent: 0 })
@@ -41,6 +40,8 @@ export async function GET(request: Request) {
 
   for (const sub of subscriptions) {
     const profile = sub.profiles as any
+    const isTrial = sub.status === 'trial'
+    const billing_date = isTrial ? sub.trial_ends_at : sub.next_billing_date
 
     // Get customer's currency from their latest order
     const { data: latestOrder } = await adminClient
@@ -77,7 +78,7 @@ export async function GET(request: Request) {
     const customer_name = profile?.full_name?.split(' ')[0] ?? 'there'
     const plan_display = sub.plan_tier
       .replace('_', ' ')
-      .replace(/\\b\\w/g, (l: string) => l.toUpperCase())
+      .replace(/\b\w/g, (l: string) => l.toUpperCase())
 
     // Send renewal email
     if (profile?.email) {
@@ -88,17 +89,20 @@ export async function GET(request: Request) {
         currency,
         amount,
         renewal_url,
-        billing_date: sub.next_billing_date,
+        billing_date: billing_date,
+        isTrial
       })
     }
 
     // Send renewal WhatsApp
     if (profile?.phone) {
+      const waText = isTrial
+        ? `Hi ${customer_name} — your free Toneek trial ends in 7 days.\n\nKeep your protocol going. Click to generate your payment details instantly:\n${renewal_url}\n\nOne click. No login required.`
+        : `Hi ${customer_name} — your Toneek ${plan_display} renews in 7 days.\n\nClick to generate your payment details instantly:\n${renewal_url}\n\nOne click. No login required.`
+
       await sendWhatsApp(
         profile.phone,
-        `Hi ${customer_name} — your Toneek ${plan_display} renews in 7 days.\n\n` +
-        `Click to generate your payment details instantly:\n${renewal_url}\n\n` +
-        `One click. No login required.`
+        waText
       )
     }
 

@@ -1,5 +1,5 @@
 export async function sendRenewalEmail({
-  email, name, plan, currency, amount, renewal_url, billing_date
+  email, name, plan, currency, amount, renewal_url, billing_date, isTrial
 }: {
   email: string
   name: string
@@ -8,6 +8,7 @@ export async function sendRenewalEmail({
   amount?: number
   renewal_url: string
   billing_date: string
+  isTrial?: boolean
 }) {
   const { Resend } = await import('resend')
   const resend = new Resend(process.env.RESEND_API_KEY)
@@ -22,10 +23,22 @@ export async function sendRenewalEmail({
     day: 'numeric', month: 'long', year: 'numeric'
   })
 
+  const subject = isTrial
+    ? `Your free Toneek trial ends in 7 days — keep your protocol going`
+    : `Your Toneek formula renews in 7 days — action required`
+
+  const headerText = isTrial
+    ? `Hi ${name}, your personalised formula has been in your routine for 3 weeks.`
+    : `Hi ${name}, your formula renewal is due.`
+
+  const subtitleText = isTrial
+    ? `Your free trial ends on ${billing_date_display}. To continue, your first paid month is due.`
+    : ``
+
   await resend.emails.send({
     from: process.env.FROM_EMAIL || 'billing@toneek.com',
     to: email,
-    subject: `Your Toneek formula renews in 7 days — action required`,
+    subject: subject,
     html: `
       <div style="font-family:system-ui;max-width:560px;margin:0 auto;
                   background:#2A0F06;padding:0;">
@@ -39,8 +52,9 @@ export async function sendRenewalEmail({
 
         <div style="padding:32px;">
           <h2 style="color:#F7F1EB;font-size:20px;margin:0 0 16px;">
-            Hi ${name}, your formula renewal is due.
+            ${headerText}
           </h2>
+          ${subtitleText ? `<p style="color:#F7F1EB;font-size:16px;margin:0 0 16px;">${subtitleText}</p>` : ''}
           
           <div style="background:rgba(255,255,255,0.05);border-radius:8px;
                       padding:20px;margin:20px 0;">

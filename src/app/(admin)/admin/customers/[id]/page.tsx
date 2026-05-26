@@ -1,9 +1,11 @@
+import React from 'react'
 import { adminClient } from '@/lib/supabase/admin'
 import { notFound } from 'next/navigation'
 import ChemistReviewForm from '@/components/admin/ChemistReviewForm'
 import ConcernReviewPanel from '@/components/admin/ConcernReviewPanel'
 import ChemistCopilotPanel from '@/components/admin/ChemistCopilotPanel'
 import DarkPeriodPanel from '@/components/admin/DarkPeriodPanel'
+import DeliveryLinkGenerator from '@/components/admin/DeliveryLinkGenerator'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,7 +61,11 @@ async function getCustomerData(id: string) {
     .eq('user_id', id)
     .order('day_number', { ascending: true })
 
-  const timeline: any[] = []
+  // Fetch platform settings for delivery fees
+  const { data: settings } = await adminClient
+    .from('platform_settings')
+    .select('delivery_fees')
+    .single()
 
   assessments?.forEach((a: any) => {
     timeline.push({
@@ -83,6 +89,20 @@ async function getCustomerData(id: string) {
       icon: '📦',
       iconBg: 'bg-toneek-sage text-toneek-forest'
     })
+
+    // Add delivery fee paid event for free trial orders
+    if (o.order_type === 'free_trial' && o.payment_status === 'confirmed' && o.payment_confirmed_at && o.delivery_fee !== null) {
+      const symbol = o.delivery_fee_currency === 'NGN' ? '₦' : o.delivery_fee_currency === 'GBP' ? '£' : o.delivery_fee_currency === 'USD' ? '$' : o.delivery_fee_currency
+      timeline.push({
+        id: `df_${o.id}`,
+        date: new Date(o.payment_confirmed_at),
+        type: 'delivery_fee_paid',
+        title: 'Delivery fee confirmed',
+        description: `${symbol}${o.delivery_fee} delivery payment confirmed. Formula cost: waived (free trial).`,
+        icon: '📦',
+        iconBg: 'bg-[#1C5C3A] text-white'
+      })
+    }
   })
 
   outcomes?.forEach((o: any) => {
@@ -138,7 +158,8 @@ async function getCustomerData(id: string) {
     timeline,
     formulaStatusMap,
     notes: notes ?? [],
-    darkPeriod: darkPeriod ?? []
+    darkPeriod: darkPeriod ?? [],
+    deliveryFees: settings?.delivery_fees ?? {}
   }
 }
 
@@ -345,7 +366,8 @@ export default async function CustomerDetailPage(
              ) : (
                <ul className="divide-y divide-gray-100">
                  {data.orders.map((o: any) => (
-                   <li key={o.id} className="p-4 flex justify-between items-center">
+                   <React.Fragment key={o.id}>
+                   <li className="p-4 flex justify-between items-center">
                      <div>
                        <p className="font-bold text-sm text-gray-900 font-mono">{o.payment_reference}</p>
                        <p className="text-xs text-gray-500 mt-1">{new Date(o.created_at).toLocaleDateString()}</p>
@@ -356,6 +378,22 @@ export default async function CustomerDetailPage(
                        {o.status}
                      </span>
                    </li>
+                   
+                   {/* Delivery Link Generator for free_trial orders without a delivery fee paid */}
+                   {o.order_type === 'free_trial' && o.delivery_fee === null && (
+                     <li key={`${o.id}-delivery`} className="p-4 bg-gray-50/50 border-t border-gray-100">
+                       <DeliveryLinkGenerator 
+                         orderId={o.id}
+                         customerName={data.profile.full_name}
+                         formulaCode={data.assessments[0]?.formula_code}
+                         planTier={o.plan_tier}
+                         paymentReference={o.payment_reference}
+                         deliveryFees={data.deliveryFees}
+                         customerPhone={data.profile.phone}
+                       />
+                     </li>
+                   )}
+                 </React.Fragment>
                  ))}
                </ul>
              )}

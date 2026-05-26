@@ -94,10 +94,26 @@ export async function GET(request: NextRequest) {
     }
 
     const is_upgrade = order.order_type === 'upgrade'
+    const is_free_trial = order.order_type === 'free_trial'
 
     // ── Handle Subscription & Profile ─────────────────────────────────────────
     if (order.user_id) {
-        if (is_upgrade) {
+        if (is_free_trial) {
+            // Free trial subscriptions are created at order creation time.
+            // We only need to mark the delivery payment link as used.
+            const { error: linkError } = await adminClient
+                .from('delivery_payment_links')
+                .update({ used_at: new Date().toISOString() })
+                .eq('order_id', order.id)
+                
+            if (linkError) {
+                console.error('Failed to update delivery payment link:', linkError)
+            }
+            
+            // Note: We do NOT change order.status here, as it may already be 'ready_to_dispatch' or in 'production'
+            // We only updated payment_status to 'confirmed' above.
+            
+        } else if (is_upgrade) {
             // Update existing subscription
             const { error: subError } = await adminClient
                 .from('subscriptions')
@@ -216,6 +232,19 @@ export async function GET(request: NextRequest) {
                 `Login to your dashboard: ${baseUrl}/dashboard`
             )
         }
+    } else if (is_free_trial) {
+        // Free trial delivery payment confirmed
+        if (customerEmail) {
+            // Re-use sendWelcomeEmail or just send a raw email/WhatsApp for delivery
+            // We'll just send WhatsApp since it's most direct for Toneek right now
+        }
+        if (order.user_id) {
+            await sendWhatsAppToCustomer(
+                order.user_id,
+                `✅ Delivery payment confirmed!\nYour Toneek formula will be dispatched shortly.\n` +
+                `Login to your dashboard: ${baseUrl}/dashboard`
+            )
+        }
     } else {
         if (customerEmail) {
             await sendWelcomeEmail({
@@ -239,7 +268,7 @@ export async function GET(request: NextRequest) {
         <div class="icon">✅</div>
         <h2>Order Confirmed</h2>
         <p>
-            ${is_upgrade ? 'Subscription upgraded.' : 'Subscription activated.<br/>Formula queued for production.'}<br/>
+            ${is_upgrade ? 'Subscription upgraded.' : is_free_trial ? 'Delivery payment confirmed.' : 'Subscription activated.<br/>Formula queued for production.'}<br/>
             Customer notified by email${order.user_id ? ' and WhatsApp' : ''}.
         </p>
         <p style="font-size:13px;margin-top:12px;">

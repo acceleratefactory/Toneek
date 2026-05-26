@@ -45,6 +45,18 @@ export default async function SubscribePage({
          // Hard fallback or redirect
     }
 
+    // Detect eligibility for free trial or 50% discount
+    const { data: existingSubscription } = await adminClient
+      .from('subscriptions')
+      .select('id')
+      .eq('user_id', assessment.user_id)
+      .maybeSingle()
+
+    const is_first_time = !existingSubscription
+    const is_single_product = routine_tier === 'just_one'
+    const show_free_trial = is_first_time && is_single_product
+    const show_half_price = is_first_time && !is_single_product
+
     return (
         <main className="min-h-screen bg-[#FCFAF8] dark:bg-[#1A1210] py-12 px-4 sm:px-6 font-sans">
             <div className="max-w-3xl mx-auto space-y-6">
@@ -82,6 +94,8 @@ export default async function SubscribePage({
                     currency={currency}
                     plans={plansData || []}
                     routineTier={routine_tier}
+                    showFreeTrial={show_free_trial}
+                    showHalfPrice={show_half_price}
                 />
 
                 <p className="text-center text-gray-400 dark:text-gray-500 text-[11px] mt-6 max-w-md mx-auto leading-relaxed font-medium">
