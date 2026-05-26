@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useRef } from 'react'
-import html2canvas from 'html2canvas'
+import domtoimage from 'dom-to-image-more'
 
 export function getScoreMeaning(score: number): string {
   if (score >= 80) return 'Strong baseline'
@@ -39,32 +39,21 @@ export default function SkinOSCard({ score, formulaCode, metrics, primaryConcern
     if (!cardRef.current) return
 
     try {
-      // Calculate perfect 1080x1080 scaling regardless of phone screen size
+      // Ensure all fonts are loaded before capture
+      await document.fonts.ready
+
+      // Use dom-to-image-more — handles Tailwind v4 oklch/lab colors natively
+      // html2canvas cannot parse modern CSS color functions
       const targetWidth = 1080
       const currentWidth = cardRef.current.offsetWidth
       const scale = targetWidth / currentWidth
 
-      // STEP 1: Ensure all fonts are loaded before capture
-      await document.fonts.ready
-
-      // STEP 2: Enhanced html2canvas options to prevent taint and inline SVGs
-      const canvas = await html2canvas(cardRef.current, {
+      const blob = await domtoimage.toBlob(cardRef.current, {
+        quality: 1,
         scale: scale,
-        backgroundColor: '#2A0F06', // deep brown
-        useCORS: true,
-        allowTaint: false,
-        logging: false,
-        onclone: (clonedDoc) => {
-          // Force inline all SVGs in the cloned document
-          const svgs = clonedDoc.querySelectorAll('svg')
-          svgs.forEach(svg => {
-            svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
-          })
-        }
+        bgcolor: '#2A0F06',
       })
 
-      const dataUrl = canvas.toDataURL('image/png')
-      const blob = await (await fetch(dataUrl)).blob()
       const file = new File([blob], `Toneek-SkinOS-${formulaCode}.png`, { type: 'image/png' })
 
       // Attempt native mobile share sheet
@@ -76,12 +65,14 @@ export default function SkinOSCard({ score, formulaCode, metrics, primaryConcern
         })
       } else {
         // Fallback to desktop download
+        const url = URL.createObjectURL(blob)
         const link = document.createElement('a')
-        link.href = dataUrl
+        link.href = url
         link.download = `Toneek-SkinOS-${formulaCode}.png`
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
+        URL.revokeObjectURL(url)
       }
     } catch (err) {
       console.error('[SkinOS Card] Image generation failed:', err)

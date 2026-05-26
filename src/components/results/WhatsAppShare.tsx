@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import html2canvas from 'html2canvas'
+import domtoimage from 'dom-to-image-more'
 import { getScoreMeaning, getCuriosityHook } from './SkinOSCard'
 
 interface WhatsAppShareProps {
@@ -35,56 +35,46 @@ export default function WhatsAppShare({ score, formulaCode, primaryConcern, refe
 
     try {
       await document.fonts.ready
-      
+
       const targetWidth = 1080
       const currentWidth = cardElement.offsetWidth
       const scale = targetWidth / currentWidth
 
-      const canvas = await html2canvas(cardElement, { 
-        scale: scale, 
-        useCORS: true,
-        backgroundColor: '#2A0F06',
-        allowTaint: false,
-        logging: false,
-        onclone: (clonedDoc) => {
-          const svgs = clonedDoc.querySelectorAll('svg')
-          svgs.forEach(svg => svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg'))
-        }
+      // Use dom-to-image-more — handles Tailwind v4 oklch/lab colors natively
+      const blob = await domtoimage.toBlob(cardElement, {
+        quality: 1,
+        scale: scale,
+        bgcolor: '#2A0F06',
       })
-      
-      canvas.toBlob(async (blob) => {
-        if (!blob) return
 
-        const file = new File([blob], `Toneek-SkinOS-${formulaCode}.png`, { type: 'image/png' })
-        
-        const message = `My Skin OS Score is ${score} — ${getScoreMeaning(score)}.\n\n${getCuriosityHook(primaryConcern)}.\n\nFind out your score (takes 3 minutes): ${referralCode ? `toneek.com/ref/${referralCode}` : 'toneek.com'}`
-        
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          // Mobile: use Web Share API
-          try {
-            await navigator.share({
-              files: [file],
-              text: message,
-              title: 'My Skin Score',
-            })
-          } catch (err) {
-            console.log('Share cancelled')
-          }
-        } else {
-          // Desktop fallback: download + open WhatsApp web
-          const url = URL.createObjectURL(blob)
-          const a = document.createElement('a')
-          a.href = url
-          a.download = `Toneek-SkinOS-${formulaCode}.png`
-          a.click()
-          URL.revokeObjectURL(url)
-          
-          setTimeout(() => {
-            const text = encodeURIComponent(message)
-            window.open(`https://wa.me/?text=${text}`, '_blank')
-          }, 500)
+      const file = new File([blob], `Toneek-SkinOS-${formulaCode}.png`, { type: 'image/png' })
+      const message = `My Skin OS Score is ${score} — ${getScoreMeaning(score)}.\n\n${getCuriosityHook(primaryConcern)}.\n\nFind out your score (takes 3 minutes): ${referralCode ? `toneek.com/ref/${referralCode}` : 'toneek.com'}`
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        // Mobile: use Web Share API
+        try {
+          await navigator.share({
+            files: [file],
+            text: message,
+            title: 'My Skin Score',
+          })
+        } catch (err) {
+          console.log('Share cancelled')
         }
-      }, 'image/png')
+      } else {
+        // Desktop fallback: download + open WhatsApp web
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `Toneek-SkinOS-${formulaCode}.png`
+        a.click()
+        URL.revokeObjectURL(url)
+
+        setTimeout(() => {
+          const text = encodeURIComponent(message)
+          window.open(`https://wa.me/?text=${text}`, '_blank')
+        }, 500)
+      }
     } catch (err) {
       console.error('WhatsApp share failed:', err)
       alert('Could not prepare image for WhatsApp. Please try again.')
