@@ -67,6 +67,8 @@ async function getCustomerData(id: string) {
     .select('delivery_fees')
     .single()
 
+  const timeline: any[] = []
+
   assessments?.forEach((a: any) => {
     timeline.push({
       id: `a_${a.id}`,
