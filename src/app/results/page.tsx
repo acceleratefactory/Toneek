@@ -268,7 +268,7 @@ export default async function ResultsPage({
     return (
         <>
         <main className="min-h-screen bg-[#FCFAF8] dark:bg-[#1A1210] py-12 px-4 sm:px-6 font-sans overflow-x-hidden">
-            <div className="max-w-3xl mx-auto space-y-6">
+            <div className="max-w-5xl mx-auto space-y-6">
                 
                 {/* 1. Header (0ms) */}
                 <div className="flex flex-col items-center text-center mb-10 animate-slide-up opacity-0" style={{ animationDelay: '0ms', animationFillMode: 'forwards' }}>
