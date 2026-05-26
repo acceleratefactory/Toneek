@@ -37,12 +37,21 @@ export default function WhatsAppShare({ score, formulaCode, primaryConcern, refe
       const currentWidth = cardElement.offsetWidth
       const scale = targetWidth / currentWidth
 
-      // Use dom-to-image-more — handles Tailwind v4 oklch/lab colors natively
+      // Inject a temporary CSS reset to neutralize mobile browser UA stylesheet borders.
+      // Written WITHOUT !important so inline styles (card border, separator line) still win.
+      const resetStyle = document.createElement('style')
+      resetStyle.setAttribute('data-skinos-reset', 'true')
+      resetStyle.textContent = '* { border: 0; outline: 0; -webkit-appearance: none; appearance: none; }'
+      cardElement.appendChild(resetStyle)
+
       const blob = await domtoimage.toBlob(cardElement, {
         quality: 1,
         scale: scale,
         bgcolor: '#2A0F06',
       })
+
+      // Remove reset style immediately — live page is completely unaffected
+      cardElement.removeChild(resetStyle)
 
       const file = new File([blob], `Toneek-SkinOS-${formulaCode}.png`, { type: 'image/png' })
       const message = `My Skin OS Score is ${score} — ${getScoreMeaning(score)}.\n\n${getCuriosityHook(primaryConcern)}.\n\nFind out your score (takes 3 minutes): ${referralCode ? `toneek.com/ref/${referralCode}` : 'toneek.com'}`

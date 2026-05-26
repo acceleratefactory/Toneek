@@ -45,11 +45,22 @@ export default function SkinOSCard({ score, formulaCode, metrics, primaryConcern
       const currentWidth = cardRef.current.offsetWidth
       const scale = targetWidth / currentWidth
 
+      // Inject a temporary CSS reset to neutralize mobile browser UA stylesheet borders.
+      // Written WITHOUT !important so our inline styles (card border, separator line) still win.
+      // This fixes thick border artifacts on iOS Safari and Android Chrome captures only.
+      const resetStyle = document.createElement('style')
+      resetStyle.setAttribute('data-skinos-reset', 'true')
+      resetStyle.textContent = '* { border: 0; outline: 0; -webkit-appearance: none; appearance: none; }'
+      cardRef.current.appendChild(resetStyle)
+
       const blob = await domtoimage.toBlob(cardRef.current, {
         quality: 1,
         scale: scale,
         bgcolor: '#2A0F06',
       })
+
+      // Remove reset style immediately — live page is completely unaffected
+      cardRef.current.removeChild(resetStyle)
 
       const file = new File([blob], `Toneek-SkinOS-${formulaCode}.png`, { type: 'image/png' })
 
