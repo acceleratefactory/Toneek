@@ -66,17 +66,19 @@ export default async function ResultsPage({
     const assessment = data
     const formula = (data as any).formula_codes
 
-    // Fetch subscription status to hide CTAs for already-subscribed customers
+    // Fetch subscription status and referral code
     let needsSubscription = true
+    let referralCode = ''
     if (assessment.user_id) {
         const { data: profile } = await adminClient
             .from('profiles')
-            .select('subscription_status')
+            .select('*')
             .eq('id', assessment.user_id)
             .single()
         
         if (profile) {
             needsSubscription = !profile.subscription_status || profile.subscription_status === 'never' || profile.subscription_status === 'cancelled'
+            referralCode = profile.referral_code || ''
         }
     }
 
@@ -115,11 +117,23 @@ export default async function ResultsPage({
         assessment.primary_concern?.replace(/_/g, ' ') || 'Skin health'
     ]
 
-    const shareMetrics = [
-        'BARRIER INTEGRITY',
-        (assessment.primary_concern || 'SKIN HEALTH').replace(/_/g, ' ').toUpperCase(),
-        'HYDRATION STATUS'
+    // Construct metrics for Skin OS Card
+    const scoresObj = (assessment.analysis_scores as Record<string, number>) || {}
+    const shareMetrics: string[] = []
+    const metricDisplayMap = [
+        { label: 'BARRIER', key: 'barrier_integrity' },
+        { label: 'HYDRATION', key: 'hydration_status' },
+        { label: 'PIGMENT', key: 'pigmentation_load' },
+        { label: 'SEBUM', key: 'oil_balance' },
+        { label: 'INFLAMMATION', key: 'inflammation_level' },
+        { label: 'SENSITIVITY', key: 'melanin_sensitivity' }
     ]
+    for (const m of metricDisplayMap) {
+        if (scoresObj[m.key] !== undefined && shareMetrics.length < 4) {
+            shareMetrics.push(`${m.label} ${scoresObj[m.key]}`)
+        }
+    }
+    if (shareMetrics.length === 0) shareMetrics.push('SKIN HEALTH')
 
     // Construct static timeline nodes for preview
     const customW2 = formula?.week_2_expectation || formula?.base_formula?.week_2_expectation || 'Skin inflammation calming, barrier beginning to stabilise. No visible pigment change at this stage — this is normal.'
@@ -412,20 +426,20 @@ export default async function ResultsPage({
 
                 {/* 8. Share Action (2000ms) */}
                 <section className="pt-12 pb-8 animate-slide-up opacity-0" style={{ animationDelay: '2000ms', animationFillMode: 'forwards' }}>
-                    <div className="text-center mb-6">
-                        <p className="text-gray-900 dark:text-[#F0E6DF] font-bold text-xl mb-2 font-sans tracking-tight">Share your Skin OS</p>
-                        <p className="text-gray-500 dark:text-[#A3938C] text-[13px] font-sans max-w-sm mx-auto">Export your clinical baseline card or share your formula directly with friends.</p>
-                    </div>
                     
                     <SkinOSCard 
                         score={assessment.skin_os_score ?? 50}
                         formulaCode={assessment.formula_code || 'TNK-0X'}
                         metrics={shareMetrics}
+                        primaryConcern={assessment.primary_concern || ''}
+                        referralCode={referralCode}
                     />
                     
                     <WhatsAppShare 
                         score={assessment.skin_os_score ?? 50}
                         formulaCode={assessment.formula_code || 'TNK-0X'}
+                        primaryConcern={assessment.primary_concern || ''}
+                        referralCode={referralCode}
                     />
                 </section>
             </div>

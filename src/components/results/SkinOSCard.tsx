@@ -3,13 +3,36 @@
 import React, { useRef } from 'react'
 import html2canvas from 'html2canvas'
 
+export function getScoreMeaning(score: number): string {
+  if (score >= 80) return 'Strong baseline'
+  if (score >= 65) return 'Good foundation, targeted correction needed'
+  if (score >= 50) return 'Recoverable — targeted correction needed'
+  if (score >= 35) return 'Your skin needs clinical attention'
+  return 'Significant correction required'
+}
+
+export function getCuriosityHook(primary_concern: string): string {
+  const hooks: Record<string, string> = {
+    PIH: 'Your dark marks need more than a brightening serum',
+    tone: 'Your skin tone issue has a clinical cause',
+    acne: 'Your breakouts are leaving marks that need a second formula',
+    dryness: 'Your moisturiser may not be reaching your barrier',
+    sensitivity: 'Your skin is reacting to something your routine is missing',
+    oiliness: 'Your oil control routine may be making things worse',
+    texture: 'Your texture has a clinical cause most brands miss',
+  }
+  return hooks[primary_concern] ?? 'Your skincare might not be working'
+}
+
 interface SkinOSCardProps {
   score: number
   formulaCode: string
   metrics: string[] // Top critical metrics
+  primaryConcern: string
+  referralCode?: string
 }
 
-export default function SkinOSCard({ score, formulaCode, metrics }: SkinOSCardProps) {
+export default function SkinOSCard({ score, formulaCode, metrics, primaryConcern, referralCode }: SkinOSCardProps) {
   const cardRef = useRef<HTMLDivElement>(null)
 
   const handleShare = async () => {
@@ -21,10 +44,23 @@ export default function SkinOSCard({ score, formulaCode, metrics }: SkinOSCardPr
       const currentWidth = cardRef.current.offsetWidth
       const scale = targetWidth / currentWidth
 
+      // STEP 1: Ensure all fonts are loaded before capture
+      await document.fonts.ready
+
+      // STEP 2: Enhanced html2canvas options to prevent taint and inline SVGs
       const canvas = await html2canvas(cardRef.current, {
         scale: scale,
         backgroundColor: '#2A0F06', // deep brown
         useCORS: true,
+        allowTaint: false,
+        logging: false,
+        onclone: (clonedDoc) => {
+          // Force inline all SVGs in the cloned document
+          const svgs = clonedDoc.querySelectorAll('svg')
+          svgs.forEach(svg => {
+            svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+          })
+        }
       })
 
       const dataUrl = canvas.toDataURL('image/png')
@@ -35,7 +71,7 @@ export default function SkinOSCard({ score, formulaCode, metrics }: SkinOSCardPr
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           title: 'My Toneek Skin OS Score',
-          text: `My Toneek Skin OS Score is ${score}. Formula: ${formulaCode}`,
+          text: `My Skin OS Score is ${score} on Toneek. Find yours → ${referralCode ? `toneek.com/ref/${referralCode}` : 'toneek.com'}`,
           files: [file],
         })
       } else {
@@ -48,22 +84,25 @@ export default function SkinOSCard({ score, formulaCode, metrics }: SkinOSCardPr
         document.body.removeChild(link)
       }
     } catch (err) {
-      console.error('Error sharing image:', err)
+      console.error('[SkinOS Card] Image generation failed:', err)
       alert('Could not generate the image. Please try again.')
     }
   }
 
   return (
-    <div className="flex flex-col items-center mt-12 w-full max-w-sm mx-auto">
-      
+    <div 
+      className="flex flex-col items-center mt-12 mx-auto"
+      style={{ width: 'min(340px, calc(100vw - 48px))' }}
+    >
       {/* The Visual Card Container */}
       <div 
+        id="skinos-card"
         ref={cardRef} 
         className="w-full aspect-square bg-[#2A0F06] rounded-[32px] p-8 flex flex-col justify-between relative shadow-xl overflow-hidden border border-[#EDA211]/20"
       >
         {/* Top Row: Hexagon Icon & Formula Code */}
         <div className="flex justify-between items-start z-10">
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#EDA211" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#EDA211" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
           </svg>
           <div className="text-right">
@@ -74,23 +113,38 @@ export default function SkinOSCard({ score, formulaCode, metrics }: SkinOSCardPr
 
         {/* Center: Skin OS Score */}
         <div className="text-center flex flex-col items-center justify-center flex-grow z-10">
-          <p className="text-[#EADECE] text-xs uppercase tracking-[0.2em] mb-3 font-semibold opacity-90">Skin OS Score</p>
-          <h2 className="text-[#EDA211] text-8xl font-black tabular-nums leading-none mb-6 drop-shadow-lg">{score}</h2>
+          <p className="text-[#EADECE] text-[10px] uppercase tracking-[0.2em] mb-4 font-semibold opacity-90">This is my Skin Score</p>
+          <h2 className="text-[#EDA211] text-[72px] font-black tabular-nums leading-none mb-2 drop-shadow-lg" style={{ fontFamily: 'Fraunces, serif' }}>{score}</h2>
+          <p className="text-[#EADECE] text-xs font-medium opacity-80 mb-6">{getScoreMeaning(score)}</p>
           
-          {/* 3 Metric Labels */}
-          <div className="flex flex-wrap justify-center gap-2 mt-2 px-4">
-            {metrics.map((m, i) => (
-              <span key={i} className="px-4 py-1.5 rounded-full border border-[#EDA211]/30 text-[#EADECE] text-[11px] font-bold uppercase tracking-wider bg-[#EDA211]/10">
+          {/* Top Metrics */}
+          <div className="flex flex-wrap justify-center gap-[6px] px-2 max-w-full">
+            {metrics.slice(0, 4).map((m, i) => (
+              <span key={i} className="px-[10px] py-[4px] rounded-[20px] text-[#F7F1EB] text-[10px] font-semibold uppercase tracking-[1px] bg-[rgba(255,255,255,0.12)] whitespace-nowrap">
                 {m}
               </span>
             ))}
           </div>
         </div>
 
-        {/* Bottom Row: Branding */}
-        <div className="flex justify-between items-end border-t border-[#EADECE]/10 pt-5 z-10">
-          <p className="text-[#EADECE] text-sm font-bold tracking-widest">TONEEK</p>
-          <p className="text-[#EADECE] text-xs opacity-60 tracking-wider font-medium">toneek.com</p>
+        {/* Bottom Area: Curiosity Hook & Branding */}
+        <div className="flex flex-col z-10 mt-2">
+          <p className="text-[#EADECE] text-[11px] font-medium opacity-70 mb-4 max-w-[85%]">{getCuriosityHook(primaryConcern)}</p>
+          
+          <div className="flex justify-between items-end border-t border-[#EADECE]/10 pt-4">
+            <div>
+              <p className="text-[#EDA211] text-[10px] font-bold tracking-wide mb-0.5">Find out what your skin actually needs</p>
+              <p className="text-[#EADECE] text-[10px] opacity-50 font-medium">
+                {referralCode ? `toneek.com/ref/${referralCode}` : 'toneek.com'}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-[#EADECE] text-sm font-bold tracking-widest mb-1">TONEEK</p>
+              <p className="text-[#EADECE] text-[10px] opacity-70 tracking-wider font-medium flex items-center justify-end gap-1">
+                Compare yours <span className="text-[#EDA211]">→</span>
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
