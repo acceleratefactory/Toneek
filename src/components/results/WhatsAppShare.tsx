@@ -12,16 +12,13 @@ interface WhatsAppShareProps {
 }
 
 export default function WhatsAppShare({ score, formulaCode, primaryConcern, referralCode }: WhatsAppShareProps) {
-  const [isMobile, setIsMobile] = useState(true)
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
-    // navigator.canShare checking for files
-    const testFile = new File([''], 'test.png', { type: 'image/png' })
-    if (navigator.canShare && navigator.canShare({ files: [testFile] })) {
-      setIsMobile(true)
-    } else {
-      setIsMobile(false)
-    }
+    // Reliable mobile detection via userAgent — navigator.canShare returns true
+    // on desktop Chrome too, so it cannot be used alone to detect mobile devices
+    const mobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    setIsMobile(mobileUA)
   }, [])
 
   const handleWhatsAppShare = async (e: React.MouseEvent) => {
@@ -50,8 +47,11 @@ export default function WhatsAppShare({ score, formulaCode, primaryConcern, refe
       const file = new File([blob], `Toneek-SkinOS-${formulaCode}.png`, { type: 'image/png' })
       const message = `My Skin OS Score is ${score} — ${getScoreMeaning(score)}.\n\n${getCuriosityHook(primaryConcern)}.\n\nFind out your score (takes 3 minutes): ${referralCode ? `toneek.com/ref/${referralCode}` : 'toneek.com'}`
 
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        // Mobile: use Web Share API
+      // Use userAgent to determine device — not navigator.canShare which is unreliable on desktop
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+
+      if (isMobileDevice && navigator.canShare && navigator.canShare({ files: [file] })) {
+        // Mobile: use Web Share API with image attachment
         try {
           await navigator.share({
             files: [file],
