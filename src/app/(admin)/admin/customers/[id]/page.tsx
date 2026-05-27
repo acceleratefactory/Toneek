@@ -75,6 +75,17 @@ async function getCustomerData(id: string) {
     .order('sent_at', { ascending: false })
     .limit(5)
 
+  // Fetch delivery links
+  const orderIds = orders?.map(o => o.id) || []
+  let deliveryLinks: any[] = []
+  if (orderIds.length > 0) {
+    const { data: links } = await adminClient
+      .from('delivery_payment_links')
+      .select('*')
+      .in('order_id', orderIds)
+    if (links) deliveryLinks = links
+  }
+
   const timeline: any[] = []
 
   assessments?.forEach((a: any) => {
@@ -206,7 +217,8 @@ async function getCustomerData(id: string) {
     notes: notes ?? [],
     darkPeriod: darkPeriod ?? [],
     deliveryFees: settings?.delivery_fees ?? {},
-    communicationLogs: commLogs ?? []
+    communicationLogs: commLogs ?? [],
+    deliveryLinks
   }
 }
 
@@ -448,16 +460,41 @@ export default async function CustomerDetailPage(
                    </li>
                    
                    {/* Delivery Link Generator for free_trial orders without a delivery fee paid */}
-                   {o.order_type === 'free_trial' && o.delivery_fee === null && (
+                   {o.order_type === 'free_trial' && o.payment_status !== 'confirmed' && (
                      <li key={`${o.id}-delivery`} className="p-4 bg-gray-50/50 border-t border-gray-100">
-                       <DeliveryLinkGenerator 
-                         orderId={o.id}
-                         customerName={data.profile.full_name}
-                         formulaCode={data.assessments[0]?.formula_code}
-                         planTier={o.plan_tier}
-                         paymentReference={o.payment_reference}
-                         customerPhone={data.profile.phone}
-                       />
+                       {(() => {
+                         const existingLink = data.deliveryLinks.find((l: any) => l.order_id === o.id)
+                         if (existingLink && !existingLink.used_at) {
+                           // Link generated but unpaid - show it permanently
+                           const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://toneek.com'
+                           const fullLink = `${baseUrl}/pay-delivery?token=${existingLink.token}`
+                           const symbol = existingLink.currency === 'NGN' ? '₦' : existingLink.currency === 'GBP' ? '£' : existingLink.currency === 'USD' ? '$' : existingLink.currency
+                           
+                           return (
+                             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                               <p className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-2">Delivery Payment Pending</p>
+                               <p className="text-sm text-amber-900 mb-3">Link generated for {symbol}{existingLink.delivery_fee?.toLocaleString()}</p>
+                               <div className="flex gap-2 mb-3">
+                                 <input type="text" readOnly value={fullLink} className="flex-1 bg-white border border-amber-200 rounded-md px-3 py-2 text-sm font-mono text-amber-900 outline-none" />
+                               </div>
+                               <p className="text-xs text-amber-700 italic">This link will remain active here until the customer completes the payment.</p>
+                             </div>
+                           )
+                         } else if (!existingLink) {
+                           // No link generated yet - show generator
+                           return (
+                             <DeliveryLinkGenerator 
+                               orderId={o.id}
+                               customerName={data.profile.full_name}
+                               formulaCode={data.assessments[0]?.formula_code}
+                               planTier={o.plan_tier}
+                               paymentReference={o.payment_reference}
+                               customerPhone={data.profile.phone}
+                             />
+                           )
+                         }
+                         return null // If link is used, show nothing
+                       })()}
                      </li>
                    )}
                  </React.Fragment>
@@ -482,13 +519,17 @@ export default async function CustomerDetailPage(
                 </div>
                 <div className="flex justify-between items-center border-t border-gray-100 pt-4">
                   <span className="text-sm font-semibold text-gray-600">Delivery Fee</span>
-                  {data.orders[0] && data.orders[0].delivery_fee !== null ? (
+                  {data.orders[0] && data.orders[0].delivery_fee !== null && data.orders[0].payment_status === 'confirmed' ? (
                     <span className="px-3 py-1 rounded bg-green-50 text-green-700 text-xs font-bold border border-green-200">
                       {data.orders[0].delivery_fee_currency === 'NGN' ? '₦' : data.orders[0].delivery_fee_currency === 'GBP' ? '£' : data.orders[0].delivery_fee_currency === 'USD' ? '$' : (data.orders[0].delivery_fee_currency || '')}{data.orders[0].delivery_fee?.toLocaleString()} paid
                     </span>
-                  ) : data.orders[0]?.order_type === 'free_trial' ? (
+                  ) : data.orders[0] && data.orders[0].delivery_fee !== null && data.orders[0].payment_status !== 'confirmed' ? (
                     <span className="px-3 py-1 rounded bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
-                      Delivery fee pending
+                      {data.orders[0].delivery_fee_currency === 'NGN' ? '₦' : data.orders[0].delivery_fee_currency === 'GBP' ? '£' : data.orders[0].delivery_fee_currency === 'USD' ? '$' : (data.orders[0].delivery_fee_currency || '')}{data.orders[0].delivery_fee?.toLocaleString()} Pending
+                    </span>
+                  ) : data.orders[0]?.order_type === 'free_trial' ? (
+                    <span className="px-3 py-1 rounded bg-gray-100 text-gray-500 text-xs font-bold border border-gray-200">
+                      Not Generated
                     </span>
                   ) : (
                     <span className="px-3 py-1 rounded bg-gray-50 text-gray-500 text-xs font-bold border border-gray-200">N/A</span>
