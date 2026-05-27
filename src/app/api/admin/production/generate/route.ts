@@ -1,7 +1,7 @@
 import { adminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 
-export async function GET() {
+export async function POST() {
   // Get all orders in payment_confirmed, pending_formulation, or pending_production status
   const { data: rawOrders } = await adminClient
     .from('orders')
