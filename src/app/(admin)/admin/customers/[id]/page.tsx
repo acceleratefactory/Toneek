@@ -319,30 +319,6 @@ export default async function CustomerDetailPage(
                 </div>
              </div>
           </div>
-
-          
-          {/* Shipping & Contact */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-             <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-               <h2 className="font-bold text-gray-900">Shipping & Contact</h2>
-             </div>
-             <div className="p-6">
-                <p className="text-sm text-gray-800 mb-3"><span className="font-semibold text-gray-500 w-16 inline-block">Phone:</span> {data.profile.phone || 'No phone on file'}</p>
-                <div className="text-sm text-gray-800">
-                  <span className="font-semibold text-gray-500 block mb-1">Address:</span>
-                  {data.profile.address ? (
-                    <div className="pl-4 border-l-2 border-gray-100">
-                      {data.profile.address}<br />
-                      {data.profile.city && <>{data.profile.city}<br /></>}
-                      {data.profile.state && <>{data.profile.state}</>}
-                    </div>
-                  ) : (
-                    <span className="italic text-gray-400">No address on file</span>
-                  )}
-                </div>
-             </div>
-          </div>
-          
           {/* Chemist Notes (Global) */}
           {(data.profile as any).chemist_notes && (
             <div className="bg-red-50 border border-red-200 rounded-xl p-6 shadow-sm">
