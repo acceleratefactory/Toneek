@@ -97,7 +97,7 @@ export default async function PayDeliveryPage({
       <PayDeliveryClient
         orderId={order.id}
         userId={order.user_id}
-        amount={linkRecord.amount}
+        amount={linkRecord.delivery_fee}
         currency={linkRecord.currency}
         paymentReference={order.payment_reference}
         bankDetails={bankDetails}
