@@ -57,6 +57,15 @@ export default async function SubscribePage({
     const show_free_trial = is_first_time && is_single_product
     const show_half_price = is_first_time && !is_single_product
 
+    const plans_to_display = (plansData || []).filter(plan => {
+      if (show_free_trial && routine_tier === 'just_one') {
+        const name = plan.name.toLowerCase().trim()
+        const plan_key = name.includes('restoration') ? 'restoration' : name.includes('full') ? 'full_protocol' : 'essentials'
+        return plan_key !== 'essentials'
+      }
+      return true
+    })
+
     return (
         <main className="min-h-screen bg-[#FCFAF8] dark:bg-[#1A1210] py-12 px-4 sm:px-6 font-sans">
             <div className="max-w-3xl mx-auto space-y-6">
@@ -92,7 +101,7 @@ export default async function SubscribePage({
                     assessmentId={assessment_id}
                     userId={assessment.user_id ?? null}
                     currency={currency}
-                    plans={plansData || []}
+                    plans={plans_to_display}
                     routineTier={routine_tier}
                     showFreeTrial={show_free_trial}
                     showHalfPrice={show_half_price}

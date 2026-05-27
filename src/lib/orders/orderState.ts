@@ -13,6 +13,19 @@ export function determineOrderState(order: any): OrderState {
   // Check if formula received first (terminal state)
   if (order.received_at) return 'active_protocol'
 
+  // FREE TRIAL CHECK — must come before payment_status check
+  // Free trial orders have order_type: 'free_trial'
+  // They never require payment — go straight to in_production state
+  if (order.order_type === 'free_trial') {
+    // If dispatched: show dispatched state
+    if (['dispatched', 'ready_to_dispatch', 'pending_dispatch'].includes(order.status)) {
+      return 'dispatched'
+    }
+    // All other free trial states: in_production
+    // This covers: pending_production, formulating, payment_confirmed, etc.
+    return 'in_production'
+  }
+
   // Normalise status strings — handle all variants
   const status = (order.status ?? '').toLowerCase().replace(/[_\s-]/g, '_')
   const payment_status = (order.payment_status ?? '').toLowerCase().replace(/[_\s-]/g, '_')

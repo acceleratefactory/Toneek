@@ -177,11 +177,14 @@ export default async function OrdersPage() {
                                             </span>
                                         </div>
                                     )}
-                                    {order.payment_amount && (
+                                    {order.payment_amount !== null && order.payment_amount !== undefined && (
                                         <div className="flex justify-between items-center">
                                             <span className="text-gray-500 dark:text-gray-400 text-xs">Amount</span>
                                             <span className="text-gray-700 dark:text-gray-300 text-xs">
-                                                {SYMBOLS[order.currency] ?? ''}{order.payment_amount?.toLocaleString()}
+                                                {order.order_type === 'free_trial' 
+                                                    ? 'Free trial' 
+                                                    : `${SYMBOLS[order.currency] ?? ''}${order.payment_amount?.toLocaleString()}`
+                                                }
                                             </span>
                                         </div>
                                     )}

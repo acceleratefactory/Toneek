@@ -23,15 +23,18 @@ export const PLAN_FEATURES: Record<RoutineTier, Record<PlanTier, PlanFeatures>> 
       ],
     },
     full_protocol: {
-      description: 'Formula + clinical outcome tracking + priority reformulation.',
-      upgrade_hook: 'Add clinical monitoring and guaranteed reformulation if needed.',
+      description: 'Your complete personalised formula. Clinical outcome tracking. Monthly delivery.',
+      upgrade_hook: undefined,
       features: [
-        'Everything in Essentials',
+        'Your personalised Toneek formula — custom compounded for your skin',
+        'Full active ingredient breakdown with exact concentrations',
+        'Climate-matched formulation base for your specific zone',
         'Skin OS Score tracked and updated at every check-in',
         'Priority formula reformulation if Week 8 response is insufficient',
         'Skin response monitoring across 8 clinical metrics',
         'Week 2, 4, 8 clinical outcome tracking',
         'Formula performance data feeds future improvements',
+        'WhatsApp notification when dispatched',
       ],
     },
     restoration: {
