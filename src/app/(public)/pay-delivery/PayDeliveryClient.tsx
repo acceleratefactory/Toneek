@@ -20,6 +20,7 @@ interface PayDeliveryClientProps {
     city: string
     state: string
   }
+  deliveryFees: Record<string, number>
 }
 
 export default function PayDeliveryClient({
@@ -32,11 +33,13 @@ export default function PayDeliveryClient({
   customerName,
   formulaCode,
   planTier,
-  initialAddress
+  initialAddress,
+  deliveryFees
 }: PayDeliveryClientProps) {
   const [showModal, setShowModal] = useState(false)
   const [step, setStep] = useState<'address' | 'payment'>('address')
   const [isSaving, setIsSaving] = useState(false)
+  const [selectedRegionKey, setSelectedRegionKey] = useState<string>('')
   
   const [addressData, setAddressData] = useState({
     address: initialAddress.address || '',
@@ -44,10 +47,31 @@ export default function PayDeliveryClient({
     state: initialAddress.state || ''
   })
 
-  const symbol = currency === 'NGN' ? '₦' : currency === 'GBP' ? '£' : currency === 'USD' ? '$' : currency
+  const REGION_OPTIONS = [
+    { key: 'delivery_fee_ngn_lagos', label: 'Nigeria — Lagos', currency: 'NGN' },
+    { key: 'delivery_fee_ngn_outside_lagos', label: 'Nigeria — Outside Lagos', currency: 'NGN' },
+    { key: 'delivery_fee_ngn_international', label: 'Nigeria — International', currency: 'NGN' },
+    { key: 'delivery_fee_gbp_uk', label: 'United Kingdom', currency: 'GBP' },
+    { key: 'delivery_fee_usd_usa', label: 'United States', currency: 'USD' },
+    { key: 'delivery_fee_eur_europe', label: 'Europe', currency: 'EUR' },
+    { key: 'delivery_fee_ghs_ghana', label: 'Ghana', currency: 'GHS' },
+  ]
+
+  const isPendingSelection = amount === 0
+  const displayAmount = isPendingSelection && selectedRegionKey ? deliveryFees[selectedRegionKey] : amount
+  const displayCurrency = isPendingSelection && selectedRegionKey 
+    ? REGION_OPTIONS.find(o => o.key === selectedRegionKey)?.currency || currency 
+    : currency
+
+  const symbol = displayCurrency === 'NGN' ? '₦' : displayCurrency === 'GBP' ? '£' : displayCurrency === 'USD' ? '$' : displayCurrency
   const displayPlan = planTier.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 
   const handleContinue = async () => {
+    if (isPendingSelection && !selectedRegionKey) {
+      alert("Please select a delivery region")
+      return
+    }
+
     if (!addressData.address || !addressData.city || !addressData.state) {
       alert("Please fill in all address fields")
       return
@@ -60,6 +84,10 @@ export default function PayDeliveryClient({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           user_id: userId,
+          order_id: orderId,
+          deliveryRegion: selectedRegionKey,
+          deliveryFee: displayAmount,
+          currency: displayCurrency,
           ...addressData
         })
       })
@@ -100,13 +128,40 @@ export default function PayDeliveryClient({
           </div>
           <div className="flex justify-between items-center">
             <span className="text-[#5C453A] font-bold text-sm">Delivery Fee</span>
-            <span className="text-sm font-black text-[#3D1A0E]">{symbol}{amount.toLocaleString()}</span>
+            <span className="text-sm font-black text-[#3D1A0E]">
+              {isPendingSelection && !selectedRegionKey 
+                ? 'Select region' 
+                : `${symbol}${displayAmount?.toLocaleString()}`}
+            </span>
           </div>
         </div>
 
         {step === 'address' ? (
           <div className="space-y-4">
             <h3 className="font-bold text-[#3D1A0E]">Delivery Address</h3>
+            
+            {isPendingSelection && (
+              <div>
+                <label className="block text-xs font-bold text-[#8B7365] mb-1">Delivery Region</label>
+                <div className="relative">
+                  <select 
+                    value={selectedRegionKey}
+                    onChange={e => setSelectedRegionKey(e.target.value)}
+                    className="w-full border border-[#E8E0DA] rounded-lg px-3 py-2.5 text-sm text-[#3D1A0E] focus:outline-none focus:ring-2 focus:ring-[#C87D3E] bg-white appearance-none cursor-pointer"
+                  >
+                    <option value="" disabled>-- Select your region --</option>
+                    {REGION_OPTIONS.map(opt => {
+                      if (deliveryFees[opt.key] === undefined) return null;
+                      return <option key={opt.key} value={opt.key}>{opt.label}</option>
+                    })}
+                  </select>
+                  <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-[#8B7365] text-xs">
+                    ▼
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div>
               <label className="block text-xs font-bold text-[#8B7365] mb-1">Street Address</label>
               <input 
@@ -156,7 +211,7 @@ export default function PayDeliveryClient({
                onClick={() => setShowModal(true)}
                className="w-full bg-[#3D1A0E] hover:bg-[#2A0F06] text-white py-4 rounded-xl font-bold transition-colors shadow-sm text-lg"
              >
-               Pay {symbol}{amount.toLocaleString()}
+               Pay {symbol}{displayAmount?.toLocaleString()}
              </button>
           </div>
         )}
@@ -165,8 +220,8 @@ export default function PayDeliveryClient({
       {showModal && (
         <BankTransferModal
           orderId={orderId}
-          amount={amount}
-          currency={currency}
+          amount={displayAmount}
+          currency={displayCurrency}
           paymentReference={paymentReference}
           bankDetails={bankDetails}
           onClose={() => setShowModal(false)}

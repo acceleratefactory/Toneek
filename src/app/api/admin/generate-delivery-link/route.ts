@@ -33,7 +33,10 @@ export async function POST(request: NextRequest) {
         let amount = custom_amount
         let currency = custom_currency || 'NGN'
 
-        if (region && region !== 'custom') {
+        if (region === 'pending') {
+            amount = 0
+            currency = 'NGN'
+        } else if (region && region !== 'custom') {
             const { data: setting, error: settingError } = await adminClient
                 .from('platform_settings')
                 .select('value')
@@ -53,7 +56,7 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        if (amount === undefined || amount === null || amount <= 0 || isNaN(amount)) {
+        if (region !== 'pending' && (amount === undefined || amount === null || amount <= 0 || isNaN(amount))) {
             return NextResponse.json({ error: 'Invalid delivery fee amount' }, { status: 400 })
         }
 

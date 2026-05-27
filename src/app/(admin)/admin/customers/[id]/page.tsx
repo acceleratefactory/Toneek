@@ -473,14 +473,19 @@ export default async function CustomerDetailPage(
                            const firstName = data.profile.full_name?.split(' ')[0] || 'Customer'
                            const phone = data.profile.phone ? data.profile.phone.replace('+', '') : ''
                            
-                           const message = `Hi ${firstName},\n\nYour personalised Toneek formula is ready! 🎉\n\nTo receive your delivery, please make a small delivery payment:\n${symbol}${existingLink.delivery_fee?.toLocaleString()} to the details on this page:\n\n${fullLink}\n\nYour formula will be dispatched as soon as payment is confirmed.`
+                           const isPendingSelection = existingLink.delivery_fee === 0
+                           const message = `Hi ${firstName},\n\nYour personalised Toneek formula is ready! 🎉\n\nTo receive your delivery, please open the link below to select your region and make a small delivery payment:\n\n${fullLink}\n\nYour formula will be dispatched as soon as payment is confirmed.`
                            const encodedMessage = encodeURIComponent(message)
                            const emailSubject = encodeURIComponent("Your free Toneek formula is ready for dispatch!")
                            
                            return (
                              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                                <p className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-2">Delivery Payment Pending</p>
-                               <p className="text-sm text-amber-900 mb-3">Link generated for {symbol}{existingLink.delivery_fee?.toLocaleString()}</p>
+                               <p className="text-sm text-amber-900 mb-3">
+                                 {isPendingSelection 
+                                   ? 'Link generated — waiting for customer to select region'
+                                   : `Link generated for ${symbol}${existingLink.delivery_fee?.toLocaleString()}`}
+                               </p>
                                <div className="flex gap-2 mb-3">
                                  <input type="text" readOnly value={fullLink} className="flex-1 bg-white border border-amber-200 rounded-md px-3 py-2 text-sm font-mono text-amber-900 outline-none" />
                                </div>
@@ -555,7 +560,9 @@ export default async function CustomerDetailPage(
                     </span>
                   ) : data.orders[0] && data.orders[0].delivery_fee !== null && data.orders[0].payment_status !== 'confirmed' ? (
                     <span className="px-3 py-1 rounded bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
-                      {data.orders[0].delivery_fee_currency === 'NGN' ? '₦' : data.orders[0].delivery_fee_currency === 'GBP' ? '£' : data.orders[0].delivery_fee_currency === 'USD' ? '$' : (data.orders[0].delivery_fee_currency || '')}{data.orders[0].delivery_fee?.toLocaleString()} Pending
+                      {data.orders[0].delivery_fee === 0 
+                        ? 'Pending Selection' 
+                        : `${data.orders[0].delivery_fee_currency === 'NGN' ? '₦' : data.orders[0].delivery_fee_currency === 'GBP' ? '£' : data.orders[0].delivery_fee_currency === 'USD' ? '$' : (data.orders[0].delivery_fee_currency || '')}${data.orders[0].delivery_fee?.toLocaleString()} Pending`}
                     </span>
                   ) : data.orders[0]?.order_type === 'free_trial' ? (
                     <span className="px-3 py-1 rounded bg-gray-100 text-gray-500 text-xs font-bold border border-gray-200">

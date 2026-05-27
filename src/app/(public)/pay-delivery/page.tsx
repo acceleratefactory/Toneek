@@ -89,6 +89,17 @@ export default async function PayDeliveryPage({
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()
+    
+  // Fetch delivery fees
+  const { data: settings } = await adminClient
+    .from('platform_settings')
+    .select('key, value')
+    .like('key', 'delivery_fee_%')
+
+  const deliveryFees: Record<string, number> = {}
+  for (const s of settings ?? []) {
+    deliveryFees[s.key] = parseFloat(s.value)
+  }
 
   const bankDetails = getBankDetails(linkRecord.currency)
 
@@ -109,6 +120,7 @@ export default async function PayDeliveryPage({
           city: profile?.city || '',
           state: profile?.state || ''
         }}
+        deliveryFees={deliveryFees}
       />
     </div>
   )
