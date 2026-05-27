@@ -58,6 +58,7 @@ export default function DeliveryLinkGenerator({
   const handleWhatsApp = () => {
     if (!generatedData) return
 
+    const firstName = customerName.split(' ')[0]
     const message = `Hi ${firstName},
 
 Your personalised Toneek formula is ready! 🎉
