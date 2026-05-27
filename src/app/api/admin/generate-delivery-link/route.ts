@@ -9,30 +9,54 @@ export async function POST(request: NextRequest) {
         if (!order_id) {
             return NextResponse.json({ error: 'Order ID is required' }, { status: 400 })
         }
-        if (!region && custom_amount === undefined) {
-            return NextResponse.json({ error: 'Region or custom amount is required' }, { status: 400 })
+
+        // 1. Check order status
+        const { data: order, error: orderError } = await adminClient
+            .from('orders')
+            .select('user_id, order_type, delivery_fee')
+            .eq('id', order_id)
+            .single()
+
+        if (orderError || !order) {
+            return NextResponse.json({ error: 'Order not found' }, { status: 404 })
         }
 
+        if (order.order_type !== 'free_trial') {
+            return NextResponse.json({ error: 'Not a free trial order' }, { status: 400 })
+        }
+
+        if (order.delivery_fee !== null) {
+            return NextResponse.json({ error: 'Delivery link already generated' }, { status: 400 })
+        }
+
+        // 2. Determine amount and currency
         let amount = custom_amount
         let currency = custom_currency || 'NGN'
 
         if (region && region !== 'custom') {
-            const { data: settings } = await adminClient
+            const { data: setting } = await adminClient
                 .from('platform_settings')
-                .select('delivery_fees')
+                .select('value')
+                .eq('key', region)
                 .single()
 
-            if (!settings || !settings.delivery_fees || !settings.delivery_fees[region]) {
+            if (!setting || !setting.value) {
                 return NextResponse.json({ error: 'Invalid region or missing delivery fee setting' }, { status: 400 })
             }
-            amount = settings.delivery_fees[region].amount
-            currency = settings.delivery_fees[region].currency
+            amount = parseFloat(setting.value)
+            
+            // Extract currency from region key, e.g., delivery_fee_ngn_lagos -> ngn -> NGN
+            const parts = region.split('_')
+            if (parts.length >= 3) {
+                currency = parts[2].toUpperCase()
+            }
         }
 
-        if (amount === undefined || amount === null || amount <= 0) {
+        if (amount === undefined || amount === null || amount <= 0 || isNaN(amount)) {
             return NextResponse.json({ error: 'Invalid delivery fee amount' }, { status: 400 })
         }
 
+        // 3. Generate link
         const token = crypto.randomBytes(16).toString('hex')
 
         const { data: link, error } = await adminClient
@@ -48,16 +72,25 @@ export async function POST(request: NextRequest) {
             .single()
 
         if (error) {
-            console.error('Error generating delivery link:', error)
-            return NextResponse.json({ error: 'Failed to generate delivery link' }, { status: 500 })
+            console.error('[generate-delivery-link] Error inserting link:', error)
+            return NextResponse.json({ error: 'Failed to generate delivery link', detail: error.message }, { status: 500 })
         }
 
-        // Update the order with delivery info
+        // 4. Update order
         await adminClient.from('orders').update({
             delivery_fee: amount,
             delivery_fee_currency: currency,
             delivery_region: region || 'custom'
         }).eq('id', order_id)
+
+        // 5. Log communication
+        if (order.user_id) {
+            await adminClient.from('communication_logs').insert({
+                user_id: order.user_id,
+                channel: 'whatsapp',
+                message_type: 'delivery_link_sent'
+            }).catch(e => console.error('Failed to log communication:', e))
+        }
 
         const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://toneek.com'
         const linkUrl = `${baseUrl}/pay-delivery?token=${token}`
@@ -65,7 +98,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ link: linkUrl, amount, currency, token })
 
     } catch (err: any) {
-        console.error('Unexpected error generating delivery link:', err)
-        return NextResponse.json({ error: 'Unexpected server error' }, { status: 500 })
+        console.error('[generate-delivery-link] Unexpected error:', err)
+        return NextResponse.json({ error: 'Unexpected server error', detail: err.message }, { status: 500 })
     }
 }

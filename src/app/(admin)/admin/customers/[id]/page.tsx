@@ -67,6 +67,14 @@ async function getCustomerData(id: string) {
     .select('delivery_fees')
     .single()
 
+  // Fetch communication logs
+  const { data: commLogs } = await adminClient
+    .from('communication_logs')
+    .select('*')
+    .eq('user_id', id)
+    .order('sent_at', { ascending: false })
+    .limit(5)
+
   const timeline: any[] = []
 
   assessments?.forEach((a: any) => {
@@ -87,10 +95,34 @@ async function getCustomerData(id: string) {
       date: new Date(o.created_at),
       type: 'order',
       title: `Order ${o.payment_reference}`,
-      description: `Status: ${o.status}. Tier: ${o.routine_tier}`,
+      description: `Status: ${o.order_type === 'free_trial' ? 'Free trial' : 'Paid'}. Tier: ${o.routine_tier}`,
       icon: '📦',
       iconBg: 'bg-toneek-sage text-toneek-forest'
     })
+
+    if (o.production_completed_at) {
+      timeline.push({
+        id: `pc_${o.id}`,
+        date: new Date(o.production_completed_at),
+        type: 'production_completed',
+        title: 'Production Completed',
+        description: `Formula ${assessments?.[0]?.formula_code || 'assigned'} compounded. Ready for dispatch.`,
+        icon: '⚗️',
+        iconBg: 'bg-indigo-100 text-indigo-600'
+      })
+    }
+
+    if (o.dispatched_at) {
+      timeline.push({
+        id: `dp_${o.id}`,
+        date: new Date(o.dispatched_at),
+        type: 'dispatched',
+        title: 'Formula Dispatched',
+        description: o.tracking_number ? `Tracking: ${o.tracking_number}` : 'Dispatched without tracking number.',
+        icon: '🚚',
+        iconBg: 'bg-blue-100 text-blue-600'
+      })
+    }
 
     // Add delivery fee paid event for free trial orders
     if (o.order_type === 'free_trial' && o.payment_status === 'confirmed' && o.payment_confirmed_at && o.delivery_fee !== null) {
@@ -101,8 +133,20 @@ async function getCustomerData(id: string) {
         type: 'delivery_fee_paid',
         title: 'Delivery fee confirmed',
         description: `${symbol}${o.delivery_fee} delivery payment confirmed. Formula cost: waived (free trial).`,
-        icon: '📦',
+        icon: '✅',
         iconBg: 'bg-[#1C5C3A] text-white'
+      })
+    }
+
+    if (o.received_at) {
+      timeline.push({
+        id: `rc_${o.id}`,
+        date: new Date(o.received_at),
+        type: 'received',
+        title: 'Customer Logged Delivery',
+        description: 'Clinical protocol started. Week 2/4/8 check-in timeline begins.',
+        icon: '🎯',
+        iconBg: 'bg-[#C87D3E] text-white'
       })
     }
   })
@@ -161,7 +205,8 @@ async function getCustomerData(id: string) {
     formulaStatusMap,
     notes: notes ?? [],
     darkPeriod: darkPeriod ?? [],
-    deliveryFees: settings?.delivery_fees ?? {}
+    deliveryFees: settings?.delivery_fees ?? {},
+    communicationLogs: commLogs ?? []
   }
 }
 
@@ -252,6 +297,51 @@ export default async function CustomerDetailPage(
         
         {/* ── LEFT COLUMN ── */}
         <div className="space-y-8">
+          
+          {/* Shipping & Contact */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+             <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+               <h2 className="font-bold text-gray-900">Shipping & Contact</h2>
+             </div>
+             <div className="p-6">
+                <p className="text-sm text-gray-800 mb-3"><span className="font-semibold text-gray-500 w-16 inline-block">Phone:</span> {data.profile.phone || 'No phone on file'}</p>
+                <div className="text-sm text-gray-800">
+                  <span className="font-semibold text-gray-500 block mb-1">Address:</span>
+                  {data.profile.address ? (
+                    <div className="pl-4 border-l-2 border-gray-100">
+                      {data.profile.address}<br />
+                      {data.profile.city && <>{data.profile.city}<br /></>}
+                      {data.profile.state && <>{data.profile.state}</>}
+                    </div>
+                  ) : (
+                    <span className="italic text-gray-400">No address on file</span>
+                  )}
+                </div>
+             </div>
+          </div>
+
+          
+          {/* Shipping & Contact */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+             <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+               <h2 className="font-bold text-gray-900">Shipping & Contact</h2>
+             </div>
+             <div className="p-6">
+                <p className="text-sm text-gray-800 mb-3"><span className="font-semibold text-gray-500 w-16 inline-block">Phone:</span> {data.profile.phone || 'No phone on file'}</p>
+                <div className="text-sm text-gray-800">
+                  <span className="font-semibold text-gray-500 block mb-1">Address:</span>
+                  {data.profile.address ? (
+                    <div className="pl-4 border-l-2 border-gray-100">
+                      {data.profile.address}<br />
+                      {data.profile.city && <>{data.profile.city}<br /></>}
+                      {data.profile.state && <>{data.profile.state}</>}
+                    </div>
+                  ) : (
+                    <span className="italic text-gray-400">No address on file</span>
+                  )}
+                </div>
+             </div>
+          </div>
           
           {/* Chemist Notes (Global) */}
           {(data.profile as any).chemist_notes && (
@@ -390,12 +480,64 @@ export default async function CustomerDetailPage(
                          formulaCode={data.assessments[0]?.formula_code}
                          planTier={o.plan_tier}
                          paymentReference={o.payment_reference}
-                         deliveryFees={data.deliveryFees}
                          customerPhone={data.profile.phone}
                        />
                      </li>
                    )}
                  </React.Fragment>
+                 ))}
+               </ul>
+             )}
+          </div>
+
+          {/* Subscription Status */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+             <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+               <h2 className="font-bold text-gray-900">Subscription Status</h2>
+             </div>
+             <div className="p-6 space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-semibold text-gray-600">Status</span>
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                    data.profile.subscription_status === 'active' ? 'bg-toneek-sage text-toneek-forest' : 'bg-toneek-cream text-toneek-brown border border-toneek-lightgray'
+                  }`}>
+                    {data.profile.subscription_status === 'trialing' ? 'TRIAL' : (data.profile.subscription_status || 'N/A')}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center border-t border-gray-100 pt-4">
+                  <span className="text-sm font-semibold text-gray-600">Delivery Fee</span>
+                  {data.orders[0] && data.orders[0].delivery_fee !== null ? (
+                    <span className="px-3 py-1 rounded bg-green-50 text-green-700 text-xs font-bold border border-green-200">
+                      {data.orders[0].delivery_fee_currency === 'NGN' ? '₦' : data.orders[0].delivery_fee_currency === 'GBP' ? '£' : data.orders[0].delivery_fee_currency === 'USD' ? '$' : (data.orders[0].delivery_fee_currency || '')}{data.orders[0].delivery_fee?.toLocaleString()} paid
+                    </span>
+                  ) : data.orders[0]?.order_type === 'free_trial' ? (
+                    <span className="px-3 py-1 rounded bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
+                      Delivery fee pending
+                    </span>
+                  ) : (
+                    <span className="px-3 py-1 rounded bg-gray-50 text-gray-500 text-xs font-bold border border-gray-200">N/A</span>
+                  )}
+                </div>
+             </div>
+          </div>
+
+          {/* Communication Log */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+             <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+               <h2 className="font-bold text-gray-900">Communication Log</h2>
+             </div>
+             {data.communicationLogs.length === 0 ? (
+               <div className="p-6 text-gray-500 text-sm">No communications logged yet.</div>
+             ) : (
+               <ul className="divide-y divide-gray-100">
+                 {data.communicationLogs.map((log: any) => (
+                   <li key={log.id} className="p-4 flex gap-3 items-start">
+                     <span className="text-xl">{log.channel === 'whatsapp' ? '💬' : '✉️'}</span>
+                     <div>
+                       <p className="font-bold text-sm text-gray-900 capitalize">{log.message_type.replace(/_/g, ' ')}</p>
+                       <p className="text-xs text-gray-500 mt-1">{log.channel} · {new Date(log.sent_at).toLocaleString()}</p>
+                     </div>
+                   </li>
                  ))}
                </ul>
              )}

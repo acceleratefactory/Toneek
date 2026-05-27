@@ -18,14 +18,36 @@ export default function DeliveryLinkGenerator({
   formulaCode,
   planTier,
   paymentReference,
-  deliveryFees,
   customerPhone
-}: DeliveryLinkGeneratorProps) {
+}: Omit<DeliveryLinkGeneratorProps, 'deliveryFees'>) {
   const [selectedRegion, setSelectedRegion] = useState<string>('')
   const [customAmount, setCustomAmount] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [generatedData, setGeneratedData] = useState<{ link: string, amount: number, currency: string, token: string } | null>(null)
+  
+  const [deliveryFees, setDeliveryFees] = useState<Record<string, number>>({})
+  const [feesLoading, setFeesLoading] = useState(true)
+
+  React.useEffect(() => {
+    fetch('/api/admin/settings')
+      .then(r => r.json())
+      .then(data => {
+        setDeliveryFees(data.fees ?? {})
+        setFeesLoading(false)
+      })
+      .catch(() => setFeesLoading(false))
+  }, [])
+
+  const REGION_OPTIONS = [
+    { key: 'delivery_fee_ngn_lagos', label: 'Nigeria — Lagos', currency: 'NGN' },
+    { key: 'delivery_fee_ngn_outside_lagos', label: 'Nigeria — Outside Lagos', currency: 'NGN' },
+    { key: 'delivery_fee_ngn_international', label: 'Nigeria — International', currency: 'NGN' },
+    { key: 'delivery_fee_gbp_uk', label: 'United Kingdom', currency: 'GBP' },
+    { key: 'delivery_fee_usd_usa', label: 'United States', currency: 'USD' },
+    { key: 'delivery_fee_eur_europe', label: 'Europe', currency: 'EUR' },
+    { key: 'delivery_fee_ghs_ghana', label: 'Ghana', currency: 'GHS' },
+  ]
 
   const handleGenerate = async () => {
     if (!selectedRegion) {
@@ -145,23 +167,32 @@ Your formula will be dispatched as soon as payment is confirmed.`
       <div className="mb-6">
         <label className="block text-sm font-bold text-[#3D1A0E] mb-3">Delivery region:</label>
         <div className="space-y-3">
-          {Object.entries(deliveryFees).map(([key, fee]) => {
-            const symbol = fee.currency === 'NGN' ? '₦' : fee.currency === 'GBP' ? '£' : fee.currency === 'USD' ? '$' : fee.currency
-            return (
-              <label key={key} className="flex items-center gap-3 cursor-pointer p-2 hover:bg-[#FCFAF8] rounded-md transition-colors">
-                <input 
-                  type="radio" 
-                  name="delivery_region" 
-                  value={key} 
-                  checked={selectedRegion === key}
-                  onChange={() => setSelectedRegion(key)}
-                  className="w-4 h-4 text-[#C87D3E] focus:ring-[#C87D3E] border-gray-300"
-                />
-                <span className="flex-1 text-sm text-[#3D1A0E] font-medium">{fee.label}</span>
-                <span className="text-sm font-bold text-[#3D1A0E]">{symbol}{fee.amount.toLocaleString()}</span>
-              </label>
-            )
-          })}
+          {feesLoading ? (
+            <p className="text-sm text-gray-500 italic py-2">Loading delivery options...</p>
+          ) : (
+            REGION_OPTIONS.map(option => {
+              const fee = deliveryFees[option.key]
+              if (fee === undefined) return null
+              const symbol = option.currency === 'NGN' ? '₦' : option.currency === 'GBP' ? '£' : option.currency === 'USD' ? '$' : option.currency
+              return (
+                <label key={option.key} className="flex items-center gap-3 cursor-pointer p-2 hover:bg-[#FCFAF8] rounded-md transition-colors">
+                  <input 
+                    type="radio" 
+                    name="delivery_region" 
+                    value={option.key} 
+                    checked={selectedRegion === option.key}
+                    onChange={() => {
+                      setSelectedRegion(option.key)
+                      setCustomAmount('')
+                    }}
+                    className="w-4 h-4 text-[#C87D3E] focus:ring-[#C87D3E] border-gray-300"
+                  />
+                  <span className="flex-1 text-sm text-[#3D1A0E] font-medium">{option.label}</span>
+                  <span className="text-sm font-bold text-[#3D1A0E]">{symbol}{fee.toLocaleString()}</span>
+                </label>
+              )
+            })
+          )}
           
           <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-[#FCFAF8] rounded-md transition-colors">
             <input 

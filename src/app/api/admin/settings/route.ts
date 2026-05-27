@@ -7,9 +7,19 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
 export async function GET(request: Request) {
-  const { data, error } = await supabaseAdmin.from('platform_settings').select('*')
+  const { data: settings, error } = await supabaseAdmin
+    .from('platform_settings')
+    .select('key, value')
+    .like('key', 'delivery_fee_%')
+
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+
+  const fees: Record<string, number> = {}
+  for (const s of settings ?? []) {
+    fees[s.key] = parseFloat(s.value)
+  }
+
+  return NextResponse.json({ fees })
 }
 
 export async function POST(request: Request) {

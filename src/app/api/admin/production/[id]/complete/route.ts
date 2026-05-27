@@ -127,6 +127,7 @@ export async function POST(
             status: 'dispatched',
             tracking_number: tracking,
             dispatched_at: new Date().toISOString(),
+            production_completed_at: new Date().toISOString(),
           })
           .eq('id', orderId)
       }
