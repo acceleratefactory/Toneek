@@ -32,8 +32,18 @@ export default function DeliveryFeeSettings() {
       const res = await fetch('/api/admin/settings')
       if (!res.ok) throw new Error('Failed to load settings')
       const data = await res.json()
-      // Only keep the allowed delivery fee keys
-      const deliverySettings = data.filter((s: Setting) => Object.keys(SETTING_LABELS).includes(s.key))
+      
+      let deliverySettings: Setting[] = []
+      if (data.fees) {
+        // Handle object format: { fees: { lagos: 3500, ... } }
+        deliverySettings = Object.keys(data.fees)
+          .filter(key => Object.keys(SETTING_LABELS).includes(key))
+          .map(key => ({ key, value: data.fees[key].toString() }))
+      } else if (Array.isArray(data)) {
+        // Fallback for array format
+        deliverySettings = data.filter((s: Setting) => Object.keys(SETTING_LABELS).includes(s.key))
+      }
+      
       setSettings(deliverySettings)
     } catch (err: any) {
       setError(err.message)
