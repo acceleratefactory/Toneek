@@ -85,11 +85,15 @@ export async function POST(request: NextRequest) {
 
         // 5. Log communication
         if (order.user_id) {
-            await adminClient.from('communication_logs').insert({
-                user_id: order.user_id,
-                channel: 'whatsapp',
-                message_type: 'delivery_link_sent'
-            }).catch(e => console.error('Failed to log communication:', e))
+            try {
+                await adminClient.from('communication_logs').insert({
+                    user_id: order.user_id,
+                    channel: 'whatsapp',
+                    message_type: 'delivery_link_sent'
+                })
+            } catch (e) {
+                console.error('Failed to log communication:', e)
+            }
         }
 
         const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://toneek.com'
