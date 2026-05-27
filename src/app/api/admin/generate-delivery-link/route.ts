@@ -59,6 +59,9 @@ export async function POST(request: NextRequest) {
 
         // 3. Generate link
         const token = crypto.randomBytes(16).toString('hex')
+        
+        const expiresAt = new Date()
+        expiresAt.setDate(expiresAt.getDate() + 7) // Link expires in 7 days
 
         const { data: link, error } = await adminClient
             .from('delivery_payment_links')
@@ -68,6 +71,7 @@ export async function POST(request: NextRequest) {
                 delivery_fee: amount,
                 currency,
                 delivery_region: region || 'custom',
+                expires_at: expiresAt.toISOString(),
             })
             .select()
             .single()
