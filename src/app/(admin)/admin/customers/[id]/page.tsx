@@ -470,6 +470,13 @@ export default async function CustomerDetailPage(
                            const fullLink = `${baseUrl}/pay-delivery?token=${existingLink.token}`
                            const symbol = existingLink.currency === 'NGN' ? '₦' : existingLink.currency === 'GBP' ? '£' : existingLink.currency === 'USD' ? '$' : existingLink.currency
                            
+                           const firstName = data.profile.full_name?.split(' ')[0] || 'Customer'
+                           const phone = data.profile.phone ? data.profile.phone.replace('+', '') : ''
+                           
+                           const message = `Hi ${firstName},\n\nYour personalised Toneek formula is ready! 🎉\n\nTo receive your delivery, please make a small delivery payment:\n${symbol}${existingLink.delivery_fee?.toLocaleString()} to the details on this page:\n\n${fullLink}\n\nYour formula will be dispatched as soon as payment is confirmed.`
+                           const encodedMessage = encodeURIComponent(message)
+                           const emailSubject = encodeURIComponent("Your free Toneek formula is ready for dispatch!")
+                           
                            return (
                              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                                <p className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-2">Delivery Payment Pending</p>
@@ -477,7 +484,30 @@ export default async function CustomerDetailPage(
                                <div className="flex gap-2 mb-3">
                                  <input type="text" readOnly value={fullLink} className="flex-1 bg-white border border-amber-200 rounded-md px-3 py-2 text-sm font-mono text-amber-900 outline-none" />
                                </div>
-                               <p className="text-xs text-amber-700 italic">This link will remain active here until the customer completes the payment.</p>
+                               <p className="text-xs text-amber-700 italic mb-3">This link will remain active here until the customer completes the payment.</p>
+                               
+                               <details className="group">
+                                 <summary className="text-xs font-bold text-amber-800 cursor-pointer hover:underline outline-none list-none [&::-webkit-details-marker]:hidden flex items-center gap-1 select-none">
+                                   <span className="group-open:hidden">▶ Show sharing options</span>
+                                   <span className="hidden group-open:inline">▼ Hide sharing options</span>
+                                 </summary>
+                                 <div className="flex gap-3 mt-3 pt-3 border-t border-amber-200/50">
+                                   <a 
+                                     href={`https://wa.me/${phone}?text=${encodedMessage}`}
+                                     target="_blank"
+                                     rel="noopener noreferrer"
+                                     className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#128C7E] text-white py-2 rounded-md font-bold text-xs transition-colors shadow-sm"
+                                   >
+                                     <span>💬</span> WhatsApp
+                                   </a>
+                                   <a 
+                                     href={`mailto:?subject=${emailSubject}&body=${encodedMessage}`}
+                                     className="flex-1 flex items-center justify-center gap-2 bg-white hover:bg-amber-100 border border-amber-200 text-amber-900 py-2 rounded-md font-bold text-xs transition-colors shadow-sm"
+                                   >
+                                     ✉️ Email
+                                   </a>
+                                 </div>
+                               </details>
                              </div>
                            )
                          } else if (!existingLink) {
