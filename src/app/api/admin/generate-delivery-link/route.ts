@@ -65,9 +65,9 @@ export async function POST(request: NextRequest) {
             .insert({
                 order_id,
                 token,
-                amount,
+                delivery_fee: amount,
                 currency,
-                region: region || 'custom',
+                delivery_region: region || 'custom',
             })
             .select()
             .single()
