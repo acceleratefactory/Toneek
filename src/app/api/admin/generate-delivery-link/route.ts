@@ -25,8 +25,8 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Not a free trial order' }, { status: 400 })
         }
 
-        if (order.delivery_fee !== null) {
-            return NextResponse.json({ error: 'Delivery link already generated' }, { status: 400 })
+        if (order.delivery_fee !== null && order.delivery_fee > 0) {
+            return NextResponse.json({ error: 'Delivery link already generated (fee > 0)' }, { status: 400 })
         }
 
         // 2. Determine amount and currency
@@ -34,13 +34,14 @@ export async function POST(request: NextRequest) {
         let currency = custom_currency || 'NGN'
 
         if (region && region !== 'custom') {
-            const { data: setting } = await adminClient
+            const { data: setting, error: settingError } = await adminClient
                 .from('platform_settings')
                 .select('value')
                 .eq('key', region)
                 .single()
 
-            if (!setting || !setting.value) {
+            if (settingError || !setting || !setting.value) {
+                console.error('[generate-delivery-link] Failed to fetch region fee:', region, settingError)
                 return NextResponse.json({ error: 'Invalid region or missing delivery fee setting' }, { status: 400 })
             }
             amount = parseFloat(setting.value)

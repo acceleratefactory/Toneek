@@ -77,7 +77,7 @@ export default async function PayDeliveryPage({
   // Fetch customer profile
   const { data: profile } = await adminClient
     .from('profiles')
-    .select('full_name')
+    .select('full_name, address, city, state')
     .eq('id', order.user_id)
     .single()
 
@@ -96,6 +96,7 @@ export default async function PayDeliveryPage({
     <div className="min-h-screen bg-[#FCFAF8] p-4">
       <PayDeliveryClient
         orderId={order.id}
+        userId={order.user_id}
         amount={linkRecord.amount}
         currency={linkRecord.currency}
         paymentReference={order.payment_reference}
@@ -103,6 +104,11 @@ export default async function PayDeliveryPage({
         customerName={profile?.full_name || 'Customer'}
         formulaCode={assessment?.formula_code || 'Pending'}
         planTier={order.plan_tier || 'essentials'}
+        initialAddress={{
+          address: profile?.address || '',
+          city: profile?.city || '',
+          state: profile?.state || ''
+        }}
       />
     </div>
   )
